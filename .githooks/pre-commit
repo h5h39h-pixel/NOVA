@@ -1,0 +1,25 @@
+#!/bin/sh
+# Quality gate before each commit: pyflakes + node --check + pytest.
+# Activate once with:  git config core.hooksPath .githooks
+# Finds a *working* Python (skips the Windows Store stub, which exits 49).
+find_py() {
+  cands="py python3 python"
+  if [ -n "$LOCALAPPDATA" ]; then
+    base=$(cygpath -u "$LOCALAPPDATA" 2>/dev/null || echo "")
+    if [ -n "$base" ]; then
+      for v in 313 312 311 310; do cands="$base/Programs/Python/Python$v/python.exe $cands"; done
+    fi
+  fi
+  for c in $cands; do
+    if { command -v "$c" >/dev/null 2>&1 || [ -x "$c" ]; } && "$c" -c "import sys" >/dev/null 2>&1; then
+      echo "$c"; return 0
+    fi
+  done
+  return 1
+}
+PY=$(find_py)
+if [ -z "$PY" ]; then
+  echo "pre-commit: no working Python found — skipping checks (run 'python scripts/check.py' manually)"
+  exit 0
+fi
+"$PY" scripts/check.py

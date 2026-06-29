@@ -1,0 +1,5 @@
+# Dev / test dependencies (install: python -m pip install -r requirements-dev.txt)
+# Runtime deps are in requirements.txt. Playwright (used by the frontend test gate) is a
+# runtime dep already; pyflakes is used by the quality gate.
+pytest==9.1.1
+pyflakes>=3.2

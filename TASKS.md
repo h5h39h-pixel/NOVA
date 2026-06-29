@@ -29,12 +29,12 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 
 | ID | Task | Pri | Effort | Deps | Status |
 |---|---|---|---|---|---|
-| T-011 | Harden exec surface: gate `/api/exec` + agent `run_command` behind explicit per-session "danger mode"; stronger allow/deny rules; full audit; **never** implicitly available when auth+LAN enabled | P0 | 6h | T-004 | ⬜ |
-| T-012 | Auto cache-busting: server stamps asset URLs with file mtime/hash (inject into served `index.html`); remove manual `?v=N` | P1 | 3h | — | ⬜ |
-| T-013 | Scheduled DB backups: daily snapshot of `control.db` → `data/backups/` with rotation/retention; surfaced in Settings | P1 | 4h | — | ⬜ |
-| T-014 | DB migration helper: `schema_version` table + ordered, idempotent migrations; run on startup | P1 | 5h | — | ⬜ |
-| T-015 | Performance guards: pause particle/Brain render loops when tab hidden or page inactive; "Lite visuals" toggle in Settings; cap DPR; honor existing reduced-motion | P1 | 4h | — | ⬜ |
-| T-016 | Secrets hygiene: gitignore `config.json` if it holds secrets; document plaintext risk; optional at-rest encryption for `cloud_api_key` | P2 | 3h | T-002 | ⬜ |
+| T-011 | Exec surface gated: `/api/exec` + agent `run_command` require `allow_remote_exec` when exposed on LAN (always allowed on localhost); audited; `exec_allowed()` in settings service | P0 | 6h | T-004 | ✅ |
+| T-012 | Auto cache-busting: `/` handler stamps `?v=<asset-mtime>` into index.html; manual bumps gone | P1 | 3h | — | ✅ |
+| T-013 | Scheduled DB backups: daily SQLite online snapshot → `data/backups/` (rotate 14) + `/api/backup/snapshot[s]`; verified | P1 | 4h | — | ✅ |
+| T-014 | DB migration framework: `schema_version` + ordered idempotent `run_migrations()` on startup | P1 | 5h | — | ✅ |
+| T-015 | Performance guards: "Lite visuals" toggle (Settings), pause particle + Brain loops on hidden tab, skip tilt on lite/touch, DPR capped | P1 | 4h | — | ✅ |
+| T-016 | Secrets hygiene: `config.json` git-ignored; `SECURITY.md` documents model + exec surface + secrets; at-rest key encryption noted as follow-up | P2 | 3h | T-002 | ✅ |
 
 ## Phase 2 — Test Coverage & CI (P1)
 
