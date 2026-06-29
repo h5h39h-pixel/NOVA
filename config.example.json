@@ -1,0 +1,14 @@
+{
+  "_comment": "Copy to config.json and adjust paths/ports for your machine. config.json is git-ignored. No secrets here — auth token (hashed) and any API keys live in the SQLite settings table.",
+  "workspace": "C:\\AI\\agent-workspace",
+  "ai_root": "C:\\AI",
+  "ollama_url": "http://127.0.0.1:11434",
+  "comfy_url": "http://127.0.0.1:8188",
+  "comfy_dir": "C:\\AI\\ComfyUI",
+  "owui_url": "http://127.0.0.1:3000",
+  "owui_container": "open-webui",
+  "training_dir": "C:\\AI\\training",
+  "port": 8900,
+  "https_enabled": false,
+  "bind_host": ""
+}

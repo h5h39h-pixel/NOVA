@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova · AI Control Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+<!-- Font Awesome (free) — professional open-source vector icons, from CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+<link rel="stylesheet" href="/css/app.css?v=37">
+</head>
+<body>
+<!-- futuristic background layers -->
+<div class="bg-aurora"></div>
+<div class="bg-grid"></div>
+<canvas id="particles"></canvas>
+
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo" title="Nova AI">
+        <svg viewBox="0 0 48 48" width="26" height="26" aria-label="Nova">
+          <defs>
+            <linearGradient id="ng" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#22d3ee"/><stop offset="0.55" stop-color="#8b5cf6"/><stop offset="1" stop-color="#f5c542"/>
+            </linearGradient>
+          </defs>
+          <path d="M24 2 L29 19 L46 24 L29 29 L24 46 L19 29 L2 24 L19 19 Z" fill="url(#ng)"/>
+          <circle cx="24" cy="24" r="4.5" fill="#0a0b12"/><circle cx="24" cy="24" r="2.2" fill="url(#ng)"/>
+        </svg>
+      </div>
+      <div><div class="brand-name">NOVA</div><div id="brandsub" style="font-size:10.5px;color:var(--mut);font-weight:500;letter-spacing:.08em">AI COMMAND CENTER</div></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot">RTX 5090 · fully local · ⌘/Ctrl + K</div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="top">
+    <button class="tbtn menu-btn" id="menubtn" data-tip="Menu" aria-label="Menu">☰</button>
+    <div class="pills">
+      <span class="pill"><span class="dot" id="d_owui"></span>Open WebUI</span>
+      <span class="pill"><span class="dot" id="d_ollama"></span>Ollama</span>
+      <span class="pill"><span class="dot" id="d_comfy"></span>ComfyUI</span>
+      <span class="pill"><span class="dot" id="d_ws"></span>Live</span>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill" id="pill_gpu">GPU —</span>
+    <span class="pill" id="pill_cpu">CPU —</span>
+    <span class="pill" id="pill_ram">RAM —</span>
+    <button class="tbtn" id="themebtn" data-tip="Toggle dark / light theme">☀️</button>
+    <button class="tbtn lang" id="langbtn" data-tip="Switch language (EN / العربية)"><span id="langlbl">ع</span></button>
+    <button class="tbtn badge-wrap" id="bell" data-tip="Notifications">🔔<span class="badge" id="nbadge">0</span></button>
+    <span class="pill" id="clock"></span>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main" id="main"></main>
+</div>
+
+<!-- toasts -->
+<div id="toasts"></div>
+
+<!-- notifications drawer -->
+<div id="drawer">
+  <header><span>Notifications</span>
+    <span class="flex" style="gap:6px">
+      <button class="tbtn" id="nmute" data-tip="Mute sounds" style="height:32px;min-width:32px;padding:0 8px">🔔</button>
+      <button class="tbtn" id="nread" data-tip="Mark all read" style="height:32px;min-width:32px;padding:0 8px">✓</button>
+      <button class="tbtn" id="nclear" data-tip="Clear all" style="height:32px;min-width:32px;padding:0 8px">🗑</button>
+      <button class="tbtn" id="dclose" style="height:32px;min-width:32px;padding:0 8px">✕</button>
+    </span>
+  </header>
+  <input class="srch" id="nsearch" placeholder="Search notifications" style="margin:10px 14px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 12px;font-size:13px">
+  <div class="nfilters" id="nfilters"></div>
+  <div class="list" id="nlist"></div>
+</div>
+
+<!-- command palette -->
+<div id="palette">
+  <div class="pal">
+    <input id="palin" placeholder="Search everything — chats, documents, commands, models, pages…  (Esc to close)">
+    <div class="res" id="palres"></div>
+  </div>
+</div>
+
+<!-- login -->
+<div id="login">
+  <div class="onbcard" style="width:400px;max-width:92vw">
+    <h2>🔒 Sign in</h2>
+    <p>This Control Center is protected. Enter your access token.</p>
+    <input class="t" id="logintoken" type="password" placeholder="Access token" autocomplete="current-password">
+    <button class="btn p" id="loginbtn" style="width:100%;margin-top:12px">Unlock</button>
+    <p id="loginerr" style="color:var(--err);font-size:12px;margin-top:8px"></p>
+  </div>
+</div>
+
+<!-- live preview -->
+<div id="preview">
+  <div class="pal" style="width:680px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line)">
+      <b>👁 Live Preview</b><button class="btn sm" id="prevclose">✕</button>
+    </div>
+    <div id="prevbody" style="padding:18px;max-height:62vh;overflow:auto"></div>
+  </div>
+</div>
+
+<!-- keyboard shortcuts -->
+<div id="shortcuts">
+  <div class="onbcard" style="width:460px;max-width:92vw">
+    <h2>⌨️ Keyboard shortcuts</h2>
+    <ul>
+      <li><span class="kbd">⌘/Ctrl K</span><div>Search everything · command palette</div></li>
+      <li><span class="kbd">?</span><div>Show this help</div></li>
+      <li><span class="kbd">Esc</span><div>Close any overlay</div></li>
+      <li><span class="kbd">Enter</span><div>Send chat message · run command</div></li>
+      <li><span class="kbd">↑ / ↓</span><div>Navigate palette results</div></li>
+    </ul>
+    <button class="btn p" id="scclose" style="width:100%">Got it</button>
+  </div>
+</div>
+
+<!-- onboarding -->
+<div id="onb">
+  <div class="onbcard">
+    <h2>👋 Welcome to your Control Center</h2>
+    <p>Everything here runs locally on your RTX 5090. A quick tour:</p>
+    <ul>
+      <li><span class="e">💬</span><div><b>AI Chat</b> — conversations with projects, file upload, voice, model compare, and <i>save‑to‑training</i>. Type <b>!command</b> to run PowerShell inline.</div></li>
+      <li><span class="e">🎓</span><div><b>Training Studio</b> — one‑click Start Training, live progress, upload your own datasets, training history.</div></li>
+      <li><span class="e">📊</span><div><b>System Monitor</b> — live GPU/CPU/RAM/VRAM from nvidia‑smi & psutil.</div></li>
+      <li><span class="e">⌨️</span><div>Press <b>Ctrl/⌘ + K</b> anytime for the command palette. Toggle <b>العربية/English</b> and <b>dark/light</b> in the top bar.</div></li>
+    </ul>
+    <button class="btn p" id="onbclose" style="width:100%">Get started →</button>
+  </div>
+</div>
+
+<!-- SPA modules, loaded in dependency order (shared global scope, no bundler) -->
+<script src="/js/core.js?v=37"></script>
+<script src="/js/pages.js?v=37"></script>
+<script src="/js/shell.js?v=37"></script>
+</body>
+</html>

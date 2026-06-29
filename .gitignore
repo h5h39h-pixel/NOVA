@@ -1,0 +1,54 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ─── Virtual environments ─────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── Node (only used for tooling/checks) ──────────────────
+node_modules/
+
+# ─── Machine-specific config (commit config.example.json instead) ──
+config.json
+
+# ─── Runtime data / databases / logs (live outside repo, but ignore if present) ──
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+logs/
+backups/
+
+# ─── Secrets / certificates ───────────────────────────────
+*.pem
+*.key
+*.crt
+*.pfx
+
+# ─── Generated / uploads / media ──────────────────────────
+uploads/
+recordings/
+*.mp4
+*.webm
+
+# ─── Test / tooling caches ────────────────────────────────
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ─── OS / editor ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

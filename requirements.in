@@ -1,0 +1,21 @@
+# AI Control Center — top-level dependencies (human-edited ranges).
+# Pinned, reproducible versions live in requirements.txt — regenerate it after changing this file.
+fastapi>=0.110
+uvicorn[standard]>=0.27
+psutil>=5.9
+python-multipart>=0.0.9
+numpy>=1.26
+pypdf>=4.0
+python-docx>=1.1
+reportlab>=4.0
+playwright>=1.40
+faster-whisper>=1.0
+cryptography>=42.0
+websockets>=12.0
+mss>=9.0
+pillow>=10.0
+imageio>=2.31
+imageio-ffmpeg>=0.4
+# click-to-act (Screen Studio automation)
+pyautogui>=0.9.54
+pyperclip>=1.8
