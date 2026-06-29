@@ -53,6 +53,16 @@ def settings_save(patch):
     return out
 
 
+def exec_allowed():
+    """Whether arbitrary command execution (/api/exec, agent run_command) is permitted.
+    Always allowed on localhost (that is the product's purpose). When the server is exposed
+    on the LAN (auth + lan_access), it requires the explicit `allow_remote_exec` opt-in."""
+    s = get_settings()
+    if s.get("auth_enabled") and s.get("lan_access"):   # reachable beyond this machine
+        return bool(s.get("allow_remote_exec"))
+    return True
+
+
 def verify_login(tok):
     """True if the token is valid for sign-in (hash or legacy plaintext)."""
     s = get_settings(); tok = str(tok or "")

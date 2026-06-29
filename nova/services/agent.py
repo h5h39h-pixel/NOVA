@@ -133,6 +133,10 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
         # side-effecting tools are simulated in dry-run
         if name == "run_command":
             cmd = a.get("command", "")
+            from nova.services.settings import exec_allowed
+            if not exec_allowed():
+                audit("agent", "run_command", cmd, "blocked")
+                return "BLOCKED: command execution is disabled while the server is exposed on the LAN (enable 'allow_remote_exec' in Settings)."
             if not unrestricted and is_dangerous(cmd):
                 audit("agent", "run_command", cmd, "blocked")
                 return "BLOCKED: that command looks destructive. Enable Full Access to run it."

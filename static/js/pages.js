@@ -1091,7 +1091,8 @@ function Brain(){
       cluster();layout(prev);renderLegend();
     }
 
-    function frame(){const W=cv.width,H=cv.height,cx=W/2,cy=H/2,now=performance.now(),tt=(now-t0)/1000;
+    function frame(){if(document.hidden){raf=requestAnimationFrame(frame);return}   // perf: pause when tab hidden
+      const W=cv.width,H=cv.height,cx=W/2,cy=H/2,now=performance.now(),tt=(now-t0)/1000;
       ctx.clearRect(0,0,W,H);
       // ambient core glow
       const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*0.6);
@@ -1256,6 +1257,7 @@ function Settings(){
       <div class="flex"><button class="btn" data-m="local">🏠 ${t('local')}</button><button class="btn" data-m="cloud">☁ ${t('cloud')}</button><button class="btn" data-m="auto">⚡ ${t('auto')}</button></div>
       <label class="f mt">Theme</label>
       <div class="flex"><button class="btn" id="thd">🌙 Dark</button><button class="btn" id="thl">☀️ Light</button><button class="btn" id="tha">🌗 Auto</button></div>
+      <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${localStorage.getItem('lite')?'on':''}" id="slite"></button> Lite visuals — reduce background animations (low-end GPUs)</label>
       <label class="f mt">Backup &amp; Restore</label>
       <div class="flex wrap"><button class="btn" id="expset">⤓ Export settings</button><button class="btn" id="impset">⤒ Import settings</button><input type="file" id="impfile" accept=".json" style="display:none"></div>
       <div class="flex wrap" style="margin-top:7px"><button class="btn p" id="backupall">💾 Backup everything</button><button class="btn" id="restoreall">♻ Restore everything</button><input type="file" id="restorefile" accept=".json" style="display:none"></div>
@@ -1272,6 +1274,8 @@ function Settings(){
    ${card('Usage Statistics',`<div id="usagebox"></div>`)}`;
   function mount(){
     (async()=>{const list=await api('/models');$('#sl').innerHTML=list.map(m=>`<option ${m.name===s.default_local_model?'selected':''}>${esc(m.name)}</option>`).join('')})();
+    const slite=$('#slite');if(slite)slite.onclick=function(){const on=!this.classList.contains('on');
+      if(on)localStorage.setItem('lite','1');else localStorage.removeItem('lite');location.reload()};
     $('#thd').onclick=()=>{localStorage.setItem('theme','dark');applyTheme()};
     $('#thl').onclick=()=>{localStorage.setItem('theme','light');applyTheme()};
     $('#tha').onclick=()=>{localStorage.setItem('theme','auto');applyTheme();toast('info','Auto theme','light by day, dark by night')};

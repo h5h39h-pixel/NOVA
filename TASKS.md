@@ -14,16 +14,16 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 
 | ID | Task | Pri | Effort | Deps | Status |
 |---|---|---|---|---|---|
-| T-001 | `git init` + choose default branch; do **not** commit secrets/data yet | P0 | 0.5h | — | ⬜ |
-| T-002 | Add `.gitignore` (`data/`, `__pycache__/`, `*.db`, `*.log`, `data/logs/`, `data/certs/`, `data/uploads/`, `.venv/`, `node_modules/`, model dirs, `config.json` if it holds secrets) | P0 | 0.5h | T-001 | ⬜ |
-| T-003 | Add `LICENSE` (**decision needed:** MIT / Apache-2.0 / proprietary) | P0 | 0.25h | T-001 | ⬜ |
-| T-004 | Initial commit of full codebase; verify `git status` clean | P0 | 0.5h | T-001,002 | ⬜ |
-| T-005 | Pin Python deps: capture exact working versions → `requirements.txt` (keep `requirements.in` for ranges); document `pip install -r` | P0 | 1h | — | ⬜ |
-| T-006 | Add missing runtime deps used by click-to-act: `pyautogui`, `pyperclip` (verify imports) | P0 | 0.5h | T-005 | ⬜ |
-| T-007 | Vendor fonts locally: download Inter, JetBrains Mono, Orbitron `.woff2`; add `@font-face` in `app.css`; drop into `static/fonts/` | P1 | 2h | — | ⬜ |
-| T-008 | Vendor Font Awesome locally (CSS + webfonts under `static/vendor/fa/`); subset if size matters | P1 | 2h | — | ⬜ |
-| T-009 | Remove CDN `<link>`s from `index.html`; point to local assets; **verify offline render** (DevTools offline) | P1 | 1h | T-007,008 | ⬜ |
-| T-010 | First-run prerequisite check (`/api/selftest` extension + CLI): Ollama reachable, required models present, optional deps importable, `ffmpeg` present; clear actionable report | P1 | 4h | T-005,006 | ⬜ |
+| T-001 | `git init` + `main` branch; identity configured | P0 | 0.5h | — | ✅ |
+| T-002 | Add `.gitignore` (data/db/logs/venv/node_modules/secrets/`config.json`) | P0 | 0.5h | T-001 | ✅ |
+| T-003 | Add `LICENSE` — **MIT chosen** (permissive default; change anytime) | P0 | 0.25h | T-001 | ✅ |
+| T-004 | Initial commit (77 files; verified no secrets/data/caches; tree clean) | P0 | 0.5h | T-001,002 | ✅ |
+| T-005 | Pin Python deps → `requirements.txt` (exact `==`) + `requirements.in` (ranges) | P0 | 1h | — | ✅ |
+| T-006 | Add `pyautogui` + `pyperclip` to manifest (already installed; imports verified) | P0 | 0.5h | T-005 | ✅ |
+| T-007 | Self-host fonts (Inter, JetBrains Mono, Orbitron `.woff2`) → `static/fonts/` + `fonts.css` | P1 | 2h | — | ✅ |
+| T-008 | Vendor Font Awesome 6.5.2 (css + webfonts) → `static/vendor/fa/` | P1 | 2h | — | ✅ |
+| T-009 | Drop all CDN `<link>`s → local assets; **verified offline** (0 external requests, 0 console errors, render identical) | P1 | 1h | T-007,008 | ✅ |
+| T-010 | First-run prerequisite check `preflight.py` (python, deps, ffmpeg, Ollama+models, services) — 26 checks, actionable report | P1 | 4h | T-005,006 | ✅ |
 
 ## Phase 1 — Security & Runtime Hardening (P1)
 

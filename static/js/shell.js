@@ -54,13 +54,15 @@ function applyTheme(){let m=localStorage.getItem('theme')||'dark';if(m==='auto')
 function toggleTheme(){localStorage.setItem('theme',localStorage.getItem('theme')==='light'?'dark':'light');applyTheme()}
 function initParticles(){const cv=$('#particles');if(!cv)return;
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;   // respect user motion pref
+  if(document.body.classList.contains('lite'))return;                 // perf: lite visuals off
   const ctx=cv.getContext('2d');let W,H,pts=[];
   // node tints cycle through the cyan/blue/purple accent family for a constellation feel
   const TINT=[[34,211,238],[59,130,246],[168,85,247]];
   const resize=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;const n=Math.min(72,Math.floor(W*H/26000));
     pts=Array.from({length:n},(_,i)=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.24,vy:(Math.random()-.5)*.24,c:TINT[i%TINT.length],r:Math.random()*1.4+.7}))};
   resize();addEventListener('resize',resize);
-  (function loop(){ctx.clearRect(0,0,W,H);
+  (function loop(){if(document.hidden){return requestAnimationFrame(loop)}   // perf: pause when tab hidden
+    ctx.clearRect(0,0,W,H);
     for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1}
     for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const a=pts[i],b=pts[j],dx=a.x-b.x,dy=a.y-b.y,d=dx*dx+dy*dy;
       if(d<16000){ctx.strokeStyle='rgba(120,150,255,'+(0.14*(1-d/16000))+')';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}}
@@ -71,6 +73,7 @@ function initParticles(){const cv=$('#particles');if(!cv)return;
 function initDepth(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   if(matchMedia('(pointer: coarse)').matches)return;   // skip on touch devices
+  if(document.body.classList.contains('lite'))return;  // perf: lite visuals off
   const aurora=$('.bg-aurora'),parts=$('#particles');
   let raf=0,mx=0,my=0;
   addEventListener('mousemove',e=>{
@@ -146,6 +149,7 @@ async function boot(){
   if(auth.required && !auth.authed){ showLogin(); return; }
   State.settings=await api('/settings').catch(()=>({}));
   $('#brandsub').textContent=t('sub');$('#langlbl').textContent=State.lang==='ar'?'EN':'ع';
+  if(localStorage.getItem('lite'))document.body.classList.add('lite');   // perf: reduce background animations
   renderNav();initPalette();connect();loadNotifs();applyTheme();initParticles();initDepth();maybeOnboard();initIcons();
   // mobile: off-canvas sidebar drawer
   let backdrop=document.getElementById('sidebackdrop');

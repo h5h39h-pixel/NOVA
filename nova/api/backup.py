@@ -3,9 +3,17 @@
 Logic lives in nova.services.backup."""
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from nova.services.backup import make_backup, restore_backup
+from nova.services.backup import make_backup, restore_backup, snapshot_db, list_snapshots
 
 router = APIRouter()
+
+@router.get("/api/backup/snapshots")
+def api_snapshots():
+    return {"items": list_snapshots()}
+
+@router.post("/api/backup/snapshot")
+def api_snapshot_now():
+    return {"ok": True, "file": snapshot_db()}
 
 @router.get("/api/backup")
 def api_backup():

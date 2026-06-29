@@ -936,6 +936,12 @@ body.light .card{background:linear-gradient(165deg,rgba(255,255,255,.86),rgba(25
 .bempty .empty-orb{font-size:54px;filter:drop-shadow(0 6px 22px color-mix(in srgb,var(--accent) 55%,transparent))}
 @media(max-width:700px){.bsearchbox input{width:120px}.bdetails{width:220px}.bhud-bl{max-height:32%}}
 
+/* ---- "Lite visuals" performance mode (Settings → Theme) ---- */
+body.lite .bg-aurora,body.lite .bg-grid,body.lite #particles,body.lite::before{display:none!important}
+body.lite .brand .logo::before,body.lite .btn.p{animation:none!important}
+body.lite .card{transition:border-color .15s ease!important}
+body.lite .card:hover{transform:none!important}
+
 /* ---- reduced motion: calm everything ---- */
 @media (prefers-reduced-motion: reduce){
   .bg-aurora,#particles,body::before{transition:none!important;animation:none!important}

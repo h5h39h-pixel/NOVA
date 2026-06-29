@@ -14,7 +14,7 @@ from pathlib import Path
 
 import psutil
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 # ----------------------------------------------------------------------------- config
@@ -97,6 +97,7 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(metrics_loop())
     asyncio.create_task(status_loop())
     asyncio.create_task(scheduler_loop())
+    asyncio.create_task(backup_loop())
     yield
     # ---- graceful shutdown: finalize in-flight work so nothing is lost ----
     try:
@@ -158,7 +159,7 @@ app.include_router(backup_router)
 app.include_router(insights_router)
 
 # auth gate (token_ok) + AUTH_EXEMPT live in nova/services/settings.py; used by the middleware below
-from nova.services.settings import token_ok, AUTH_EXEMPT
+from nova.services.settings import token_ok, AUTH_EXEMPT, exec_allowed
 
 # ---- in-memory rate limiter (per IP + path): (max_requests, window_seconds) ----
 RATE_RULES = {"/api/auth/login": (10, 60), "/api/exec": (60, 60),
@@ -235,6 +236,17 @@ async def scheduler_loop():
         except Exception: pass
         await asyncio.sleep(15)
 
+async def backup_loop():
+    """Daily consistent snapshot of the SQLite DB (rotated, last 14 kept)."""
+    from nova.services.backup import snapshot_db
+    while True:
+        try:
+            p = await asyncio.to_thread(snapshot_db)
+            log.info(f"DB snapshot written: {p}")
+        except Exception as e:
+            log.warning(f"DB snapshot failed: {e}")
+        await asyncio.sleep(24 * 3600)
+
 # ---- websocket
 @app.websocket("/ws")
 async def ws(ws: WebSocket):
@@ -263,6 +275,10 @@ async def ws(ws: WebSocket):
 # ---- terminal / commands
 @app.post("/api/exec")
 async def api_exec(req: Request):
+    if not exec_allowed():
+        audit("terminal", "run_command", "blocked (remote exec disabled)", "blocked")
+        return JSONResponse({"error": "Command execution is disabled while exposed on the LAN. "
+                                      "Enable 'allow_remote_exec' in Settings to permit it."}, status_code=403)
     b = await req.json(); cmd = (b.get("command") or "").strip()
     if not cmd: return JSONResponse({"error": "empty"}, status_code=400)
     job = PM.start(cmd, ps_args(cmd), kind="command", source="terminal")
@@ -534,6 +550,22 @@ def api_selftest():
 # brain / habits / achievements routes now live in nova/api/analytics.py
 
 # ---- static dashboard
+# index.html is served through a small handler that stamps every ?v=… asset URL with the
+# newest asset mtime → automatic cache-busting (no manual version bumps, no stale CSS/JS).
+import re as _re
+_INDEX = STATIC / "index.html"
+def _asset_version():
+    paths = [STATIC / "css/app.css", STATIC / "js/core.js", STATIC / "js/pages.js",
+             STATIC / "js/shell.js", STATIC / "fonts/fonts.css", STATIC / "vendor/fa/css/all.min.css"]
+    try: return str(int(max(p.stat().st_mtime for p in paths if p.exists())))
+    except Exception: return "1"
+@app.get("/", response_class=HTMLResponse)
+def index():
+    try:
+        html = _INDEX.read_text(encoding="utf-8")
+        return HTMLResponse(_re.sub(r"\?v=[0-9]+", "?v=" + _asset_version(), html))
+    except Exception:
+        return HTMLResponse("<h1>index.html missing</h1>", status_code=500)
 app.mount("/", StaticFiles(directory=str(STATIC), html=True), name="static")
 
 if __name__ == "__main__":

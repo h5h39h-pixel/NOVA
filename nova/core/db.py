@@ -22,6 +22,8 @@ DEFAULT_SETTINGS = {
     "auth_enabled": False,        # require a login token for all API + WebSocket access
     "auth_token": "",             # legacy plaintext (superseded by auth_token_hash)
     "lan_access": False,          # bind 0.0.0.0 instead of localhost (ONLY meaningful with auth on)
+    "allow_remote_exec": False,   # permit /api/exec + agent run_command when exposed on LAN (off by default)
+    "lite_visuals": False,        # reduce background animations (particles/aurora/tilt) for low-end GPUs
 }
 
 def db():
@@ -71,7 +73,31 @@ def init_db():
     if "link" not in ncols: c.execute("ALTER TABLE notifications ADD COLUMN link TEXT")
     for k, v in DEFAULT_SETTINGS.items():
         c.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)", (k, json.dumps(v)))
+    run_migrations(c)
     c.commit(); c.close()
+
+
+# ─── versioned migrations ───────────────────────────────────────────────
+# The schema above is the baseline (v1). Add future changes as (version, fn) entries below;
+# each runs once, in order, and the applied version is recorded in `schema_version`.
+SCHEMA_VERSION = 1
+MIGRATIONS = [
+    # (2, lambda c: c.execute("ALTER TABLE kb_docs ADD COLUMN tags TEXT")),
+]
+
+def run_migrations(c):
+    """Apply ordered, idempotent migrations; stamp the applied version in schema_version."""
+    c.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)")
+    row = c.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
+    if not row:
+        c.execute("INSERT INTO schema_version(version) VALUES(?)", (SCHEMA_VERSION,))
+        return SCHEMA_VERSION   # fresh/existing baseline DB → stamp current, nothing to replay
+    cur = row[0]
+    for ver, fn in MIGRATIONS:
+        if cur < ver:
+            fn(c); cur = ver
+            c.execute("UPDATE schema_version SET version=?", (ver,))
+    return cur
 
 def get_settings():
     c = db(); rows = c.execute("SELECT key,value FROM settings").fetchall(); c.close()

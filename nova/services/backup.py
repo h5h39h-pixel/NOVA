@@ -5,10 +5,37 @@ bundle back in (skips existing conversations, never restores auth). Depends on n
 nova.services (audit, training.rebuild_combined) + config (dataset paths)."""
 import json
 import time
-from config import DS_BASE, DS_LEARNED
+import sqlite3
+from config import DS_BASE, DS_LEARNED, DB_PATH
 from nova.core.db import db, get_settings, set_settings
 from nova.services.audit import audit
 from nova.services.training import rebuild_combined
+
+BACKUP_DIR = DB_PATH.parent / "backups"
+
+
+def snapshot_db(keep=14):
+    """Consistent online snapshot of the SQLite DB → data/backups/, pruned to the last `keep`.
+    Uses SQLite's backup API (safe while the DB is in use). Returns the snapshot path."""
+    BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    dest = BACKUP_DIR / f"control-{time.strftime('%Y%m%d_%H%M%S')}.db"
+    src = sqlite3.connect(str(DB_PATH)); dst = sqlite3.connect(str(dest))
+    try: src.backup(dst)
+    finally: dst.close(); src.close()
+    snaps = sorted(BACKUP_DIR.glob("control-*.db"))
+    for old in snaps[:-keep]:
+        try: old.unlink()
+        except Exception: pass
+    return str(dest)
+
+
+def list_snapshots():
+    if not BACKUP_DIR.exists(): return []
+    out = []
+    for p in sorted(BACKUP_DIR.glob("control-*.db"), reverse=True):
+        try: st = p.stat(); out.append({"name": p.name, "size": st.st_size, "ts": st.st_mtime})
+        except Exception: pass
+    return out
 
 
 def make_backup():
