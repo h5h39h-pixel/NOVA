@@ -87,6 +87,7 @@ const I18N={
   nav_batch:'Batch Queue',nav_owui:'Open WebUI',nav_settings:'Settings',nav_knowledge:'Knowledge',
   nav_automation:'Automation',d_automation:'Schedule tasks to run automatically in the background',
   nav_agent:'Agent',d_agent:'Autonomous multi-step assistant — it plans, uses tools, and acts',
+  nav_workspace:'Nova',d_workspace:'Chat + Agent in one — DeepThink, Web Search, Full Access, attach any file, ✨ Auto model',
   nav_screen:'Screen Studio',d_screen:'Record, read (OCR/vision) and understand your screen',
   nav_live:'AI Screen Vision',d_live:'Real-time screen + AI vision — the AI sees what you see (privacy: opt-in)',
   nav_bugs:'Bug Reports',d_bugs:'Report issues and track them — recent logs attached automatically',
@@ -119,6 +120,7 @@ const I18N={
   nav_batch:'قائمة المهام',nav_owui:'واجهة الويب',nav_settings:'الإعدادات',nav_knowledge:'المعرفة',
   nav_automation:'الأتمتة',d_automation:'جدولة المهام لتعمل تلقائياً في الخلفية',
   nav_agent:'الوكيل',d_agent:'مساعد ذاتي متعدد الخطوات — يخطط ويستخدم الأدوات وينفّذ',
+  nav_workspace:'نوفا',d_workspace:'محادثة + وكيل في صفحة واحدة — تفكير عميق، بحث ويب، صلاحية كاملة، إرفاق أي ملف، نموذج تلقائي ✨',
   nav_screen:'استوديو الشاشة',d_screen:'سجّل واقرأ (OCR/رؤية) وافهم شاشتك',
   nav_live:'رؤية الشاشة بالذكاء',d_live:'الشاشة الحيّة + رؤية الذكاء — يرى ما تراه (اختياري للخصوصية)',
   nav_bugs:'بلاغات الأخطاء',d_bugs:'أبلغ عن المشكلات وتابعها — تُرفق السجلات تلقائياً',
@@ -153,8 +155,7 @@ const ROUTES=[
  ['dashboard','⚡',()=>Dashboard()],
  ['monitor','📊',()=>Monitor()],
  ['terminal','⌨️',()=>Terminal()],
- ['chat','💬',()=>Chat()],
- ['agent','🤖',()=>Agent()],
+ ['workspace','💬',()=>Workspace()],
  ['screen','🖥️',()=>ScreenStudio()],
  ['live','👁️',()=>LiveVision()],
  ['bugs','🐞',()=>Bugs()],
@@ -180,7 +181,8 @@ function renderNav(){
     `<a href="#/${id}" data-r="${id}"><span class="ic">${ic}</span><span data-i18n="nav_${id}">${t('nav_'+id)}</span></a>`).join('');
 }
 function route(){
-  const id=(location.hash.replace('#/','')||'dashboard');
+  let id=(location.hash.replace('#/','')||'dashboard');
+  if(id==='chat'||id==='agent'){location.hash='#/workspace';return}  // merged into the unified Workspace
   const r=ROUTES.find(x=>x[0]===id)||ROUTES[0];
   cleanup.forEach(f=>{try{f()}catch(e){}});cleanup=[];
   $$('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.r===r[0]));

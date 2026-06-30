@@ -14,6 +14,9 @@ async def api_chat_send(req: Request):
     b = await req.json(); prompt = (b.get("prompt") or "").strip()
     if not prompt: return JSONResponse({"error": "empty"}, status_code=400)
     model = b.get("model") or get_settings().get("default_local_model", "llama3.1:8b")
+    if str(model).lower() == "auto":          # ✨ Auto: pick the best model for this turn
+        from nova.services.automodel import resolve
+        model, _ = resolve("auto", prompt, deepthink=bool(b.get("deepthink")), mode="chat")
     cid = conv_ensure(b.get("cid"))
     stream_chat_send(prompt, model, cid,
                      context=(b.get("context") or "").strip(),
@@ -22,3 +25,14 @@ async def api_chat_send(req: Request):
                      deepthink=bool(b.get("deepthink")),
                      websearch=bool(b.get("websearch")))
     return {"ok": True, "model": model, "cid": cid}
+
+
+@router.post("/api/model/auto")
+async def api_model_auto(req: Request):
+    """Preview which model ✨ Auto would pick for a prompt (so the UI can show it)."""
+    b = {}
+    try: b = await req.json()
+    except Exception: pass
+    from nova.services.automodel import pick_model
+    name, reason = pick_model(b.get("prompt", ""), deepthink=bool(b.get("deepthink")), mode=b.get("mode", "chat"))
+    return {"model": name, "reason": reason}

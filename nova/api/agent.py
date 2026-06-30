@@ -18,6 +18,9 @@ async def api_agent(req: Request):
     b = await req.json(); goal = (b.get("goal") or "").strip()
     if not goal: return JSONResponse({"error": "empty goal"}, status_code=400)
     model = b.get("model") or get_settings().get("default_local_model", "llama3.1:8b")
+    if str(model).lower() == "auto":          # ✨ Auto: pick the best tool-capable model
+        from nova.services.automodel import resolve
+        model, _ = resolve("auto", goal, deepthink=bool(b.get("deepthink")), mode="agent")
     tools = b.get("tools") if isinstance(b.get("tools"), list) else None
     threading.Thread(target=agent_run, args=(goal, model, bool(b.get("dry_run")), bool(b.get("unrestricted")),
                      b.get("temperature", 0.2), b.get("max_steps", 8), tools),

@@ -6,8 +6,8 @@ import socket
 import pytest
 
 BASE = "http://127.0.0.1:8900"
-ROUTES = ["dashboard", "monitor", "chat", "agent", "knowledge", "brain", "models",
-          "training", "screen", "automation", "settings"]
+ROUTES = ["dashboard", "monitor", "workspace", "knowledge", "brain", "models",
+          "training", "screen", "live", "automation", "settings"]
 
 
 def _server_up():
@@ -70,7 +70,7 @@ def page(browser):
 
 def test_nav_click_routing(page):
     """Clicking sidebar links swaps the page, sets the title, marks the link active, updates the hash."""
-    for rid, title in [("agent", "Agent"), ("chat", "AI Chat"), ("settings", "Settings")]:
+    for rid, title in [("workspace", "Nova"), ("monitor", "System Monitor"), ("settings", "Settings")]:
         page.click(f"#nav a[data-r='{rid}']")
         page.wait_for_function(
             "t => document.querySelector('#main .page-head h2') "

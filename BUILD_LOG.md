@@ -1168,3 +1168,20 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   composition root.
 - **Verified:** gate green; live suite 42/42 (exercises exec/stt/upload/files); all pages render.
   Structure docs (frontend-structure.md) updated.
+
+## M97 — Unified Workspace (Chat + Agent on one page) + ✨ Auto model (2026-06-30)  [Feature]
+
+- **Merged Chat + Agent into one "Nova" page** (`static/js/pages-workspace.js`, route `#/workspace`;
+  the old `#/chat` and `#/agent` redirect to it; nav now has a single "Nova" entry). Professional
+  TOGGLE BUTTONS (not checkboxes): mode segmented control [💬 Chat | 🤖 Agent], 🧠 DeepThink, 🌐 Web
+  Search, 🔓 Full Access (agent-mode only), 📎 Attach (any file). Shared thread renders chat token
+  streams AND agent step cards; mic input; Stop (agent → /agent/stop + panic). Toggle state persists.
+- **✨ Auto model (intelligent):** new `nova/services/automodel.py` + `/api/model/auto`; chat-send and
+  /agent resolve `model:"auto"` per task (coding→qwen3-coder:30b, reasoning/DeepThink→reasoning/largest,
+  vision→VLM, agent→control-tagged, else default). UI shows a live hint of the pick + reason.
+- **Agent decides screen capture/record/monitor:** the agent gets its full toolset (see_screen/
+  read_screen/screenshot/screen_awareness/control + record via automation) so the ReAct loop chooses
+  when to use them — no manual wiring needed.
+- **Verified:** gate green; render-verified end-to-end — mode switch, Full Access shown only in agent
+  mode, DeepThink/Web toggles, Auto default + hint, a real chat turn streamed (with web citations),
+  zero console errors; live suite 42/42. Frontend tests updated for the merged nav.
