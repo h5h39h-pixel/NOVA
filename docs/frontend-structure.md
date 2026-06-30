@@ -11,11 +11,11 @@ after every file loads, so cross‑file function/`const` references resolve at c
 | File | Lines | Owns |
 |---|---|---|
 | `js/core.js` | ~223 | DOM/api helpers, icon engine, `State`, event bus, i18n, **router + `ROUTES`**, render helpers (`card`, `ringHTML`, `mdRender`, …). |
-| `js/pages.js` | ~377 | Everyday pages: Dashboard, Monitor, Terminal, Chat + shared dashboard helpers (`kpi`, `updateKpis`, `renderSvc`) + `TEMPLATES`. |
+| `js/pages.js` | ~145 | Everyday pages: Dashboard, Monitor, Terminal + shared dashboard helpers (`kpi`, `updateKpis`, `renderSvc`). |
 | `js/pages-create.js` | ~329 | Creation/media + screen: Models, Tools, Video, Training, Screen Studio, Live Vision, Bugs + the STT voice helpers (`dictate`, `_micUI`). |
-| `js/pages-agent.js` | ~219 | The Agent page (Nova avatar, thinking log, tools grid, DeepThink/Web toggles). |
 | `js/pages-data.js` | ~199 | Data pages: Learning, A/B Test, Knowledge, Automation (incl. `screen_if`), Workflows, Batch. |
 | `js/pages-system.js` | ~337 | System/insight: Nova Brain (3D map + `BRAIN_PALETTE`), Diagnostics, Audit, Open WebUI, Settings. |
+| `js/pages-workspace.js` | ~250 | **The unified "Nova" page** — Chat + Agent merged, pro toggles, ✨Auto model, attach/open files, media (capture/image/video) in chat. (Replaced the old separate Chat + `pages-agent.js`, which were removed.) |
 | `js/shell.js` | ~213 | WebSocket bus, toasts, notifications, command palette, theme, auth gate, `autoLite`, `boot()` (calls `route()` last). |
 
 **Rule:** new pages go in the matching `pages-*.js`; `ROUTES` (in `core.js`) maps a route id → page

@@ -1240,3 +1240,16 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   see_screen/screen_awareness/find_element → act via control/act_on_screen → look again) — supports
   AVL-style tasks ("what's on my desktop", iterative screen interaction).
 - **Verified:** gate green; restarted; live auto-model routing correct.
+
+## M103 — innovation backlog + deep error-hunt + dead-code removal (2026-06-30)  [Cleanup/Ideas]
+
+- **Innovation backlog (IDEA-1…10)** added to ROADMAP + TASKS — creative, in-scope (single-user/local)
+  ideas: visual macro recorder, local screen memory, save-run-as-workflow, hands-free voice, folder Q&A,
+  quality dashboard, region-watch→act, persistent memory, image-edit pipeline, self-healing loops.
+- **Error-hunt findings (all verified/fixed):** error paths correct (file/read credential→403,
+  nonexistent→404, understand-missing→ok:false, model/auto-empty→default). Fixed a stale dashboard link
+  (#/chat → #/workspace). **Removed dead code:** the old `Chat()` + `TEMPLATES` (pages.js 377→145) and
+  the entire dead `pages-agent.js` (only the unused `Agent()` remained after the workspace merge) +
+  its <script> tag — confirmed zero external references first.
+- **Verified:** gate green; restarted; routes render (dashboard/terminal/workspace/automation/knowledge/
+  brain), #/chat→#/workspace redirect works, zero console errors. frontend-structure.md updated.

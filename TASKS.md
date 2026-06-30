@@ -147,6 +147,24 @@ page · SV‑6 ✅ privacy · SV‑7 ✅ tests · SV‑2 🟧 on‑demand descri
 focused‑window context (full keystroke capture deferred by privacy decision). Optional follow‑ups:
 auto‑narration loop, click‑event capture, wire the Live page directly to `act_on_screen`.
 
+## 💡 Innovation backlog (IDEA · creative, in‑scope — single‑user/local‑only)
+
+Original, useful ideas aligned with the vision. All ⬜ TODO; build when prioritized. Each is local‑only
+and opt‑in where it touches the screen/privacy. (Full descriptions in `ROADMAP.md` → Innovation backlog.)
+
+| ID | Idea | Priority | Status |
+|---|---|---|---|
+| IDEA‑1 | Visual macro recorder (record/replay UIA+mouse as named macros) | P2 | ⬜ |
+| IDEA‑2 | Local screen memory — opt‑in OCR+embed of the screen into the KB ("what did I see earlier?") | P2 | ⬜ |
+| IDEA‑3 | Save a successful agent run as a reusable Workflow/Automation | P2 | ⬜ |
+| IDEA‑4 | Hands‑free voice conversation loop (STT→answer→TTS) | P2 | ⬜ |
+| IDEA‑5 | Folder Q&A — index a directory, chat over it with citations | P2 | ⬜ |
+| IDEA‑6 | Quality dashboard — scheduled eval batteries charted over time | P3 | ⬜ |
+| IDEA‑7 | Region watch → act (pin a screen region; act on text change) | P3 | ⬜ |
+| IDEA‑8 | Local persistent memory (durable user facts/preferences) | P2 | ⬜ |
+| IDEA‑9 | Image edit pipeline (ComfyUI img2img refine from chat) | P3 | ⬜ |
+| IDEA‑10 | Self‑healing loops (auto‑restart a dead background loop) | P2 | ⬜ |
+
 ## P2 — Documentation (keep the six files current)
 
 | ID | Task | Status | Notes |

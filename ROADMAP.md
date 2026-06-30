@@ -115,6 +115,25 @@ and the full spec in **`docs/chat-deepthink-websearch.md`**.
 - `screen_if`, click‑to‑act — best‑effort / mocked‑only.
 - ~~No watchdog; loops swallow errors; secrets plaintext; deps not clean‑installed~~ → **fixed**: watchdog (M55), loops surface errors (M56), secrets encrypted (M46), clean‑install proven (M52), WAL (M57), media backup (M59).
 
+## 💡 Innovation backlog (creative, in‑scope — single‑user · local‑only)
+Original ideas that extend Nova's vision without breaking the core principle. Tracked as IDEA‑* in
+`TASKS.md`. Each is local‑only, opt‑in where it touches the screen/privacy.
+1. **Visual macro recorder** — record a sequence of UIA/mouse actions and replay as a named local macro.
+2. **Local screen memory (opt‑in)** — periodically OCR+embed the screen into the KB so you can later ask
+   "what was that error I saw earlier?" — local, opt‑in, with a retention cap and a clear indicator.
+3. **Save a successful agent run as a reusable Workflow/Automation** — one click turns a good run into a
+   repeatable task.
+4. **Hands‑free voice conversation** — speak → STT → answer → TTS loop (building blocks already exist).
+5. **Folder Q&A** — point at a folder → auto‑index → chat over it with citations (RAG over a directory).
+6. **Quality dashboard** — schedule the eval batteries (agent/RAG/gen) and chart quality over time to
+   catch regressions after model/dep updates.
+7. **Region watch → act** — pin a screen region; when its text changes, trigger an action (extends
+   `screen_if`).
+8. **Local persistent memory** — durable user facts/preferences the assistant recalls across sessions
+   (local file, owner‑editable).
+9. **Image edit pipeline** — generate then iteratively refine images (ComfyUI img2img) from the chat.
+10. **Self‑healing loops** — if a background loop dies (seen in `/api/errors`), auto‑restart it.
+
 ## 🔒 CORE PRINCIPLE (permanent) — single‑user · local‑only
 See **`docs/PRINCIPLES.md`**. No cloud/telemetry/inbound‑remote/LAN‑control/phone‑control/external‑
 access/multi‑user — ever. Localhost‑only. Opt‑in outbound exceptions: Web Search + git source push.
