@@ -52,6 +52,15 @@ def test_index_auto_cache_bust(client):
     assert re.search(r"app\.css\?v=\d+", html)   # server-stamped asset version
 
 
+def test_security_headers(client):
+    """SEC-3: strict CSP + clickjacking/permissions headers present."""
+    h = client.get("/").headers
+    csp = h.get("content-security-policy", "")
+    assert "default-src 'self'" in csp and "frame-ancestors 'self'" in csp and "object-src 'none'" in csp
+    assert h.get("x-content-type-options") == "nosniff"
+    assert "microphone=(self)" in h.get("permissions-policy", "")
+
+
 def test_exec_destructive_confirm_guard(client, monkeypatch):
     """SEC-1: destructive commands require confirm; nothing executes without it."""
     import server

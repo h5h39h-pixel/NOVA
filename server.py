@@ -183,6 +183,27 @@ def _rate_ok(ip, path):
     if len(q) >= limit: return False
     q.append(now); return True
 
+# SEC-3: strict security headers. All assets are local (vendored fonts/FA) and all model/service
+# traffic is proxied through this origin, so we can lock CSP to 'self'. 'unsafe-inline' is kept for
+# style/script because the SPA uses inline styles + a couple of inline handlers — but external
+# script/resource loading and framing are blocked (XSS-exfiltration + clickjacking defense).
+# Microphone is allowed for STT (same origin); camera/geolocation denied.
+_CSP = ("default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "font-src 'self'; "
+        "connect-src 'self' ws: wss:; "
+        "media-src 'self' blob:; "
+        "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'")
+SECURITY_HEADERS = {
+    "Content-Security-Policy": _CSP,
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "X-Frame-Options": "SAMEORIGIN",
+    "Permissions-Policy": "geolocation=(), camera=(), microphone=(self)",
+}
+
 @app.middleware("http")
 async def gate(request: Request, call_next):
     path = request.url.path
@@ -204,11 +225,8 @@ async def gate(request: Request, call_next):
         dt = (time.time() - t0) * 1000
         if resp.status_code >= 400 or dt > 1500:
             log.info(f"{request.method} {path} -> {resp.status_code} ({dt:.0f}ms)")
-    resp.headers["Content-Security-Policy"] = "frame-ancestors *"
-    resp.headers["X-Content-Type-Options"] = "nosniff"
-    resp.headers["Referrer-Policy"] = "no-referrer"
-    if "x-frame-options" in resp.headers:
-        del resp.headers["x-frame-options"]
+    for k, v in SECURITY_HEADERS.items():
+        resp.headers[k] = v
     if path == "/" or path.endswith(".html"):
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp

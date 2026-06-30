@@ -475,3 +475,18 @@ Made the six project files the **mandatory, permanent** source of truth and the 
 - **Verified:** `tests/test_safety.py` — 24 cases (15 dangerous incl. piped/alias/format, 9 safe incl.
   echo-with-words / single-file delete / format-table). Gate green; live suite 42/42.
 - **Next:** SEC-3 (tighten CSP/security headers).
+
+## M45 — SEC-3: strict HTTP security headers (2026-06-30)  [P0 Security]
+
+- **What:** replaced the permissive `frame-ancestors *` with a strict Content-Security-Policy now
+  that all assets are local: `default-src 'self'`, `object-src 'none'`, `base-uri/form-action 'self'`,
+  `frame-ancestors 'self'`, `connect-src 'self' ws: wss:`, `img-src 'self' data: blob:`. Kept
+  `'unsafe-inline'` for style/script (SPA uses inline styles + a few inline handlers) — external
+  script/resource loading and framing are blocked (XSS-exfiltration + clickjacking defense). Added
+  `X-Frame-Options: SAMEORIGIN` and `Permissions-Policy: geolocation=(), camera=(), microphone=(self)`
+  (mic kept for STT). Centralized into a `SECURITY_HEADERS` dict.
+- **Why:** baseline headers were weak (anything could frame the app; no CSP). Feasible to lock down
+  only after M-A vendored the CDN assets.
+- **Verified:** the Playwright frontend gate loads all 11 routes with **zero console/CSP errors**;
+  new header regression test (`test_security_headers`); gate green; live suite 42/42.
+- **Next:** SEC-4 (encrypt cloud_api_key at rest).

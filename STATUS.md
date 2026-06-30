@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **SEC‑3** Tighten HTTP security headers (CSP `default-src 'self'`, `frame-ancestors 'self'`). (P0)
-2. **SEC‑4** Encrypt `cloud_api_key` at rest. (P0)
-3. **TST‑1** Replace smoke tests with real per‑service assertions. (P0)
+1. **SEC‑4** Encrypt `cloud_api_key` at rest. (P0)
+2. **SEC‑5** One‑command HTTPS enablement. (P0)
+3. **SEC‑6** Audit every `subprocess`/exec call site, then **TST‑1**. (P0)
 
-_Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** centralized/strengthened denylist `nova/core/safety.py` (M44)._
+_Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** centralized denylist `nova/core/safety.py` (M44) · **SEC‑3** strict CSP/security headers (M45)._
 
 ---
 
