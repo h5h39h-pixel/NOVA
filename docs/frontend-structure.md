@@ -13,8 +13,9 @@ after every file loads, so cross‑file function/`const` references resolve at c
 | `js/core.js` | ~223 | DOM/api helpers, icon engine, `State`, event bus, i18n, **router + `ROUTES`**, render helpers (`card`, `ringHTML`, `mdRender`, …). |
 | `js/pages.js` | ~377 | Everyday pages: Dashboard, Monitor, Terminal, Chat + shared dashboard helpers (`kpi`, `updateKpis`, `renderSvc`) + `TEMPLATES`. |
 | `js/pages-create.js` | ~329 | Creation/media + screen: Models, Tools, Video, Training, Screen Studio, Live Vision, Bugs + the STT voice helpers (`dictate`, `_micUI`). |
-| `js/pages-agent.js` | ~414 | Agent + data: Agent, Learning, A/B Test, Knowledge, Automation, Workflows, Batch. |
-| `js/pages-system.js` | ~334 | System/insight: Nova Brain (3D map + `BRAIN_PALETTE`), Diagnostics, Audit, Open WebUI, Settings. |
+| `js/pages-agent.js` | ~219 | The Agent page (Nova avatar, thinking log, tools grid, DeepThink/Web toggles). |
+| `js/pages-data.js` | ~199 | Data pages: Learning, A/B Test, Knowledge, Automation (incl. `screen_if`), Workflows, Batch. |
+| `js/pages-system.js` | ~337 | System/insight: Nova Brain (3D map + `BRAIN_PALETTE`), Diagnostics, Audit, Open WebUI, Settings. |
 | `js/shell.js` | ~213 | WebSocket bus, toasts, notifications, command palette, theme, auth gate, `autoLite`, `boot()` (calls `route()` last). |
 
 **Rule:** new pages go in the matching `pages-*.js`; `ROUTES` (in `core.js`) maps a route id → page
@@ -33,9 +34,11 @@ Loaded after the fonts/FA in this order (later files override earlier — preser
 
 ## Backend — layered DAG (unchanged)
 `config ← core ← services ← api ← server`; nothing imports `server.py`. Routes live in `nova/api/*`
-(now incl. `toolkit.py`, `control.py`, `screen_vision.py`, `understand.py`); logic in `nova/services/*`;
-`server.py` (~667) is the composition root (lifespan, loops, middleware, router includes + a few
-app‑state‑coupled inline routes: exec, stt, upload/files, ws, health/errors).
+(now incl. `toolkit.py`, `control.py`, `screen_vision.py`, `understand.py`, **`exec.py`, `stt.py`,
+`files_api.py`**); logic in `nova/services/*` (now incl. `stt.py` for the Whisper loader). After the
+M96 extraction, `server.py` is **~576 lines** — closer to a pure composition root (lifespan, loops,
+middleware, router includes + a small set of app‑state‑coupled routes: ws, health/errors, selftest,
+db‑status, chat‑export, kb/ingest).
 
 ## Lessons from the refactor
 - **Split the genuine monoliths, not everything.** pages.js (1440) and app.css (1039) were real

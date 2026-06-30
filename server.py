@@ -7,7 +7,7 @@ the toolkit (.ps1), and an SQLite store for settings/history/notifications.
 
 Run:  python server.py   ->  http://localhost:8900
 """
-import os, json, time, threading, asyncio, shutil, uuid, secrets, logging, collections
+import os, json, time, threading, asyncio, shutil, secrets, logging, collections
 from contextlib import asynccontextmanager
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -39,33 +39,11 @@ if not log.handlers:
     log.addHandler(_fh)
 
 # process ownership (Windows Job Object) — nova.core.process
-from nova.core.process import init_job_object, ps_args
-from nova.core.safety import danger_reason  # shared destructive-command denylist
+from nova.core.process import init_job_object
 
 # _hash + the auth gate now live in nova/services/settings.py
 
-# ----------------------------------------------------------------------------- local speech-to-text (faster-whisper)
-_WHISPER = None
-_WHISPER_LOCK = threading.Lock()
-_WHISPER_SIZE = None
-def get_whisper():
-    """Lazily load the local Whisper STT model. Size is configurable via the `stt_model`
-    setting (tiny/base/small/medium) — larger = more accurate (esp. Arabic/noisy), slower."""
-    global _WHISPER, _WHISPER_SIZE
-    size = (get_settings().get("stt_model") or "small").strip()
-    if size not in ("tiny", "base", "small", "medium", "large-v3"): size = "small"
-    if _WHISPER is None or size != _WHISPER_SIZE:
-        with _WHISPER_LOCK:
-            if _WHISPER is None or size != _WHISPER_SIZE:
-                from faster_whisper import WhisperModel
-                try:   # GPU (RTX 5090) — far faster + lets large models run for good Arabic accuracy
-                    _WHISPER = WhisperModel(size, device="cuda", compute_type="float16")
-                    log.info(f"Whisper STT model loaded ({size} / cuda / float16) — fully local")
-                except Exception as e:
-                    _WHISPER = WhisperModel(size, device="cpu", compute_type="int8")
-                    log.info(f"Whisper STT model loaded ({size} / cpu / int8) — cuda unavailable: {str(e)[:80]}")
-                _WHISPER_SIZE = size
-    return _WHISPER
+# local speech-to-text (faster-whisper): model loading → nova/services/stt.py, route → nova/api/stt.py
 
 # ----------------------------------------------------------------------------- db
 # service layer — audit trail + notifications/webhooks (nova.services)
@@ -153,6 +131,9 @@ from nova.api.screen_vision import router as screen_vision_router
 from nova.api.understand import router as understand_router
 from nova.api.control import router as control_router
 from nova.api.toolkit import router as toolkit_router
+from nova.api.exec import router as exec_router
+from nova.api.stt import router as stt_router
+from nova.api.files_api import router as files_router
 from nova.api.settings import router as settings_router
 from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
@@ -179,13 +160,16 @@ app.include_router(screen_vision_router, tags=["screen-vision"])
 app.include_router(understand_router, tags=["understand"])
 app.include_router(control_router, tags=["control"])
 app.include_router(toolkit_router, tags=["toolkit"])
+app.include_router(exec_router, tags=["terminal"])
+app.include_router(stt_router, tags=["stt"])
+app.include_router(files_router, tags=["files"])
 app.include_router(settings_router, tags=["settings"])
 app.include_router(tts_router, tags=["media"])
 app.include_router(backup_router, tags=["backup"])
 app.include_router(insights_router, tags=["insights"])
 
 # auth gate (token_ok) + AUTH_EXEMPT live in nova/services/settings.py; used by the middleware below
-from nova.services.settings import token_ok, AUTH_EXEMPT, exec_allowed
+from nova.services.settings import token_ok, AUTH_EXEMPT
 from nova.core.errors import record as record_error
 START_TS = time.time()   # process start, for /api/health uptime
 
@@ -334,50 +318,9 @@ async def ws(ws: WebSocket):
 # open-webui routes now live in nova/api/owui.py
 
 # ---- terminal / commands
-@app.post("/api/exec")
-async def api_exec(req: Request):
-    if not exec_allowed():
-        audit("terminal", "run_command", "blocked (remote exec disabled)", "blocked")
-        return JSONResponse({"error": "Command execution is disabled while exposed on the LAN. "
-                                      "Enable 'allow_remote_exec' in Settings to permit it."}, status_code=403)
-    b = await req.json(); cmd = (b.get("command") or "").strip()
-    if not cmd: return JSONResponse({"error": "empty"}, status_code=400)
-    # SEC-1/SEC-2: clearly-destructive commands require an explicit confirm (the Terminal asks first).
-    why = danger_reason(cmd)
-    if why and not b.get("confirm"):
-        audit("terminal", "run_command", cmd, "needs_confirm")
-        return JSONResponse({"needs_confirm": True,
-                             "reason": f"This looks destructive — {why}. Run it anyway?"}, status_code=409)
-    job = PM.start(cmd, ps_args(cmd), kind="command", source="terminal")
-    audit("terminal", "run_command", cmd, "forced" if why else "ok")
-    return {"ok": True, "job": job.id}
-
-# toolkit quick-action routes (video/image/speak) now live in nova/api/toolkit.py
-# logs route now lives in nova/api/history.py (included after `app` is defined)
-# bug-report routes now live in nova/api/bugs.py (included after `app` is defined)
-@app.post("/api/stt")
-async def api_stt(req: Request):
-    """Local speech-to-text: accepts a recorded audio blob, returns the transcript (no cloud)."""
-    form = await req.form(); f = form.get("audio") or form.get("file")
-    if not f: return JSONResponse({"error": "no audio"}, status_code=400)
-    lang = (form.get("lang") or "").strip() or None
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    tmp = UPLOAD_DIR / f"stt_{uuid.uuid4().hex[:8]}.webm"
-    tmp.write_bytes(await f.read())
-    try:
-        model = await asyncio.to_thread(get_whisper)
-        def run():
-            segs, info = model.transcribe(str(tmp), language=lang, vad_filter=True)
-            return "".join(s.text for s in segs).strip(), info.language
-        text, detected = await asyncio.to_thread(run)
-        audit("stt", "transcribe", f"{detected}: {text[:60]}")
-        return {"ok": True, "text": text, "language": detected}
-    except Exception as e:
-        log.exception("stt failed")
-        return JSONResponse({"ok": False, "error": str(e)[:200]}, status_code=500)
-    finally:
-        try: tmp.unlink()
-        except Exception: pass
+# /api/exec → nova/api/exec.py · /api/stt → nova/api/stt.py
+# toolkit quick-action routes (video/image/speak) → nova/api/toolkit.py
+# logs → nova/api/history.py · bug-reports → nova/api/bugs.py
 
 # ---- Screen Studio ----
 # Routes extracted to nova/api/screen.py. The service is still imported here so the
@@ -394,44 +337,7 @@ from nova.services import screen as screen_svc
 # ---- conversations / projects
 # conversation + chat-history/clear routes now live in nova/api/conversations.py
 
-# ---- file upload (chat context): extract text from PDF/DOCX/TXT/image
-# UPLOAD_DIR now lives in config; file text extraction in nova/services/files.py.
-from nova.services.files import extract_text
-
-@app.post("/api/upload")
-async def api_upload(req: Request):
-    form = await req.form()
-    f = form.get("file")
-    if not f: return JSONResponse({"error": "no file"}, status_code=400)
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    dest = UPLOAD_DIR / f.filename
-    dest.write_bytes(await f.read())
-    # Images: include BOTH a VLM description and OCR text so chat "read this / describe this" works.
-    if dest.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".webp", ".gif"):
-        try:
-            from nova.services.understand import understand_image
-            u = understand_image(dest)
-            parts = []
-            if u.get("description"): parts.append("[What the image shows]\n" + u["description"])
-            if u.get("text") and not str(u["text"]).startswith("("): parts.append("[Text in the image]\n" + u["text"])
-            text = "\n\n".join(parts) or extract_text(dest)
-        except Exception:
-            text = extract_text(dest)
-    else:
-        text = extract_text(dest)
-    return {"ok": True, "filename": f.filename, "size": dest.stat().st_size, "chars": len(text),
-            "text": text[:8000], "truncated": len(text) > 8000, "url": f"/files/{f.filename}"}
-
-@app.get("/files/{name}")
-def api_file(name: str):
-    p = (UPLOAD_DIR / name)
-    try:
-        if UPLOAD_DIR.resolve() not in p.resolve().parents:
-            return JSONResponse({"error": "bad path"}, status_code=400)
-    except Exception:
-        return JSONResponse({"error": "bad path"}, status_code=400)
-    if not p.exists(): return JSONResponse({"error": "not found"}, status_code=404)
-    return FileResponse(str(p))
+# file upload (/api/upload) + static file serving (/files/{name}) → nova/api/files_api.py
 
 @app.get("/api/db-status")
 def api_db_status():
@@ -487,6 +393,7 @@ def api_toolkit_list():
 # KB service extracted to nova/services/kb.py; imported back here. Routes that are
 # pure CRUD live in nova/api/kb.py; the multipart ingest stays here (shares UPLOAD_DIR).
 from nova.services.kb import embed, chunk_text, kb_search
+from nova.services.files import extract_text   # used by the kb/ingest route below
 
 @app.post("/api/kb/ingest")
 async def api_kb_ingest(req: Request):

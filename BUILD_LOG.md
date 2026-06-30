@@ -1147,3 +1147,24 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Honest backlog HON-1…12 now complete** (M81–M94). Remaining beyond it: HON-1b's per-action confirm
   prompt (optional) and hosted CI (owner-gated) — everything actionable in this environment is done.
 - **Verified:** gate green; pre-push hook runs the gate and passes.
+
+## M95 — connected GitHub remote + hosted CI (2026-06-30)  [HON-9]
+
+- Owner provided a private remote (github.com/h5h39h-pixel/NOVA). Verified no secrets are tracked
+  (config.json/.nova_key/*.db/backups all git-ignored; only secretbox.py = the encryption module).
+  Added `origin`, merged the remote's initial README (kept ours), pushed `main` → the pre-push gate
+  passed and the `ci.yml` workflow (`on: push`) now runs **hosted CI on GitHub Actions**. HON-9 fully
+  closed (run results in the repo's Actions tab; `gh` not installed locally to print them).
+
+## M96 — more splits: pages-data.js + server.py route extraction (2026-06-30)  [HON-11 cont.]
+
+- **pages-agent.js (414) → pages-agent.js (219, Agent only) + pages-data.js (199, Learning/ABTest/
+  Knowledge/Automation/Workflows/Batch)** — byte-identical; index.html loads it in order; all pages
+  render, zero console errors.
+- **server.py (669 → 576):** extracted the remaining inline routes into proper routers —
+  `nova/api/exec.py` (/api/exec, the guarded terminal exec), `nova/api/stt.py` (+ `nova/services/stt.py`
+  for the Whisper loader), `nova/api/files_api.py` (/api/upload + /files/{name}). Trimmed now-unused
+  imports (uuid, ps_args, danger_reason, exec_allowed). server.py is now much closer to a pure
+  composition root.
+- **Verified:** gate green; live suite 42/42 (exercises exec/stt/upload/files); all pages render.
+  Structure docs (frontend-structure.md) updated.
