@@ -1,6 +1,11 @@
 # 🔧 Build Log
 
-Chronological record of what was built, fixed, tested, and decided.
+Chronological record of what was built, fixed, tested, and decided — **date · what · why · how verified**.
+
+> **Permanent rule:** this is one of six mandatory source‑of‑truth files
+> (`ROADMAP.md`, `TASKS.md`, `BUILD_LOG.md`, `WORKFLOW.md`, `PROJECT_PLAN.md`, `STATUS.md`).
+> Review them before work, update during, reconcile after — see `WORKFLOW.md`. Append a dated
+> entry here for every completed task. Personal single‑user system — no multi‑user, ever.
 
 ## M5 — Pro chat & model library
 
@@ -420,3 +425,22 @@ running container, and verified everything — custom Nova features preserved, s
   suite **42/42**, gate green (pyflakes + node + pytest 24).
 - **Rollback path** (if ever needed): recreate container from the retained `:main` image + restore
   the `webui.db` backup.
+
+## M42 — Source-of-truth files established (2026-06-30)
+
+Made the six project files the **mandatory, permanent** source of truth and the workflow a fixed law.
+
+- **What:** authored/reorganized `STATUS.md` (live dashboard), `WORKFLOW.md` (the permanent
+  before/during/after process + quality gate), `TASKS.md` (full backlog by priority P0→P3 with
+  DONE/FRAGILE/IN‑PROGRESS/TODO/EXCLUDED), `ROADMAP.md` (feature status + phases + vision),
+  `PROJECT_PLAN.md` (phases + architecture decisions), and this log's header rule.
+- **Why:** to have one reliable record of what's done vs fragile vs remaining, and to enforce
+  reviewing/updating these files on every coding session.
+- **Priorities fixed:** P0 Security (exec surface, auth, HTTPS) · P0 Tests · P1 Outcome
+  verification · P1 Stability · P2 Docs · P2 Features · P3 Polish. **Multi‑user excluded forever.**
+- **Honest fragile list captured** (see STATUS.md): unguarded localhost exec, shallow/env‑coupled
+  tests, never‑run CI, unverified agent/training/generation outcomes, mocked‑only `screen_if`,
+  best‑effort click‑to‑act, plaintext `cloud_api_key`, no watchdog, silent loop error handling,
+  deps not clean‑installed.
+- **Next:** begin Phase 1 / SEC‑1 (Terminal `/api/exec` destructive‑command confirm‑guard).
+- _Verified:_ docs only; quality gate green (pyflakes + node + pytest 24); live suite 42/42.

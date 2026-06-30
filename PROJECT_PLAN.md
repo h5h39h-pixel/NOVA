@@ -1,81 +1,62 @@
-# Nova / AI Control Center — Project Plan
+# PROJECT PLAN — Nova / AI Control Center
 
-_Milestones, schedule, deliverables, and risks for the hardening & completion effort._
-_Plan start: **2026-06-30**. Pace assumption: part-time (~2–3 focused hours/day, AI-paired)._
-_See `PLAN.md` (strategy) and `TASKS.md` (task detail)._
+High‑level plan: milestones, phases, and the architecture decisions behind them.
+Personal single‑user system. Companions: `ROADMAP.md` (features), `TASKS.md` (work),
+`WORKFLOW.md` (process), `STATUS.md` (live), `BUILD_LOG.md` (history).
 
-> ⚠️ **Estimates, not commitments.** Effort is in focused days (1 d ≈ 6 h). The calendar assumes a
-> part-time cadence; compress to ~2 weeks if worked full-time. Re-baseline after Phase 0.
-
-> ✅ **STATUS (2026-06-30): Milestones M-A → M-E delivered + T-033 bespoke UI done.** 33/34 tasks done.
-> **Monitoring:** T-034 32B throughput (upstream-gated, `docs/32b-throughput.md`) — 🟡.
-> All committed to git; quality gate (pyflakes + node + pytest 24 + live 42/42) green;
-> redesigned pages render with zero console errors.
-> See `TASKS.md` for per-task status and `BUILD_LOG.md` (M39) for the execution record.
+_Last updated: 2026-06-30._ **Update on every session (permanent rule).**
 
 ---
 
-## 1. Milestones
+## 1. Where it stands
+Feature‑complete, cleanly architected, under git, fully local. The remaining work is **maturity**:
+security, real tests, outcome verification, and resilience — in that order.
 
-| # | Milestone | Phase | Exit criteria | Effort |
-|---|---|---|---|---|
-| **M-A** | **Safety Net** | 0 | Under git; deps pinned + complete; fonts/icons local (offline works); first-run check passes | ~2.5 d |
-| **M-B** | **Hardened Runtime** | 1 | Exec consent-gated; auto cache-bust live; scheduled backups; migrations; perf guards | ~3.5 d |
-| **M-C** | **Tested & CI** | 2 | pytest suite over core/services/routers; frontend load gate; pre-commit/CI green | ~5 d |
-| **M-D** | **Documented & Observable** | 3 | Curated API docs + data model; metrics history; error aggregation | ~3 d |
-| **M-E** | **Feature-Complete & Polished** | 4 | Conditional screen actions; robust training progress; STT option; click-to-act decision; per-page UI | ~6–8 d |
+## 2. The campaign (phases, by priority)
+Foundation is done (Safety Net, modular refactor, UI, OWUI 0.10.1 — BUILD_LOG M28–M41).
+The active plan:
 
-**Total:** ~20–22 focused days (excluding upstream-gated 32b tracking).
-
-## 2. Schedule (suggested, part-time — anchored 2026-06-30)
-
-| Week (from 2026-06-30) | Focus | Tasks | Deliverable |
+| Phase | Goal (priority) | Exit criteria | Status |
 |---|---|---|---|
-| **Week 1** | M-A Safety Net | T-001…T-010 | Recoverable, reproducible, offline-capable install |
-| **Week 2** | M-B Hardening (1/2) | T-011, T-012, T-013 | Safe exec, auto cache-bust, daily DB backups |
-| **Week 3** | M-B (2/2) + start M-C | T-014, T-015, T-016, T-017 | Migrations, perf guards, secrets; test harness stood up |
-| **Week 4** | M-C Tests & CI | T-018, T-019, T-020, T-022, T-023, T-021 | Green pytest + frontend gate + pre-commit/CI |
-| **Week 5** | M-D Docs & Observability | T-024…T-028 | API docs, data model, metrics history, error aggregation |
-| **Week 6+** | M-E Features & polish | T-029…T-033 (T-034 ongoing) | Conditional screen actions, training/STT/UI improvements |
+| **P‑1 Security** | P0 — lock down exec surface, auth, HTTPS | exec destructive‑guard + tightened CSP + key encryption + HTTPS turnkey; every exec call‑site audited | 🟦 next |
+| **P‑2 Tests** | P0 — real coverage | deep unit + integration + hermetic (no live deps) + agent tests + CI actually runs + clean‑venv install proven | ⬜ |
+| **P‑3 Outcome** | P1 — prove it works | measured agent success baseline; training/generation/`screen_if`/RAG verified end‑to‑end | ⬜ |
+| **P‑4 Stability** | P1 — resilience | watchdog auto‑restart; jobs survive restart; loops recover + surface errors; media backup; WAL | ⬜ |
+| **P‑5 Docs** | P2 — upkeep | six files always current; README/SETUP refreshed; training pipeline documented | 🟦 ongoing |
+| **P‑6 Features/Polish** | P2/P3 | click‑to‑act reliability, STT, voice; perf budget, a11y, mobile | ⬜ |
 
-```
-Phase 0 ▓▓▓ (Wk1)
-Phase 1     ▓▓▓▓▓ (Wk2–3)
-Phase 2          ▓▓▓▓▓ (Wk3–4)
-Phase 3                ▓▓▓ (Wk5)
-Phase 4                   ▓▓▓▓▓▓ (Wk6+)
-```
+Estimates are deliberately omitted — work proceeds **one task at a time, highest priority first,
+fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each phase.
 
-## 3. Deliverables by milestone
-- **M-A:** `.git/`, `.gitignore`, `LICENSE`, pinned `requirements.txt` (+ `requirements.in`), `static/fonts/`, `static/vendor/fa/`, prerequisite-check in `/api/selftest` + CLI.
-- **M-B:** consent-gated exec + audit, server asset-versioning, `data/backups/` rotation, `schema_version` + migrations, "Lite visuals" setting.
-- **M-C:** `tests/` (unit + integration), Playwright load gate, `.pre-commit`/CI config.
-- **M-D:** curated `/docs` + `openapi.json`, `DATA_MODEL.md`, metrics-history API + Diagnostics error panel.
-- **M-E:** conditional screen-action engine, structured training progress, STT model option, click-to-act decision doc, refreshed Chat/Training/Screen pages.
+## 3. Architecture decisions (the load‑bearing ones)
+- **Strict layered DAG:** `config ← core ← services ← api ← server`. Nothing imports `server.py`.
+  Cross‑cutting coupling is broken with **injection hooks** (`set_run_action`, `set_briefing_hook`,
+  training hook) rather than back‑imports.
+- **Composition root:** `server.py` (~555 lines) wires the app, lifespan, middleware, background
+  loops, and includes the 21 routers. Logic lives in `nova/services/*`, routes in `nova/api/*`.
+- **Framework‑free SPA:** `static/js/{core,pages,shell}.js`, one global scope, load order matters.
+  No bundler. Auto cache‑busting (server stamps `?v=<asset mtime>`).
+- **Single SQLite store** (`control.db`) with a `schema_version` migration framework + daily snapshots.
+- **Fully local:** vendored fonts + Font Awesome; all model/services traffic proxied through our
+  backend; works offline.
+- **Security posture:** localhost‑only by default; LAN exposure requires auth **and** explicit
+  `allow_remote_exec`; tokens hashed; audit trail. (Hardening continues in Phase 1.)
+- **Open WebUI** runs as a Docker container (`ghcr.io/open-webui/open-webui:v0.10.1`); we integrate
+  via its `webui.db` and HTTP; our integration is **schema‑agnostic** to survive OWUI upgrades.
+- **External dependency:** the fine‑tune pipeline lives in `C:\AI\training` — we orchestrate it, we
+  don't own it.
 
-## 4. Risk register
+## 4. Milestone history (condensed — full detail in BUILD_LOG.md)
+- **M28–M30** foundation refactor, bug reports, data safety, responsive, flagship model.
+- **M31–M33** model evaluation, click‑to‑act (best‑effort), API‑layer start.
+- **M34–M35** full backend modularization (server.py 2400→~550).
+- **M36** vibrant/living UI. **M37** Nova Brain 2.0. **M38** hardening Phases 0–4.
+- **M39** bespoke per‑page UI. **M40** close‑tab confirm. **M41** Open WebUI 0.10.1.
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| **No git today → data/work loss** | Med | **Critical** | **M-A T-001..004 first**, before any other change |
-| Unpinned deps drift / break install | High | High | Pin in T-005; test fresh install in a clean venv |
-| Exec surface abused if auth+LAN enabled | Low–Med | **Critical** | T-011 consent gate; never auto-enable on LAN |
-| Offline run fails (CDN down) | Med | Med | Vendor assets (T-007..009); verify offline |
-| Tests flaky due to live externals (Ollama/ComfyUI) | Med | Med | Mock externals in unit/integration; isolate live suite (T-021) |
-| Migrations corrupt DB | Low | High | Idempotent migrations + auto-backup before migrate (T-013→T-014 ordering) |
-| Perf regressions from heavy visuals on weak GPUs | Med | Low–Med | Lite-visuals toggle + pause-on-hidden (T-015) |
-| Click-to-act stays unreliable | High | Low | Time-boxed spike (T-032); park as best-effort if no win |
-| Windows-only lock-in | High | Med (future) | Document; isolate PowerShell calls already done in services |
-| Solo-dev bandwidth | High | Med | Strict priority order; P0/P1 before P2/P3; estimates re-baselined after Phase 0 |
+## 5. Definition of Done & risks
+- **DoD:** see `WORKFLOW.md` quality gate (lint + tests + live suite + render‑if‑visual + docs + commit).
+- **Top risks:** (1) command‑exec surface = effectively RCE if exposed → Phase 1; (2) shallow tests
+  hide real bugs → Phase 2; (3) unverified outcomes (agent/training/generation) → Phase 3;
+  (4) no watchdog → Phase 4. Each is the explicit goal of its phase.
 
-## 5. Governance / working agreement
-- **Branch per milestone**, small commits, descriptive messages (once git exists).
-- **Quality gate** (Definition of Done in `PLAN.md` §5) enforced from Phase 2 via pre-commit.
-- **Docs stay in sync** every change: `ROADMAP.md` (status), `BUILD_LOG.md` (history), `TASKS.md`
-  (move ⬜→🟦→✅), `ARCHITECTURE.md` (structure).
-- **Re-baseline** the schedule after M-A with real measured velocity.
-
-## 6. Tracking
-- Source of truth for **status**: `TASKS.md` (update the Status column as work proceeds).
-- Source of truth for **feature state**: `ROADMAP.md`.
-- Source of truth for **what happened**: `BUILD_LOG.md` (append a milestone entry per phase).
+## 🚫 Out of scope (permanent): multi‑user/RBAC, RTL mirroring, cloud/scaling.
