@@ -72,7 +72,7 @@ from nova.services.chat import SESSION_ID, conv_messages
 # ----------------------------------------------------------------------------- http helpers
 # http helpers (nova.core.http) + system telemetry (nova.services.metrics)
 from nova.core.http import http_ok
-from nova.services.metrics import collect_metrics, set_last_metrics
+from nova.services.metrics import collect_metrics, set_last_metrics, record_history, get_last_metrics
 
 # ----------------------------------------------------------------------------- process manager
 # Job + ProcMgr live in nova.services.jobs; the training-done callback is injected below.
@@ -136,30 +136,33 @@ from nova.api.settings import router as settings_router
 from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
 from nova.api.insights import router as insights_router
-app.include_router(bugs_router)
-app.include_router(notifications_router)
-app.include_router(audit_router)
-app.include_router(history_router)
-app.include_router(conversations_router)
-app.include_router(analytics_router)
-app.include_router(models_router)
-app.include_router(owui_router)
-app.include_router(kb_router)
-app.include_router(media_router)
-app.include_router(agent_router)
-app.include_router(search_router)
-app.include_router(metrics_router)
-app.include_router(chat_router)
-app.include_router(training_router)
-app.include_router(schedules_router)
-app.include_router(screen_router)
-app.include_router(settings_router)
-app.include_router(tts_router)
-app.include_router(backup_router)
-app.include_router(insights_router)
+# tags group the routes in the auto-generated API docs at /docs
+app.include_router(bugs_router, tags=["bugs"])
+app.include_router(notifications_router, tags=["notifications"])
+app.include_router(audit_router, tags=["audit"])
+app.include_router(history_router, tags=["history"])
+app.include_router(conversations_router, tags=["chat"])
+app.include_router(analytics_router, tags=["analytics"])
+app.include_router(models_router, tags=["models"])
+app.include_router(owui_router, tags=["open-webui"])
+app.include_router(kb_router, tags=["knowledge"])
+app.include_router(media_router, tags=["media"])
+app.include_router(agent_router, tags=["agent"])
+app.include_router(search_router, tags=["search"])
+app.include_router(metrics_router, tags=["system"])
+app.include_router(chat_router, tags=["chat"])
+app.include_router(training_router, tags=["training"])
+app.include_router(schedules_router, tags=["automation"])
+app.include_router(screen_router, tags=["screen"])
+app.include_router(settings_router, tags=["settings"])
+app.include_router(tts_router, tags=["media"])
+app.include_router(backup_router, tags=["backup"])
+app.include_router(insights_router, tags=["insights"])
 
 # auth gate (token_ok) + AUTH_EXEMPT live in nova/services/settings.py; used by the middleware below
 from nova.services.settings import token_ok, AUTH_EXEMPT, exec_allowed
+from nova.core.errors import record as record_error
+START_TS = time.time()   # process start, for /api/health uptime
 
 # ---- in-memory rate limiter (per IP + path): (max_requests, window_seconds) ----
 RATE_RULES = {"/api/auth/login": (10, 60), "/api/exec": (60, 60),
@@ -188,6 +191,7 @@ async def gate(request: Request, call_next):
         resp = await call_next(request)
     except Exception as e:
         log.exception(f"unhandled error: {request.method} {path}")
+        record_error(f"{request.method} {path}", e)
         return JSONResponse({"error": "Internal server error", "detail": str(e)[:300]}, status_code=500)
     if path.startswith("/api/"):
         dt = (time.time() - t0) * 1000
@@ -203,11 +207,16 @@ async def gate(request: Request, call_next):
     return resp
 
 async def metrics_loop():
+    last_hist = 0.0
     while True:
         try:
             m = await asyncio.get_running_loop().run_in_executor(None, collect_metrics)
             set_last_metrics(m)
             await _send_all(m)
+            now = time.time()
+            if now - last_hist >= 30:        # persist a trend sample ~every 30s
+                last_hist = now
+                await asyncio.to_thread(record_history, m)
         except Exception: pass
         await asyncio.sleep(float(get_settings().get("metrics_interval", 1.5)))
 
@@ -548,6 +557,37 @@ def api_selftest():
 
 # Nova Co-Pilot route now lives in nova/api/insights.py
 # brain / habits / achievements routes now live in nova/api/analytics.py
+
+# ---- server health + error aggregation (observability) ----
+@app.get("/api/health")
+def api_health():
+    m = get_last_metrics() or {}
+    age = (time.time() - m["ts"]) if m.get("ts") else None
+    jobs = list(PM.jobs.values())
+    return {
+        "ok": True,
+        "uptime_sec": round(time.time() - START_TS),
+        "metrics_loop_alive": bool(age is not None and age < 15),   # fresh sample → loop running
+        "last_metrics_age_sec": round(age, 1) if age is not None else None,
+        "jobs_total": len(jobs),
+        "jobs_running": sum(1 for j in jobs if j.status in ("running", "starting")),
+        "ws_clients": len(clients),
+        "errors_total": _errors_total(),
+    }
+
+@app.get("/api/errors")
+def api_errors():
+    from nova.core.errors import snapshot
+    return {"errors": snapshot(), "total": _errors_total()}
+
+@app.delete("/api/errors")
+def api_errors_clear():
+    from nova.core.errors import clear
+    clear(); return {"ok": True}
+
+def _errors_total():
+    from nova.core.errors import total
+    return total()
 
 # ---- static dashboard
 # index.html is served through a small handler that stamps every ?v=… asset URL with the

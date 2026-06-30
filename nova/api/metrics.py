@@ -9,7 +9,7 @@ import psutil
 from config import COMFY, COMFY_URL, OLLAMA, OWUI_URL, OWUI_CTR
 from nova.core.http import http_ok
 from nova.core.process import ps_args
-from nova.services.metrics import collect_metrics, get_last_metrics
+from nova.services.metrics import collect_metrics, get_last_metrics, history
 from nova.services.jobs import PM
 
 router = APIRouter()
@@ -17,6 +17,10 @@ router = APIRouter()
 # ---- metrics snapshot
 @router.get("/api/metrics")
 def api_metrics(): return get_last_metrics() or collect_metrics()
+
+# ---- metrics history (trend)
+@router.get("/api/metrics/history")
+def api_metrics_history(limit: int = 240): return {"history": history(limit)}
 
 # ---- services
 @router.get("/api/services")

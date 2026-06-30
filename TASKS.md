@@ -40,13 +40,13 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 
 | ID | Task | Pri | Effort | Deps | Status |
 |---|---|---|---|---|---|
-| T-017 | `pytest` harness + fixtures: temp SQLite, monkeypatched Ollama/HTTP, FastAPI `TestClient` | P1 | 4h | T-005 | ⬜ |
-| T-018 | Unit tests — core (`db`, `events`, `process`/`ps_args`/`_q`, `http`) | P1 | 4h | T-017 | ⬜ |
-| T-019 | Unit tests — services (`chat`, `kb`, `training`, `schedules`, `settings`, `backup`, `insights`, `ollama`, `metrics`, `files`) | P1 | 12h | T-017 | ⬜ |
-| T-020 | Integration tests — routers via `TestClient` (no live server, mocked externals) | P1 | 8h | T-017 | ⬜ |
-| T-021 | Extend/keep live smoke suite `run_tests.py`; tag as "live/e2e" | P2 | 2h | — | ⬜ |
-| T-022 | Frontend gate: Playwright load each route, assert **zero console errors** + key elements present | P2 | 4h | — | ⬜ |
-| T-023 | CI: pre-commit hook (pyflakes + `node --check` + `pytest`); optional GitHub Actions workflow when a remote exists | P1 | 4h | T-017,018,019,020 | ⬜ |
+| T-017 | `pytest` harness + fixtures (`tests/conftest.py`): temp SQLite, TestClient, mocked externals | P1 | 4h | T-005 | ✅ |
+| T-018 | Unit tests — core (settings/history/schema_version, `ps_args`/`_q`, events) `test_core.py` | P1 | 4h | T-017 | ✅ |
+| T-019 | Unit tests — services (chat, settings, training, ollama, kb, backup, schedules) `test_services.py` | P1 | 12h | T-017 | ✅ |
+| T-020 | Integration tests — routers via `TestClient` `test_api.py` (settings/history/notifs/audit/bug CRUD/conv CRUD/selftest/cache-bust) | P1 | 8h | T-017 | ✅ |
+| T-021 | Live smoke suite `run_tests.py` retained (42 checks) — complements pytest | P2 | 2h | — | ✅ |
+| T-022 | Frontend gate `test_frontend.py`: Playwright loads 11 routes, asserts **zero console errors**; auto-skips w/o server | P2 | 4h | — | ✅ |
+| T-023 | CI: `scripts/check.py` (pyflakes+node+pytest) · `.githooks/pre-commit` (active) · `.github/workflows/ci.yml` (windows) · `requirements-dev.txt` | P1 | 4h | T-017..020 | ✅ |
 
 ## Phase 3 — Documentation & Observability (P2)
 

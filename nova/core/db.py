@@ -62,6 +62,8 @@ def init_db():
     CREATE TABLE IF NOT EXISTS bug_reports (id INTEGER PRIMARY KEY AUTOINCREMENT,
         ts REAL, title TEXT, detail TEXT, severity TEXT, status TEXT DEFAULT 'open',
         page TEXT, logs TEXT);
+    CREATE TABLE IF NOT EXISTS metrics_history (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts REAL, cpu REAL, ram REAL, gpu_util REAL, vram_used REAL, vram_total REAL, gpu_temp REAL);
     """)
     # migrate older chat tables to the richer schema
     chat_cols = [r[1] for r in c.execute("PRAGMA table_info(chat)")]

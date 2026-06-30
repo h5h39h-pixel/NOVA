@@ -1192,14 +1192,29 @@ function Brain(){
   return {html,mount};
 }
 function Diagnostics(){
-  const html=`${card('🩺 System Self-Test <span class="tag" id="dgsum"></span>',`
+  const html=`<div class="grid g2">
+    ${card('💓 Server Health',`<div id="dghealth"><span class="spin"></span> loading…</div>`)}
+    ${card('🐞 Recent Errors <span class="tag" id="dgerrtot"></span>',`<div id="dgerrors"><span class="spin"></span></div>
+       <button class="btn sm danger mt" id="dgerrclear">Clear errors</button>`)}
+   </div>
+   ${card('🩺 System Self-Test <span class="tag" id="dgsum"></span>',`
      <p class="muted" style="font-size:12.5px">Runs a full health check across every subsystem — services, database, embeddings, GPU, safety guards, and more.</p>
      <button class="btn p mt" id="dgrun">▶ Run self-test</button>
      <div id="dglist" class="mt"></div>`)}`;
   async function run(){const el=$('#dglist');if(!el)return;el.innerHTML='<span class="spin"></span> running checks…';
     const r=await api('/selftest');const s=$('#dgsum');if(s){s.className='tag '+(r.ok?'on':'err');s.textContent=`${r.passed}/${r.total} passed`}
     el.innerHTML=r.checks.map(c=>`<div class="row"><span style="font-size:16px">${c.ok?'✅':'❌'}</span><span class="name">${esc(c.name)}</span><span class="muted" style="font-size:11.5px">${esc(c.detail)}</span></div>`).join('')}
-  function mount(){run();$('#dgrun').onclick=run;return []}
+  const fmtUp=s=>{s=Math.floor(s);const d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60);return (d?d+'d ':'')+(h?h+'h ':'')+m+'m'};
+  async function loadHealth(){const el=$('#dghealth');if(!el)return;const h=await api('/health');
+    el.innerHTML=[['Uptime',fmtUp(h.uptime_sec)],['Metrics loop',h.metrics_loop_alive?'🟢 alive':'🔴 stalled'],
+      ['Background jobs',h.jobs_running+' running · '+h.jobs_total+' total'],['Live clients',h.ws_clients],
+      ['Errors logged',h.errors_total]].map(([k,v])=>`<div class="metarow"><span class="mut">${k}</span><span>${v}</span></div>`).join('')}
+  async function loadErrors(){const el=$('#dgerrors');if(!el)return;const r=await api('/errors');const tot=$('#dgerrtot');if(tot)tot.textContent=(r.total||0)+' total';
+    el.innerHTML=(r.errors&&r.errors.length)?r.errors.map(e=>`<div class="row"><span class="tag err">${e.count}×</span><span class="name" title="${esc(e.signature)}">${esc(e.signature)}</span><span class="muted" style="font-size:11px">${esc(e.where||'')}</span></div>`).join(''):'<div class="empty">No errors recorded 🎉</div>'}
+  function mount(){run();loadHealth();loadErrors();$('#dgrun').onclick=run;
+    const hv=setInterval(loadHealth,5000);
+    const ce=$('#dgerrclear');if(ce)ce.onclick=()=>del('/errors').then(loadErrors);
+    return [()=>clearInterval(hv)]}
   return {html,mount};
 }
 function AuditPage(){
