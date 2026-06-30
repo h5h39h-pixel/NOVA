@@ -952,3 +952,20 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **README.md:** "Known limitations & safety" section up top. **CLAUDE.md:** honest‑state pointer so every
   future session sees HON‑1/HON‑10 + the "✅ = verified once" caveat.
 - **Verified:** gate green (docs‑only). The files now reflect the real state, not the polished one.
+
+## M79 — HON-11: split app.css + extract server.py toolkit routes (2026-06-30)  [Refactor]
+
+- **app.css (1039 lines) → 4 cascade-ordered files:** `app.css` (base/shell/chat) + `app-components.css`
+  (Apple layer/notifications/agent/icons/responsive) + `app-visuals.css` (palette/living bg/glass/
+  gradients) + `app-extras.css` (lite mode/reduced-motion/Live page/a11y). Byte-identical split; loaded
+  via 4 ordered <link>s. Verified: dashboard renders with all styling intact, zero console errors.
+- **server.py (694 → 667):** extracted the inline `/api/toolkit/{tool}` (video/image/speak) routes into
+  `nova/api/toolkit.py` (architecture says routes live in nova/api/*); trimmed now-unused imports
+  (TOOLKIT, _q). Live suite 42/42; toolkit route still registered.
+- **Cache-busting:** `_asset_version()` now globs `js/*.js` + `css/*.css` so any new module versions
+  automatically (no manual list).
+- **Judgment call:** deliberately did NOT fragment cohesive single-responsibility modules
+  (`training.py` 366, `agent.py` 357) or over-split the composition root — splitting the genuine
+  monoliths (pages.js, app.css) + one misplaced route group is the maintainability win; further
+  fragmentation would hurt readability.
+- **Verified:** gate green; live 42/42; render-verified CSS + all 23 routes (M78).

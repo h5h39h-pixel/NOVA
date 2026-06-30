@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 # ----------------------------------------------------------------------------- config
 # All paths/endpoints are resolved portably in config.py and overridable via config.json.
-from config import (TOOLKIT, UPLOAD_DIR, DB_PATH, LOG_DIR, OLLAMA, COMFY_URL,
+from config import (UPLOAD_DIR, DB_PATH, LOG_DIR, OLLAMA, COMFY_URL,
                     OWUI_URL, PORT, HTTPS_ENABLED, BIND_OVERRIDE,
                     DS_BASE, DS_COMBINED, ensure_cert)
 BASE        = Path(__file__).resolve().parent
@@ -39,7 +39,7 @@ if not log.handlers:
     log.addHandler(_fh)
 
 # process ownership (Windows Job Object) — nova.core.process
-from nova.core.process import init_job_object, ps_args, _q
+from nova.core.process import init_job_object, ps_args
 from nova.core.safety import danger_reason  # shared destructive-command denylist
 
 # _hash + the auth gate now live in nova/services/settings.py
@@ -152,6 +152,7 @@ from nova.api.screen import router as screen_router
 from nova.api.screen_vision import router as screen_vision_router
 from nova.api.understand import router as understand_router
 from nova.api.control import router as control_router
+from nova.api.toolkit import router as toolkit_router
 from nova.api.settings import router as settings_router
 from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
@@ -177,6 +178,7 @@ app.include_router(screen_router, tags=["screen"])
 app.include_router(screen_vision_router, tags=["screen-vision"])
 app.include_router(understand_router, tags=["understand"])
 app.include_router(control_router, tags=["control"])
+app.include_router(toolkit_router, tags=["toolkit"])
 app.include_router(settings_router, tags=["settings"])
 app.include_router(tts_router, tags=["media"])
 app.include_router(backup_router, tags=["backup"])
@@ -348,36 +350,7 @@ async def api_exec(req: Request):
     audit("terminal", "run_command", cmd, "forced" if why else "ok")
     return {"ok": True, "job": job.id}
 
-# ---- toolkit quick actions
-@app.post("/api/toolkit/{tool}")
-async def api_toolkit(tool: str, req: Request):
-    b = await req.json()
-    if tool == "video":
-        prompt = b.get("prompt", "a cinematic shot")
-        cmd = '& "{}" "{}"'.format(TOOLKIT / "genvideo.ps1", prompt.replace('"', '`"'))
-        if b.get("ckpt"):   cmd += ' -Ckpt "{}"'.format(b["ckpt"])
-        if b.get("length"): cmd += ' -Length {}'.format(int(b["length"]))
-        if b.get("steps"):  cmd += ' -Steps {}'.format(int(b["steps"]))
-        if b.get("fps"):    cmd += ' -Fps {}'.format(int(b["fps"]))
-        if b.get("out"):    cmd += ' -Out "{}"'.format(b["out"])
-        job = PM.start("video: " + prompt[:40], ps_args(cmd), kind="video", source="video")
-        return {"ok": True, "job": job.id}
-    if tool == "image":
-        prompt = b.get("prompt", "a photorealistic landscape at golden hour")
-        model = b.get("model", "sdxl")
-        if model not in ("sdxl", "flux-schnell", "flux-dev"): model = "sdxl"
-        UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-        fn = f"img_{uuid.uuid4().hex[:8]}.png"; outp = UPLOAD_DIR / fn
-        cmd = '& "{}" "{}" -Model {} -Out "{}"'.format(TOOLKIT / "generate.ps1", prompt.replace('"', '`"'), model, outp)
-        job = PM.start("image: " + prompt[:40], ps_args(cmd), kind="image", source="image")
-        audit("image", "generate", f"{model}: {prompt[:60]}")
-        return {"ok": True, "job": job.id, "file": f"/files/{fn}", "model": model}
-    if tool == "speak":
-        job = PM.start("speak", ps_args(f'& "{TOOLKIT / "speak.ps1"}" {_q(b.get("text",""))}'),
-                       kind="command", source="speak")
-        return {"ok": True, "job": job.id}
-    return JSONResponse({"error": "unknown tool"}, status_code=400)
-
+# toolkit quick-action routes (video/image/speak) now live in nova/api/toolkit.py
 # logs route now lives in nova/api/history.py (included after `app` is defined)
 # bug-report routes now live in nova/api/bugs.py (included after `app` is defined)
 @app.post("/api/stt")

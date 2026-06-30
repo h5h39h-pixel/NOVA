@@ -1,0 +1,40 @@
+/* Nova SPA stylesheet — split for maintenance (HON-11). Loaded in cascade order:
+   app.css -> app-components.css -> app-visuals.css -> app-extras.css.
+   Extras — lite-visuals perf mode, reduced motion, Live (Screen Vision) page, accessibility focus. */
+
+/* ---- "Lite visuals" performance mode (Settings → Theme) ---- */
+body.lite .bg-aurora,body.lite .bg-grid,body.lite #particles,body.lite::before{display:none!important}
+body.lite .brand .logo::before,body.lite .btn.p{animation:none!important}
+body.lite .card{transition:border-color .15s ease!important}
+body.lite .card:hover{transform:none!important}
+
+/* ---- reduced motion: calm everything ---- */
+@media (prefers-reduced-motion: reduce){
+  .bg-aurora,#particles,body::before{transition:none!important;animation:none!important}
+  .brand .logo::before,.brand .logo svg,.dot.up::after,.btn.p{animation:none!important}
+  .card,.page{transition:none;animation:none}
+}
+
+/* ---- AI Screen Vision (Phase 7) — Live page ---- */
+.livevision{display:flex;flex-direction:column;gap:16px}
+.livevision .pill{padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(120,120,140,.25);color:var(--muted)}
+.livevision .pill.on{background:linear-gradient(90deg,#22d3ee,#3b82f6);color:#031018;box-shadow:0 0 14px rgba(34,211,238,.5)}
+.lvtoggles{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center}
+.lvsw{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px}
+.lvsw input{width:16px;height:16px;accent-color:#22d3ee;cursor:pointer}
+.lvfps{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.lvfps input[type=range]{accent-color:#22d3ee}
+.lvstage{position:relative;width:100%;background:#05070d;border:1px solid var(--bd);border-radius:12px;overflow:hidden;min-height:200px;display:flex;align-items:center;justify-content:center}
+.lvstage #lv_img{max-width:100%;max-height:70vh;display:block}
+.lvstage #lv_img:not([src]){min-height:200px}
+.lvcursor{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid #22d3ee;border-radius:50%;box-shadow:0 0 12px rgba(34,211,238,.8);pointer-events:none;transition:left .08s linear,top .08s linear}
+.lvdesc{margin-top:10px;line-height:1.6}
+
+/* ---- POL-2: accessibility (keyboard focus, skip link) ---- */
+.skiplink{position:fixed;left:-999px;top:8px;z-index:9999;background:#1118;color:#fff;
+  padding:8px 14px;border-radius:8px;border:1px solid var(--bd);text-decoration:none}
+.skiplink:focus{left:8px}
+:focus-visible{outline:2px solid #22d3ee;outline-offset:2px;border-radius:6px}
+.btn:focus-visible,.tbtn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
+#main:focus-visible{outline:none}
