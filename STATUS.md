@@ -27,13 +27,14 @@ is **HON‑1…11** in `TASKS.md`.
 - **RTL mirroring** — Arabic stays text‑only on the fixed LTR layout.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
-## Next actions — honest backlog HON‑1…12 COMPLETE
-The full self‑audit backlog is done (M81–M94). The only thing not local‑doable is **GitHub‑hosted** CI
-execution (HON‑9), which needs a remote the owner creates — CI already auto‑runs locally on every
-commit + push, and the workflow is validated and ready for a remote.
+## Next actions — backlog COMPLETE; project is on GitHub with CI
+Honest self‑audit HON‑1…12 **all closed** (M81–M96). Repo pushed to a private remote
+(github.com/h5h39h-pixel/NOVA); hosted GitHub Actions CI runs on push, and the gate also runs on every
+local commit + push. Frontend + server fully modularized. No open task rows remain.
 
-_GUI text control fixed via UIA SetValue (M93, after finding synthetic keyboard input is suppressed
-here); CI auto‑runs via git hooks (M94). Re‑run the eval tools after model/dep changes._
+_Optional future polish (not gaps): HON‑1b per‑action confirm prompt; broader 50+‑goal agent battery;
+Arabic STT WER measurement. Re‑run the eval tools (`agent_eval`/`rag_eval`/`gen_eval`/`nova_eval`/
+`bench_model`/`gui_eval`/`load_test`) after model/dependency changes._
 
 _**Honest backlog HON‑1…12 essentially complete** (M81–M92): HON‑1 kill‑switch ✅, HON‑1b agent‑control
 toggle ✅, HON‑3 coverage ✅, HON‑4 persistent errors ✅, HON‑5 load/concurrency ✅, HON‑6 stream+web verify
