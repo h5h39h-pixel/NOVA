@@ -1026,3 +1026,12 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - Not added to the gate (would need a threshold + live deps); run manually after changes. `.coverage`
   git-ignored.
 - **Verified:** gate green.
+
+## M85 — HON-4 + HON-8: persistent errors + hashed lockfile (2026-06-30)  [P1/P2]
+
+- **HON-4:** `nova/core/errors.py` persists the aggregated errors to `data/logs/errors.json` on each
+  record and reloads on import → `/api/errors` + Diagnostics survive a restart. Test `test_errors_persist`.
+- **HON-8:** `requirements.lock` generated via `pip-compile --generate-hashes --allow-unsafe
+  requirements.in` — full transitive closure, 1426 hashes, reproducible (`pip install -r
+  requirements.lock`). `requirements.txt` stays the readable direct pins; `pip-tools` added to dev deps.
+- **Verified:** gate green; restarted; live suite 42/42.

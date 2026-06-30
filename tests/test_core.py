@@ -40,6 +40,19 @@ def test_ps_args_and_quote():
     assert '`"' in _q('say "hi"')            # inner quotes escaped
 
 
+def test_errors_persist(tmp_path, monkeypatch):
+    """HON-4: recorded errors persist to disk and reload after a 'restart'."""
+    import nova.core.errors as E
+    monkeypatch.setattr(E, "_FILE", tmp_path / "errors.json")
+    E.clear()
+    E.record("loopX", ValueError("boom-xyz"))
+    assert (tmp_path / "errors.json").exists()
+    E._errors.clear()          # simulate restart (in-memory gone)
+    E._load()                  # restore from disk
+    assert any("boom-xyz" in x["signature"] for x in E.snapshot())
+    E.clear()
+
+
 def test_events_push_without_loop():
     from nova.core import events
     events.push({"type": "test"})            # must not raise when no loop is set
