@@ -70,6 +70,27 @@ function initParticles(){const cv=$('#particles');if(!cv)return;
     requestAnimationFrame(loop)})()}
 
 /* depth: subtle mouse parallax on background layers + a 3D tilt on hovered cards */
+function autoLite(){
+  // POL-1: sample real background FPS for ~2s (after a short settle); if it's low on this GPU,
+  // switch to lite visuals automatically. Runs once (remembers via localStorage); respects an
+  // explicit user choice and reduced-motion.
+  if(document.body.classList.contains('lite'))return;
+  if(localStorage.getItem('lite_auto_done'))return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  setTimeout(()=>{
+    let frames=0; const t0=performance.now();
+    (function sample(now){
+      frames++;
+      if(now-t0<2000){requestAnimationFrame(sample);return}
+      const fps=frames/((now-t0)/1000);
+      localStorage.setItem('lite_auto_done','1');
+      if(fps<32){
+        document.body.classList.add('lite'); localStorage.setItem('lite','1');
+        if(window.toast)toast('info','Lite visuals enabled',`background ran at ${Math.round(fps)} fps — reduced animations for smoothness`);
+      }
+    })(performance.now());
+  },1500);
+}
 function initDepth(){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   if(matchMedia('(pointer: coarse)').matches)return;   // skip on touch devices
@@ -159,6 +180,7 @@ async function boot(){
   $('#brandsub').textContent=t('sub');$('#langlbl').textContent=State.lang==='ar'?'EN':'ع';
   if(localStorage.getItem('lite'))document.body.classList.add('lite');   // perf: reduce background animations
   renderNav();initPalette();connect();loadNotifs();applyTheme();initParticles();initDepth();maybeOnboard();initIcons();
+  autoLite();   // POL-1: measure background FPS once; drop to lite visuals on a weak GPU
   // mobile: off-canvas sidebar drawer
   let backdrop=document.getElementById('sidebackdrop');
   if(!backdrop){backdrop=document.createElement('div');backdrop.id='sidebackdrop';document.body.appendChild(backdrop)}

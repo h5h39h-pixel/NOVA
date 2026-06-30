@@ -895,3 +895,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Verified:** CUDA backend probe loaded a model on GPU successfully; gate green; server restarted.
 - **Why:** the box has a 5090 but STT was pinned to CPU/int8 + a weak model — poor Arabic. Now it uses
   the GPU.
+
+## M74 — FEA-4 + POL-1 + POL-3: screen_if UI, auto-lite, mobile verify (2026-06-30)  [P2/P3]
+
+- **FEA-4:** Automation page exposes `screen_if` ("👁 If screen shows… then act"): match text/regex +
+  then-action (notify/speak/command) + with-text + a "use vision model" toggle → builds
+  {match,then_action,then_params,vision}. Render-verified (fields appear on selection).
+- **POL-1:** `autoLite()` in shell.js samples real background FPS for ~2s once per machine; if <32fps it
+  enables lite visuals (persisted) + toasts. Respects reduced-motion + explicit user choice.
+- **POL-3:** automated mobile-viewport test (390×844, is_mobile) — dashboard renders, hamburger menu
+  present, zero horizontal overflow, zero console errors; screenshot shows a clean stacked layout.
+- **Verified:** quality gate green; render checks all pass.

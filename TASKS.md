@@ -122,16 +122,16 @@ Core chat UX, requested 2026‑06‑30. Toggle buttons styled like the existing 
 | FEA‑1 | Click‑to‑act reliability (UI Automation / pywinauto + focus) | ✅ | M70. `act_on_screen` now tries **precise UI‑Automation element detection first** (exact pixel center via `control.find_element`, reduced from natural instructions by `_core_term`) and only falls back to vision grounding when there's no UIA name. Returns `via:"uia"|"vision"`. Much more reliable on real apps. |
 | FEA‑2 | STT Arabic/noisy accuracy (larger Whisper default / tuning) | ✅ | M73. `get_whisper` now loads on **CUDA/float16 (RTX 5090)** with CPU/int8 fallback — far faster, so larger models are practical; default bumped `base`→`small` (much better Arabic). GPU path verified (tiny loaded on cuda). Users can pick up to `large-v3` in Settings. |
 | FEA‑3 | Voice improvements (input UX, TTS voices) | ⬜ | |
-| FEA‑4 | Conditional screen actions UX in Automation page (expose `screen_if`) | ⬜ | Backend done (M39); no dedicated UI. |
+| FEA‑4 | Conditional screen actions UX in Automation page (expose `screen_if`) | ✅ | M74. Automation page now offers "👁 If screen shows… then act": match text/regex + then‑action (notify/speak/command) + with‑text + a "use vision model" toggle → `{match,then_action,then_params,vision}`. Render‑verified. |
 | FEA‑E | `screen_if` action · bespoke pages · Nova Brain 2.0 · OWUI 0.10.1 | ✅ | M37/M39/M41. |
 
 ## P3 — Polish (UI · performance · optimization)
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| POL‑1 | Performance budget for the animated background (measure FPS; auto‑lite on weak GPUs) | ⬜ | "Lite visuals" toggle exists. |
+| POL‑1 | Performance budget for the animated background (measure FPS; auto‑lite on weak GPUs) | ✅ | M74. `autoLite()` samples real background FPS for ~2s once per machine; if <32fps it switches to lite visuals + persists + toasts. Respects reduced‑motion and explicit user choice. |
 | POL‑2 | Accessibility pass (ARIA, keyboard nav, contrast) | 🟧 | M71. Skip‑to‑content link, `role`/`aria-label` on nav + main, `aria-live="polite"` toasts (screen‑reader announcements), and `:focus-visible` keyboard outlines. Icon buttons already carry `title`s. Not a full WCAG audit (single‑user tool) but the core keyboard/SR gaps are closed. |
-| POL‑3 | Mobile testing on real devices | ⬜ | Responsive CSS untested on hardware. |
+| POL‑3 | Mobile testing on real devices | 🟧 | M74. Automated **mobile‑viewport** test (390×844, `is_mobile`): dashboard renders, hamburger menu present, **zero horizontal overflow**, zero console errors; screenshot confirms clean stacked layout. (Real‑hardware testing still advisable, but the responsive layout is verified.) |
 | POL‑4 | 32B throughput re‑benchmark on Ollama/llama.cpp updates | 🟧 | `docs/32b-throughput.md` (monitoring). |
 
 ## 🚫 Excluded (owner decision — do not build)

@@ -1000,7 +1000,7 @@ function Knowledge(){
   return {html,mount};
 }
 function Automation(){
-  const ACTIONS=[['notify','🔔 Notification'],['command','⌨️ PowerShell command'],['browse','🌐 Open website (browser)'],['screen_record','🎥 Record screen'],['harvest','🌾 Harvest chats'],['retrain','🎓 Retrain model'],['video','🎬 Generate video'],['speak','🔊 Speak text'],['kb_search','📚 KB search'],['kb_index','📥 Index folder into KB']];
+  const ACTIONS=[['notify','🔔 Notification'],['command','⌨️ PowerShell command'],['browse','🌐 Open website (browser)'],['screen_record','🎥 Record screen'],['screen_if','👁 If screen shows… then act'],['harvest','🌾 Harvest chats'],['retrain','🎓 Retrain model'],['video','🎬 Generate video'],['speak','🔊 Speak text'],['kb_search','📚 KB search'],['kb_index','📥 Index folder into KB']];
   const PRESETS=[
     {l:'🌙 Nightly KB index',name:'Nightly KB index',action:'kb_index',pp:'C:\\AI\\inbox',repeat:'86400'},
     {l:'📅 Weekly retrain',name:'Weekly retrain',action:'retrain',pp:'',repeat:'604800'},
@@ -1026,8 +1026,15 @@ function Automation(){
     if(a==='kb_index')return `<label class="f">Folder to index (new files only)</label><input class="t" id="pp" placeholder="C:\\AI\\inbox">`;
     if(a==='browse')return `<label class="f">Website URL</label><input class="t" id="pp" placeholder="https://example.com">`;
     if(a==='screen_record')return `<label class="f">Duration (seconds)</label><input class="t" id="pp" placeholder="10" value="10">`;
+    if(a==='screen_if')return `<label class="f">If the screen contains (text or regex)</label><input class="t" id="pp" placeholder="Build FAILED">
+      <div class="grid g2 mt"><div><label class="f">Then do</label><select class="t" id="pp2"><option value="notify">🔔 Notify</option><option value="speak">🔊 Speak</option><option value="command">⌨️ Run command</option></select></div>
+      <div><label class="f">With (text / command)</label><input class="t" id="pp3" placeholder="Build failed!"></div></div>
+      <label class="atog mt" style="display:inline-flex"><input type="checkbox" id="ppv"> use the vision model (read screen via qwen2.5‑VL instead of OCR)</label>`;
     return '<p class="muted mt" style="font-size:12px">No parameters needed.</p>';}
-  function buildParams(a){const v=$('#pp')?$('#pp').value:'';return a==='command'?{command:v}:a==='video'?{prompt:v}:(a==='notify'||a==='speak')?{text:v}:a==='kb_search'?{query:v}:a==='kb_index'?{folder:v}:a==='browse'?{url:v}:a==='screen_record'?{seconds:+v||10}:{}}
+  function buildParams(a){const v=$('#pp')?$('#pp').value:'';
+    if(a==='screen_if'){const ta=$('#pp2')?$('#pp2').value:'notify';const tx=$('#pp3')?$('#pp3').value:'';
+      return {match:v,then_action:ta,then_params:(ta==='command'?{command:tx}:{text:tx}),vision:!!($('#ppv')&&$('#ppv').checked)};}
+    return a==='command'?{command:v}:a==='video'?{prompt:v}:(a==='notify'||a==='speak')?{text:v}:a==='kb_search'?{query:v}:a==='kb_index'?{folder:v}:a==='browse'?{url:v}:a==='screen_record'?{seconds:+v||10}:{}}
   async function load(){const rows=await api('/schedules');const el=$('#slist');if(!el)return;
     el.innerHTML=rows.length?rows.map(r=>{const next=r.next_run?new Date(r.next_run*1000).toLocaleString():'—';
       return `<div class="row"><span class="name">${esc(r.name)} <span class="tag">${esc(r.action)}</span></span>
