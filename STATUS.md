@@ -18,11 +18,21 @@ Real (non‑smoke) tests of every feature: gate ✅ · live 42/42 ✅ · self‑
 nova‑local 4/4 ✅ · GUI control ✅ · concurrency ✅ · **STT round‑trip ✅** · screen‑understanding ✅ ·
 media‑in‑chat zero console errors ✅ (fixed the 404 polling). Full table: `docs/honest-state.md`.
 
-**M105 (post‑launch backlog):** **IDEA‑10 self‑healing loops** (every background loop auto‑restarts on a
-hard crash via `_supervise`, exp‑backoff) · **IDEA‑8 local persistent memory** (durable user facts;
-`/api/memory` + Settings "🧠 Persistent Memory" card; injected into chat + agent prompts; agent
-`remember`/`recall` tools) · **AVL‑2 closed** (the ReAct perceive→act→observe loop *is* the helper).
-All gated (check.py ✅, 42/42 ✅) and live‑verified. Local‑only; no protections disabled.
+**M105 (post‑launch innovation backlog — COMPLETE):** cleared the IDEA‑* backlog autonomously, each
+gated (check.py ✅ · 42/42 ✅) + live‑verified + documented + pushed, all single‑user/local‑only with
+**no protections disabled**:
+- **IDEA‑10 self‑healing loops** — every background loop auto‑restarts on a hard crash (`_supervise`, exp‑backoff).
+- **IDEA‑8 persistent memory** — durable user facts; `/api/memory` + Settings card; injected into chat + agent; agent `remember`/`recall`.
+- **IDEA‑5 folder Q&A** — index a directory into the KB (`/api/kb/ingest-folder`), chat over it with citations.
+- **IDEA‑3 save agent run as workflow** — "💾 Save as workflow" on the agent's final answer; `agent` action replays it.
+- **IDEA‑2 + 2b screen memory** — opt‑in OCR snapshots → KB (default OFF) with a retention cap + purge.
+- **IDEA‑7 region watch → act** — `screen_if` gained a pinned `region` + an `absent` (text‑vanished) trigger.
+- **IDEA‑6 quality dashboard** — `/api/quality` records eval/health scores; Diagnostics "📈 Quality Trend" card.
+- **IDEA‑9 img2img refine** — "✨ Refine / edit" on generated images (verified base→refined PNG).
+- **IDEA‑4 hands‑free voice** (🟧 live‑loop) — 🎙️ listen→STT→chat→Piper‑TTS→listen; components verified.
+- **AVL‑2 closed** — the ReAct perceive→act→observe loop *is* the helper.
+Remaining backlog: **IDEA‑1** (visual macro recorder) — deferred (needs passive global input capture +
+constrained by this env's synthetic‑keyboard suppression; documented in TASKS/honest‑state).
 
 ## Where we are right now (honest)
 The original roadmap (P0→P3 + Phases 7/8) is **built and smoke‑verified**, and the architecture / security

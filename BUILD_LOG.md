@@ -1390,3 +1390,24 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
     (denoise 0.6) → new valid PNG (1.28 MB). Gate ✅.
   - Note: `generate.ps1` is a toolkit script (external dep we orchestrate); the change is additive and
     backward-compatible.
+
+### M105i — IDEA-4 hands-free voice conversation loop
+- **IDEA-4:** a 🎙️ toggle in the unified Workspace for hands-free conversation.
+  - Listen: `getUserMedia` + `MediaRecorder`, with **Web-Audio silence detection** (stops ~1.3s after
+    speech ends; 15s hard cap) so no stop-button is needed.
+  - → `/api/stt` (Whisper) → fills the input → sends a **chat** turn.
+  - On the chat `end` event, the reply text is spoken via local Piper `/api/tts`, then listening resumes.
+  - Stops cleanly on toggle-off, chat error, or leaving the page.
+  - Reuses the already-verified STT (M104 round-trip), chat stream, and TTS (`ok=True` confirmed).
+- **Honest verification:** the three legs are individually verified and the UI renders with zero console
+  errors, but the *continuous mic loop* can't be exercised in headless Chromium (no real microphone), so
+  it's **component-verified, not end-to-end automated** — marked 🟧 for the live loop. Gate ✅.
+
+## M105 summary — post-launch innovation backlog COMPLETE
+This session cleared the innovation backlog autonomously, each item gated + (where possible) live-verified
++ documented + committed + pushed, all strictly single-user/local-only with **no protections disabled**:
+IDEA-10 (self-healing loops), IDEA-8 (persistent memory), IDEA-5 (folder Q&A), IDEA-3 (save agent run as
+workflow), IDEA-2 + IDEA-2b (screen memory + retention), IDEA-7 (region watch → act), IDEA-6 (quality
+dashboard), IDEA-9 (img2img refine), IDEA-4 (hands-free voice, 🟧 live-loop), and AVL-2 (perceive→act→
+observe loop, closed). Remaining: IDEA-1 (visual macro recorder) — deferred (passive global input
+capture needs a new dep + is constrained by this env's synthetic-keyboard suppression; documented).

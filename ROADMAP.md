@@ -124,7 +124,9 @@ Original ideas that extend Nova's vision without breaking the core principle. Tr
    schedule action for periodic capture.
 3. ✅ **Save a successful agent run as a reusable Workflow/Automation** (M105) — a "💾 Save as workflow"
    button on the agent's final answer; the `agent` action replays the goal on re-run.
-4. **Hands‑free voice conversation** — speak → STT → answer → TTS loop (building blocks already exist).
+4. ✅ **Hands‑free voice conversation** (M105) — 🎙️ toggle in the Workspace: listen (silence‑detected) →
+   STT → chat → speak the reply (local Piper) → listen again. Components verified; live mic loop is
+   component‑verified (can't be driven headlessly).
 5. ✅ **Folder Q&A** (M105) — point at a folder → auto‑index (recursive, skips secrets) → chat over it
    with citations (RAG over a directory). `/api/kb/ingest-folder` + Knowledge‑page input.
 6. ✅ **Quality dashboard** (M105) — `/api/quality` records scored eval/health runs; the Diagnostics

@@ -49,6 +49,7 @@ function Workspace(){
         <button class="tgl" id="tg-vid" data-tip="${AR?'ولّد فيديو':'Generate a video'}">🎬</button>
         <span class="spacer"></span>
         <button class="btn" id="wsmic" data-tip="${AR?'إدخال صوتي':'Voice input'}">🎤</button>
+        <button class="btn" id="wshf" data-tip="${AR?'محادثة صوتية بدون يدين':'Hands-free voice conversation'}">🎙️</button>
         <button class="btn p" id="wssend">${L.send}</button>
         <button class="btn danger" id="wsstop" style="display:none">⏹ ${L.stop}</button>
       </div>
@@ -62,6 +63,7 @@ function Workspace(){
     let mode = localStorage.getItem('ws_mode') || 'chat';
     let attached = [], curAI = null, lastUser = '', busy = false, maxSteps = 8, workingFile = null;
     let lastAgentRun = null;   // IDEA-3: the last agent goal+settings, for "save as workflow"
+    const hf = { on:false, waiting:false };   // IDEA-4: hands-free voice conversation loop
     const tg = { deep: localStorage.getItem('ws_deep')==='1', web: localStorage.getItem('ws_web')==='1', full: false };
 
     // ---- helpers ----
@@ -264,6 +266,49 @@ function Workspace(){
     ta.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
     $('#wsmic').onclick = () => dictate('#wsinput','#wsmic');
 
+    // ---- IDEA-4: hands-free voice conversation (listen → STT → chat → TTS → listen again) ----
+    // Records a phrase with silence detection, transcribes it, sends it as a chat turn; when the reply
+    // finishes (chat 'end' handler below), it's spoken via local Piper TTS and listening resumes.
+    async function hfListenOnce(){
+      if(!hf.on) return;
+      if(!navigator.mediaDevices||!window.MediaRecorder){ toast('error','Mic unavailable',''); hfStop(); return; }
+      let stream; try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+      catch(e){ toast('error','Microphone blocked','Allow mic access'); hfStop(); return; }
+      const mr=new MediaRecorder(stream); const chunks=[];
+      mr.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+      // silence detection via Web Audio analyser
+      const ac=new (window.AudioContext||window.webkitAudioContext)(); const src=ac.createMediaStreamSource(stream);
+      const an=ac.createAnalyser(); an.fftSize=512; src.connect(an); const buf=new Uint8Array(an.fftSize);
+      let spoke=false, silence=0; const t0=Date.now();
+      const tick=setInterval(()=>{
+        an.getByteTimeDomainData(buf); let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
+        const rms=Math.sqrt(sum/buf.length);
+        if(rms>0.045){ spoke=true; silence=0; } else if(spoke){ silence+=120; }
+        const maxed=Date.now()-t0>15000;          // hard cap 15s
+        if((spoke && silence>1300) || maxed){ clearInterval(tick); if(mr.state==='recording') mr.stop(); }
+      },120);
+      mr.onstop=async()=>{ clearInterval(tick); stream.getTracks().forEach(t=>t.stop()); try{ac.close();}catch(e){}
+        const blob=new Blob(chunks,{type:'audio/webm'});
+        if(blob.size<800){ if(hf.on) hfListenOnce(); return; }   // nothing said → keep listening
+        const fd=new FormData(); fd.append('audio',blob,'rec.webm'); fd.append('lang',State.lang);
+        let r; try{ r=await fetch('/api/stt',{method:'POST',body:fd}).then(x=>x.json()); }catch(e){ r={}; }
+        if(r&&r.text&&r.text.trim()){ $('#wsinput').value=r.text.trim(); hf.waiting=true; send(); }
+        else if(hf.on){ hfListenOnce(); }                        // no speech recognised → listen again
+      };
+      mr.start(); $('#wshf').classList.add('rec'); toast('info','🎙️ '+(AR?'أستمع…':'Listening…'), AR?'تحدّث ثم توقّف':'speak, then pause');
+    }
+    function hfStop(){ hf.on=false; hf.waiting=false; const b=$('#wshf'); if(b) b.classList.remove('rec','on'); }
+    async function hfSpeakAndContinue(text){     // called from the chat 'end' handler
+      hf.waiting=false; $('#wshf').classList.remove('rec');
+      if(text){ try{ await post('/tts',{text:text.slice(0,1200)}); }catch(e){} }
+      if(hf.on) hfListenOnce();
+    }
+    $('#wshf').onclick = () => {
+      if(hf.on){ hfStop(); toast('info',AR?'أُوقفت المحادثة الصوتية':'Hands-free off',''); return; }
+      if(mode!=='chat'){ mode='chat'; applyMode(); }             // hands-free is a chat experience
+      hf.on=true; $('#wshf').classList.add('on'); hfListenOnce();
+    };
+
     applyMode();
 
     // ---- live streams ----
@@ -275,8 +320,11 @@ function Workspace(){
           if(m.sources && m.sources.length){ const s=document.createElement('div'); s.className='wssrc';
             s.innerHTML='📎 '+m.sources.map(x=>x.url?`<a href="${esc(x.url)}" target="_blank">${esc(x.doc)}</a>`:esc(x.doc)).join(' · '); curAI.d.appendChild(s);}
           if(workingFile) saveBtn(curAI); }
-          if(m.tokens!=null) $('#wstok').textContent=m.tokens+' tok'; curAI=null; setBusy(false); }
-      else if(m.ev==='error'){ addMsg('ai','⚠️ '+(m.text||'error')); curAI=null; setBusy(false); }
+          if(m.tokens!=null) $('#wstok').textContent=m.tokens+' tok';
+          const reply=(curAI&&curAI.span.dataset.raw)||''; curAI=null; setBusy(false);
+          if(hf.on && hf.waiting) hfSpeakAndContinue(reply); }   // IDEA-4: speak the reply, then listen again
+      else if(m.ev==='error'){ addMsg('ai','⚠️ '+(m.text||'error')); curAI=null; setBusy(false);
+          if(hf.on && hf.waiting){ hf.waiting=false; $('#wshf').classList.remove('rec'); hfListenOnce(); } }
     }));
     subs.push(bus.on('agent', m => {
       if(m.ev==='start'){ maxSteps=m.max_steps||8; }
@@ -295,6 +343,7 @@ function Workspace(){
       else if(m.ev==='error'){ addStep('❌', (AR?'خطأ':'Error'), esc(m.text||'')); setBusy(false); }
       else if(m.ev==='done'){ setBusy(false); }
     }));
+    subs.push(()=>hfStop());   // IDEA-4: stop hands-free when leaving the page
     return subs;
   }
   return { html, mount };
