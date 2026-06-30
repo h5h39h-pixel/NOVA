@@ -812,3 +812,20 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   upgrades generation from "job starts" to "actually produces correct output."
 - **Scope:** image verified; video (LTX) runs the same path but is slower and not auto-verified yet.
 - **Verified:** quality gate green. (ComfyUI was up on :8188 with SDXL/Flux/LTX checkpoints present.)
+
+## M68 — PC-1: unified Read & Understand (OCR + VLM) (2026-06-30)  [P1 Phase 8]
+
+- **Owner request:** a tool to read text from screens/screenshots/files AND describe images, in chat
+  and as an agent tool.
+- **What:** new `nova/services/understand.py` — `understand(path|region)`, `understand_image`
+  (OCR via extract_text + VLM via the refactored `screen.vlm_image`), `understand_file` (image →
+  image path; document → extract_text + local-LLM `summarize_text`). The VLM uses one combined prompt
+  returning TEXT / SHOWS / PURPOSE / DETAILS. Refactored `screen.describe_screen` to share `vlm_image`.
+- **Surfaces:** `POST /api/understand`; agent tool `understand {path}` (credential-denylist gated, screen
+  if no path); **image chat uploads auto-enriched** in `/api/upload` (VLM description + OCR) so "read
+  this / describe this" works with an attached image.
+- **Verified:** 3 hermetic tests (understand_image / understand_file / missing); full gate green; server
+  restarted; live `POST /api/understand` on a generated image returned a correct TEXT/SHOWS/PURPOSE
+  breakdown; live suite 42/42.
+- **Next (Phase 8):** PC-2 window awareness, PC-3 element detection, PC-4/5 mouse+keyboard control, PC-6
+  surfaces+tests.

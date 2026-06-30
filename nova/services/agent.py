@@ -63,6 +63,10 @@ AGENT_TOOL_DEFS = {
     "speak": "- speak {text}: read text aloud to the user.\n",
     "read_file": ("- read_file {path}: read a text file's contents. For a file you created, pass just its "
                   "name (e.g. notes.txt) — it is read from your output folder. Use a full path for files elsewhere.\n"),
+    "understand": ("- understand {path}: read AND describe a file, image, or screenshot — returns the text it "
+                   "contains plus what it shows, its main purpose, and notable details. Use this for "
+                   "'read this', 'describe this image', or to understand a screenshot/PDF/document. Omit path "
+                   "to read & describe the current screen.\n"),
     "write_file": ("- write_file {path, content}: write a text file. Pass just a bare filename (e.g. report.txt) — "
                    "it is saved in your output folder automatically; do NOT prefix 'agent-output/'.\n"),
     "schedule": "- schedule {name, action, params, interval_sec}: create a background automation.\n",
@@ -142,6 +146,19 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             if not p.exists(): return f"file not found: {p}"
             audit("agent", "read_file", str(p))
             return p.read_text(encoding="utf-8", errors="replace")[:4000]
+        if name == "understand":
+            raw = a.get("path", "")
+            if raw and safe_read_path(raw) is None:
+                return "BLOCKED: that path is not readable (credential store)."
+            if dry_run:
+                return f"[dry-run] would read & describe {raw or 'the current screen'}"
+            from nova.services.understand import understand as _understand
+            r = _understand(path=raw or None, question=a.get("question"))
+            audit("agent", "understand", str(raw or "screen")[:60])
+            parts = []
+            if r.get("text"): parts.append("TEXT:\n" + str(r["text"])[:1500])
+            if r.get("description"): parts.append("UNDERSTANDING:\n" + str(r["description"])[:1500])
+            return "\n\n".join(parts) or ("error: " + r.get("error", "could not read"))
         if name == "notify":
             add_notification("info", "Agent", a.get("text", "")); return "user notified"
         if name == "speak":

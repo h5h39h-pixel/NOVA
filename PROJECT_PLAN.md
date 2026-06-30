@@ -24,7 +24,8 @@ The active plan:
 | **P‑4 Stability** | P1 — resilience | watchdog auto‑restart; jobs survive restart; loops recover + surface errors; media backup; WAL | ⬜ |
 | **P‑5 Docs** | P2 — upkeep | six files always current; README/SETUP refreshed; training pipeline documented | 🟦 ongoing |
 | **P‑6 Features/Polish** | P2/P3 | click‑to‑act reliability, STT, voice; perf budget, a11y, mobile | ⬜ |
-| **P‑7 AI Screen Vision** | P1 — core feature | real‑time screen stream + mouse/keyboard tracking + continuous VLM loop, fused into a live "see‑what‑I‑see & act" session; privacy‑first (opt‑in, local, non‑persistent) | ⬜ new (SV‑1…7) |
+| **P‑7 AI Screen Vision** | P1 — core feature | real‑time screen stream + mouse/keyboard tracking + continuous VLM loop, fused into a live "see‑what‑I‑see & act" session; privacy‑first (opt‑in, local, non‑persistent) | 🟦 largely shipped (SV‑1…7) |
+| **P‑8 Perception & Control** | P1 — core feature | read & understand (OCR+VLM, files/images/screen) · window‑layout awareness (active/all windows, measurements, DPI) · UI element detection · precise mouse/keyboard control — as agent tools, chat commands, APIs | 🟦 PC‑1 ✅ (PC‑2…6) |
 
 Estimates are deliberately omitted — work proceeds **one task at a time, highest priority first,
 fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each phase.

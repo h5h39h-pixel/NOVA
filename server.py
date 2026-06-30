@@ -146,6 +146,7 @@ from nova.api.training import router as training_router
 from nova.api.schedules import router as schedules_router
 from nova.api.screen import router as screen_router
 from nova.api.screen_vision import router as screen_vision_router
+from nova.api.understand import router as understand_router
 from nova.api.settings import router as settings_router
 from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
@@ -169,6 +170,7 @@ app.include_router(training_router, tags=["training"])
 app.include_router(schedules_router, tags=["automation"])
 app.include_router(screen_router, tags=["screen"])
 app.include_router(screen_vision_router, tags=["screen-vision"])
+app.include_router(understand_router, tags=["understand"])
 app.include_router(settings_router, tags=["settings"])
 app.include_router(tts_router, tags=["media"])
 app.include_router(backup_router, tags=["backup"])
@@ -423,7 +425,19 @@ async def api_upload(req: Request):
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     dest = UPLOAD_DIR / f.filename
     dest.write_bytes(await f.read())
-    text = extract_text(dest)
+    # Images: include BOTH a VLM description and OCR text so chat "read this / describe this" works.
+    if dest.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".webp", ".gif"):
+        try:
+            from nova.services.understand import understand_image
+            u = understand_image(dest)
+            parts = []
+            if u.get("description"): parts.append("[What the image shows]\n" + u["description"])
+            if u.get("text") and not str(u["text"]).startswith("("): parts.append("[Text in the image]\n" + u["text"])
+            text = "\n\n".join(parts) or extract_text(dest)
+        except Exception:
+            text = extract_text(dest)
+    else:
+        text = extract_text(dest)
     return {"ok": True, "filename": f.filename, "size": dest.stat().st_size, "chars": len(text),
             "text": text[:8000], "truncated": len(text) > 8000, "url": f"/files/{f.filename}"}
 

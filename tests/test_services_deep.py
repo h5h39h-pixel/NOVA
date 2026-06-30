@@ -168,6 +168,33 @@ def test_reconcile_interrupted_jobs(tmpdb):
     assert s1 == "interrupted" and s2 == "done"
 
 
+def test_understand_image(monkeypatch, tmp_path):
+    """Unified understand: image → OCR text + VLM description (both mocked)."""
+    import nova.services.understand as U
+    import nova.services.screen as S
+    monkeypatch.setattr(U, "extract_text", lambda p: "HELLO TEXT")
+    monkeypatch.setattr(S, "vlm_image", lambda p, prompt=None, num_predict=600: "SHOWS: a road sign")
+    img = tmp_path / "x.png"; img.write_bytes(b"\x89PNG fake")
+    r = U.understand_image(img)
+    assert r["ok"] and r["kind"] == "image" and "HELLO" in r["text"] and "road sign" in r["description"]
+
+
+def test_understand_file_text(monkeypatch, tmp_path):
+    """Unified understand: document → extracted text + LLM summary (both mocked)."""
+    import nova.services.understand as U
+    monkeypatch.setattr(U, "extract_text", lambda p: "the quarterly report body")
+    monkeypatch.setattr(U, "summarize_text", lambda text, q=None: "SUMMARY: quarterly report")
+    f = tmp_path / "doc.txt"; f.write_text("hi", encoding="utf-8")
+    r = U.understand_file(f)
+    assert r["kind"] == "file" and r["ok"] and "report" in r["text"] and "SUMMARY" in r["description"]
+
+
+def test_understand_file_missing(tmp_path):
+    from nova.services.understand import understand_file
+    r = understand_file(tmp_path / "nope.txt")
+    assert r["ok"] is False and "not found" in r["error"]
+
+
 def test_extract_text(tmp_path):
     from nova.services.files import extract_text
     p = tmp_path / "x.txt"; p.write_text("hello world", encoding="utf-8")

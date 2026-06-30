@@ -62,6 +62,13 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 | **Jobs across restart** | **Improved (STB‑2, M66):** jobs persist to a `jobs` table; on startup, ones left running are marked **interrupted** + the user is notified (no silent loss). A killed training/recording still can't auto‑resume (Job Object terminates children) — surfaced, not resumed. |
 | **beforeunload text** | Browser shows generic wording + only after interaction (browser limitation, not fixable). |
 
+## 🆕 Perception & Control (Phase 8, P1) — in progress
+Owner request: read & understand anything (OCR+VLM), full window‑layout awareness, UI element detection,
+and precise mouse/keyboard control — as agent tools, chat commands, and APIs. **PC‑1 ✅ shipped (M68):**
+unified **Read & Understand** (`/api/understand`, agent `understand` tool, auto‑enriched image chat
+uploads) — verified live. **PC‑2…6 (window awareness, elements, mouse/keyboard control) in progress.**
+Tracked as **PC‑1…6** in `TASKS.md`.
+
 ## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62
 DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckGo via `ddgs`, cited;
 opt‑in/online), and an explicit microphone **⏹ Stop** control. Render‑verified; live suite 42/42.

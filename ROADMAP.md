@@ -24,7 +24,10 @@ continuous learning — private, offline‑capable, and owned end‑to‑end. Th
 5. **Phase 5 — Documentation** (P2): keep the six files + repo docs current.
 6. **Phase 6 — Features & polish** (P2/P3): click‑to‑act, voice, accessibility, performance.
 7. **Phase 7 — AI Screen Vision** (P1): real‑time screen streaming, mouse/keyboard tracking, and a
-   continuous AI vision loop so the AI sees exactly what the user sees and can act on it. ⬜ new (SV‑1…7)
+   continuous AI vision loop so the AI sees exactly what the user sees and can act on it. 🟦 largely shipped (SV‑1…7)
+8. **Phase 8 — Perception & Control** (P1): read & understand anything (OCR+VLM for files/images/screen),
+   full window‑layout awareness (active window, all windows, measurements, DPI), UI element detection, and
+   precise mouse/keyboard control — as agent tools, chat commands, and APIs. 🟦 PC‑1 ✅ (PC‑2…6)
 
 Foundation phases **0 (Safety Net)**, **modular refactor**, **UI**, and the **OWUI 0.10.1 upgrade**
 are ✅ complete (see BUILD_LOG M28–M41).

@@ -53,6 +53,26 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | STB‑5 | SQLite WAL mode + concurrency review | ✅ | M57. `db()` now opens with `timeout=5s` + `PRAGMA busy_timeout=5000` + `synchronous=NORMAL`; `init_db` sets persistent `journal_mode=WAL` (readers no longer block the writer; fewer "database is locked" under the concurrent loops). Backup uses the online `src.backup()` API → WAL‑safe. WAL sidecars git‑ignored. Test: `test_db_wal_and_busy_timeout`. |
 | STB‑E | Daily DB snapshots (rotate 14) + migration framework + `/api/health` + error aggregation | ✅ | M‑B/M‑D. |
 
+## P1 — Perception & Control (PC · owner request, Phase 8)
+
+The system should **read & understand** anything on screen / in files, have **perfect awareness** of the
+window layout, and **precisely control** mouse + keyboard. Built on Windows APIs (ctypes, pygetwindow,
+pyautogui) + UI Automation (pywinauto/uiautomation) + the existing OCR/VLM. Exposed three ways: **agent
+tools**, **chat commands** ("read this", "where am I?", "move mouse to 500,300"), and **API endpoints**.
+
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| PC‑1 | **Read & Understand** — OCR + VLM for files/images/screenshots/screen; text + what it shows + purpose + details | ✅ | M68. `nova/services/understand.py` (`understand`/`understand_image`/`understand_file`) reusing `extract_text` + `screen.vlm_image`; `POST /api/understand`; agent tool `understand {path}`; **image chat uploads auto‑enriched** with VLM description + OCR (so "read/describe this" works). Verified live on a generated image. |
+| PC‑2 | **Window & screen awareness** — active window (title/process/rect), all visible windows, screen resolution + DPI, precise measurements | ⬜ | win32 via ctypes/pygetwindow; `GetForegroundWindow`/`EnumWindows`/`GetWindowRect`/`GetDpiForWindow`. |
+| PC‑3 | **Element detection** — find UI elements by name/text/partial match | ⬜ | UI Automation (`pywinauto`/`uiautomation`); return matched element name + bounding rect (→ click target). |
+| PC‑4 | **Precise mouse control** — move to exact X/Y, click, double/right‑click, drag, scroll | ⬜ | `pyautogui` (already a dep); pixel‑accurate; reuse/extend `screen.click_at`. |
+| PC‑5 | **Precise keyboard control** — key presses with modifiers, accurate text typing | ⬜ | `pyautogui` hotkey + clipboard‑paste typing (reuse `screen.type_text` for Unicode/Arabic accuracy). |
+| PC‑6 | **Surfaces + tests** — agent tools, chat commands, API endpoints, hermetic tests | ⬜ | "where am I?" / "list windows" / "move mouse to x,y" / "click x,y"; `POST /api/control/*`. |
+
+**Rollup:** P1. PC‑1 ✅. Next PC‑2 (awareness) → PC‑3 (elements) → PC‑4/5 (control) → PC‑6 (surfaces+tests).
+May add `pywin32`/`pywinauto`/`uiautomation` (pinned + ci_local‑verified). Privacy/safety: control actions
+are powerful — audited; localhost‑gated like exec.
+
 ## P1 — AI Screen Vision (Phase 7 · NEW core feature)
 
 Real‑time perception + control: the AI sees exactly what the user sees and can act on it. Builds on

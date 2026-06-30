@@ -62,20 +62,27 @@ def read_screen(vision=False, region=None, lang=None):
                        capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
     return {"ok": True, "text": (r.stdout or "").strip(), "file": f"/files/{fn}", "mode": "ocr"}
 
+def vlm_image(image_path, prompt=None, num_predict=600):
+    """Run the local vision model (qwen2.5-VL) on ANY image file and return its text answer.
+    Shared by describe_screen and the unified 'understand' service. Raises on failure."""
+    from pathlib import Path as _P
+    b64 = base64.b64encode(_P(image_path).read_bytes()).decode("ascii")
+    prompt = prompt or ("Describe exactly what is on this image: the application/window, the visible "
+                        "text, the buttons, menus and input fields, and what the user appears to be doing. "
+                        "Be specific and concise.")
+    body = json.dumps({"model": VISION_MODEL, "stream": False, "options": {"num_predict": num_predict},
+                       "messages": [{"role": "user", "content": prompt, "images": [b64]}]}).encode()
+    rq = urllib.request.Request(OLLAMA + "/api/chat", data=body,
+                                headers={"Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(rq, timeout=180) as r:
+        return (json.loads(r.read().decode()).get("message") or {}).get("content", "").strip()
+
+
 def describe_screen(question=None, region=None):
     """Use the local vision model to understand the screen in natural language."""
     fn, path = capture_screenshot(region)
     try:
-        b64 = base64.b64encode(path.read_bytes()).decode("ascii")
-        prompt = question or ("Describe exactly what is on this screen: the application/window, the visible "
-                              "text, the buttons, menus and input fields, and what the user appears to be doing. "
-                              "Be specific and concise.")
-        body = json.dumps({"model": VISION_MODEL, "stream": False, "options": {"num_predict": 600},
-                           "messages": [{"role": "user", "content": prompt, "images": [b64]}]}).encode()
-        rq = urllib.request.Request(OLLAMA + "/api/chat", data=body,
-                                    headers={"Content-Type": "application/json"}, method="POST")
-        with urllib.request.urlopen(rq, timeout=180) as r:
-            desc = (json.loads(r.read().decode()).get("message") or {}).get("content", "").strip()
+        desc = vlm_image(path, question)
         return {"ok": True, "description": desc, "file": f"/files/{fn}", "model": VISION_MODEL}
     except Exception as e:
         return {"ok": False, "error": str(e)[:200], "file": f"/files/{fn}"}
