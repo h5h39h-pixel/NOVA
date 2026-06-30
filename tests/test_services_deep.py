@@ -146,6 +146,7 @@ def test_web_search_mocked(monkeypatch):
     assert r and r[0]["title"] == "RTX 5090" and r[0]["url"] == "http://example.com/gpu"
     block, src = web_context("gpu vram", 4)
     assert "RTX 5090" in block and "example.com/gpu" in block and src[0]["url"] == "http://example.com/gpu"
+    assert "UNTRUSTED" in block and "DATA" in block      # HON-10: fenced as untrusted data
     assert web_search("") == []                                # empty query short-circuits
 
 
