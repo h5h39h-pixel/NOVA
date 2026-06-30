@@ -108,19 +108,32 @@ def run_action(action, params, name="task"):
     if action == "screen_if":
         # Conditional screen trigger: if `match` text appears on screen, run `then_action`.
         # Use as a schedule (e.g., every 60s) for "if X on screen → do Y".
+        # IDEA-7: an optional `region` [x,y,w,h] pins the watch to a screen region (faster, fewer false
+        # positives) — "region watch → act". `absent: true` inverts the trigger (act when match is GONE).
         want = (p.get("match") or "").strip().lower()
         if not want: return "screen_if: no 'match' text configured"
+        region = p.get("region")
+        if region is not None:
+            try:
+                region = [int(v) for v in region]
+                assert len(region) == 4
+            except Exception:
+                return "screen_if: 'region' must be [x,y,w,h]"
         try:
-            r = screen_svc.read_screen(bool(p.get("vision")))
+            r = screen_svc.read_screen(bool(p.get("vision")), region=region)
             text = (r.get("text") or "").lower()
         except Exception as e:
             return f"screen_if: read failed ({e})"
-        if want in text:
+        present = want in text
+        trigger = (not present) if bool(p.get("absent")) else present
+        where = " in region" if region else ""
+        if trigger:
             ta = p.get("then_action", "notify")
-            tp = p.get("then_params") or {"text": f"Screen matched: {p.get('match')}"}
+            verb = "vanished from" if p.get("absent") else "matched"
+            tp = p.get("then_params") or {"text": f"Screen {verb}: {p.get('match')}"}
             st = run_action(ta, tp, name)
-            return f"matched '{p.get('match')}' → {ta}: {st}"
-        return f"no match for '{p.get('match')}'"
+            return f"{verb} '{p.get('match')}'{where} → {ta}: {st}"
+        return f"no trigger for '{p.get('match')}'{where}"
     return "unknown action"
 
 

@@ -128,6 +128,27 @@ def test_screen_memory_gate(monkeypatch, tmpdb):
     assert any("main.py" in h["text"] for h in KB.kb_search("which file was open"))
 
 
+def test_screen_if_region_and_absent(monkeypatch, tmpdb):
+    """IDEA-7: screen_if supports a pinned region + an inverted (absent) trigger."""
+    import nova.services.schedules as SCH
+    monkeypatch.setattr(SCH.screen_svc, "read_screen",
+                        lambda vision=False, region=None: {"ok": True, "text": "Error: disk full on C:"})
+    # present + normal → triggers
+    r = SCH.run_action("screen_if", {"match": "disk full", "then_action": "notify"})
+    assert "matched" in r and "notify" in r
+    # present + absent flag → does NOT trigger
+    r = SCH.run_action("screen_if", {"match": "disk full", "absent": True})
+    assert "no trigger" in r
+    # missing text + absent flag → triggers (the watched thing vanished)
+    r = SCH.run_action("screen_if", {"match": "loading...", "absent": True, "then_action": "notify"})
+    assert "vanished" in r
+    # region is passed through + validated
+    r = SCH.run_action("screen_if", {"match": "disk full", "region": [0, 0, 100, 50]})
+    assert "in region" in r
+    r = SCH.run_action("screen_if", {"match": "x", "region": "bad"})
+    assert "must be [x,y,w,h]" in r
+
+
 def test_screen_memory_retention(monkeypatch, tmpdb):
     """IDEA-2b: screen memory keeps only the newest N docs and purge removes all."""
     import nova.services.screen_vision as SV
@@ -186,8 +207,8 @@ def test_run_action(tmpdb):
 
 def test_screen_if_trigger(tmpdb, monkeypatch):
     import nova.services.schedules as S
-    monkeypatch.setattr(S.screen_svc, "read_screen", lambda vision=False: {"text": "Build SUCCEEDED on main"})
-    assert "no match" in S.run_action("screen_if", {"match": "FAILED"})
+    monkeypatch.setattr(S.screen_svc, "read_screen", lambda vision=False, region=None: {"text": "Build SUCCEEDED on main"})
+    assert "no trigger" in S.run_action("screen_if", {"match": "FAILED"})
     out = S.run_action("screen_if", {"match": "succeeded", "then_action": "notify", "then_params": {"text": "ok"}})
     assert out.startswith("matched") and "notify" in out
     assert "no 'match'" in S.run_action("screen_if", {})

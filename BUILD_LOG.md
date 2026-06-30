@@ -1351,3 +1351,14 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
 - Settings: "🧹 Purge all screen memories" button.
 - Test `test_screen_memory_retention` (5→keep 3→2 pruned; purge→0; non-screen docs untouched). Live
   roundtrip verified (keep=1 prunes to 1; purge removes 1; defaults restored). Gate ✅ · live 42/42 ✅.
+
+### M105f — IDEA-7 region watch → act
+- **IDEA-7:** extended the `screen_if` automation:
+  - optional `region` `[x,y,w,h]` pins the watch to a screen region (faster, fewer false positives;
+    `read_screen` already accepted a region — wired it through + validated the shape).
+  - `absent: true` inverts the trigger — act when the watched text *disappears* (e.g. "act when the
+    'loading…' spinner is gone").
+  - `static/js/pages-data.js`: the automation builder's screen_if form gained a region field + an
+    "act when absent" checkbox.
+  - Tests: new `test_screen_if_region_and_absent` (present/absent/region passthrough + validation);
+    updated `test_screen_if_trigger` for the new lambda signature + "no trigger" wording. Gate ✅.

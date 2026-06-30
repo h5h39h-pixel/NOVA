@@ -129,8 +129,8 @@ Original ideas that extend Nova's vision without breaking the core principle. Tr
    with citations (RAG over a directory). `/api/kb/ingest-folder` + Knowledge‑page input.
 6. **Quality dashboard** — schedule the eval batteries (agent/RAG/gen) and chart quality over time to
    catch regressions after model/dep updates.
-7. **Region watch → act** — pin a screen region; when its text changes, trigger an action (extends
-   `screen_if`).
+7. ✅ **Region watch → act** (M105) — pin a screen `region` and/or trigger on text *absence*; extends
+   the `screen_if` automation (region + "act when absent" in the builder).
 8. ✅ **Local persistent memory** (M105) — durable user facts/preferences recalled across sessions;
    owner‑editable in Settings, injected into chat + agent prompts; local‑only.
 9. **Image edit pipeline** — generate then iteratively refine images (ComfyUI img2img) from the chat.
