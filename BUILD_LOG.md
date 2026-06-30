@@ -555,3 +555,20 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Note:** `run_tests.py` (live, 42) remains environment-coupled by design — it validates the
   actually-running stack, which is a different (and still useful) guarantee.
 - **Next:** TST-3 (agent-loop integration tests with a mocked model).
+
+## M51 — TST-3: agent-loop integration tests (mocked model) (2026-06-30)  [P0 Tests]
+
+- **What:** `tests/test_agent_loop.py` (9 tests). A scripted `ollama_chat_once` drives `agent_run`
+  through every control path while capturing emitted events + the observation fed back each turn:
+  parse_action (nested braces / garbage -> None); tool dispatch -> observation -> final; reformat
+  recovery when the model returns non-JSON; step-budget termination ("reached the step limit");
+  mid-run Stop (caught before dispatch -> "Stopped by user."); tool gating (disallowed tool never
+  dispatched, "disabled for this run" fed back); the `ask` path; and direct `agent_tool` checks for
+  the destructive-command block and confined-write block.
+- **Why:** the agent loop is the highest-risk surface (it controls the PC). Its mechanics now have
+  real coverage independent of any model or network.
+- **Verified:** `pytest tests/test_agent_loop.py` -> 9 passed; full suite 72 passed (hermetic);
+  quality gate green.
+- **Scope note:** this tests loop *mechanics*, not real-world success rate with a 14B model — that's
+  OUT-1 (P1 Outcome).
+- **Next:** TST-5 (make CI actually run) / TST-4 (clean-venv install).
