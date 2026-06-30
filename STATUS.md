@@ -24,9 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **S‑1** Terminal `/api/exec` destructive‑command confirm‑guard (P1 security).
-2. **S‑2 / S‑3** Tighten the command‑exec surface + headers (P1 security).
-3. **T‑coverage** Replace smoke tests with real per‑service assertions (P2).
+1. **SEC‑2** Centralize + strengthen the destructive‑command denylist (shared by agent + terminal). (P0)
+2. **SEC‑3** Tighten HTTP security headers (CSP `default-src 'self'`, `frame-ancestors 'self'`). (P0)
+3. **TST‑1** Replace smoke tests with real per‑service assertions. (P0)
+
+_Done this session: **SEC‑1** — Terminal destructive‑command confirm‑guard (M43)._
 
 ---
 
@@ -44,7 +46,7 @@ The next campaign is hardening, by priority below.
 ## Fragile — works but needs improvement 🟧
 | Item | The issue |
 |---|---|
-| **Command‑exec surface** | `/api/exec` (Terminal) runs **any** PowerShell with **no destructive‑command guard**; only LAN exposure is gated. On localhost it's unrestricted by design — but no confirm/kill‑switch. |
+| **Command‑exec surface** | Terminal `/api/exec` now **confirm‑guards destructive commands** (SEC‑1 ✅) + LAN gate. Still open: the denylist is shallow/substring‑based (SEC‑2), and the agent's `run_command` uses the same shallow guard. No global kill‑switch yet. |
 | **Agent reliability** | Loop mechanics tested; real multi‑step success rate with 14B is **unmeasured** and inconsistent. |
 | **Tests are shallow** | Mostly "returns 200 / CRUD works." Whole services have ~0 real assertions. Live suite needs Ollama/ComfyUI running (not hermetic). |
 | **`screen_if` (conditional screen actions)** | Implemented + unit‑tested **with a mocked screen**; never run against a real screen / real vision matching. |

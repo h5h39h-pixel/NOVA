@@ -50,3 +50,23 @@ def test_selftest_endpoint(client):
 def test_index_auto_cache_bust(client):
     html = client.get("/").text
     assert re.search(r"app\.css\?v=\d+", html)   # server-stamped asset version
+
+
+def test_exec_destructive_confirm_guard(client, monkeypatch):
+    """SEC-1: destructive commands require confirm; nothing executes without it."""
+    import server
+    calls = []
+    class _Job: id = "job-test"
+    monkeypatch.setattr(server.PM, "start", lambda *a, **k: (calls.append(a), _Job())[1])
+    # safe command runs
+    r = client.post("/api/exec", json={"command": "echo hello"})
+    assert r.status_code == 200 and r.json().get("ok")
+    base = len(calls)
+    # destructive without confirm -> 409, NOT executed
+    r = client.post("/api/exec", json={"command": "format C:"})
+    assert r.status_code == 409 and r.json().get("needs_confirm")
+    assert len(calls) == base
+    # destructive WITH confirm -> executes
+    r = client.post("/api/exec", json={"command": "format C:", "confirm": True})
+    assert r.status_code == 200 and r.json().get("ok")
+    assert len(calls) == base + 1

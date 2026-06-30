@@ -444,3 +444,17 @@ Made the six project files the **mandatory, permanent** source of truth and the 
   deps not clean‑installed.
 - **Next:** begin Phase 1 / SEC‑1 (Terminal `/api/exec` destructive‑command confirm‑guard).
 - _Verified:_ docs only; quality gate green (pyflakes + node + pytest 24); live suite 42/42.
+
+## M43 — SEC-1: Terminal command confirm-guard (2026-06-30)  [P0 Security]
+
+- **What:** `/api/exec` now returns HTTP **409 `needs_confirm`** for clearly-destructive commands
+  (format / rm -rf / shutdown / registry / recurse-force, via `is_dangerous`) unless `confirm:true`
+  is sent. New shared `execCommand()` helper (core.js) catches the 409, asks the user, and resends
+  with `confirm:true`; routed all three call sites through it (Terminal, Chat `!cmd`, Batch). Audited
+  as `needs_confirm` / `forced`.
+- **Why:** the Terminal previously ran ANY PowerShell with no guard at all (only LAN exposure was
+  gated). This adds a real speed-bump against accidental destructive commands while keeping the
+  terminal fully usable (one confirm).
+- **Verified:** unit test (`test_exec_destructive_confirm_guard`, PM.start mocked so nothing runs) +
+  live check (`format c:` → 409). Gate green (pyflakes + node + pytest 25); live suite 42/42.
+- **Next:** SEC-2 (centralize + strengthen the denylist, shared by agent + terminal).

@@ -11,7 +11,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 
 | ID | Task | Status | Notes / issue |
 |---|---|---|---|
-| SEC‑1 | Terminal `/api/exec` destructive‑command **confirm‑guard** (block clearly‑destructive cmds unless `confirm:true`) | ⬜ | Currently `/api/exec` runs ANY PowerShell with **no guard** (only LAN is gated). |
+| SEC‑1 | Terminal `/api/exec` destructive‑command **confirm‑guard** (block clearly‑destructive cmds unless `confirm:true`) | ✅ | M43. 409 `needs_confirm` for destructive cmds; `execCommand()` asks before resending; audited (`needs_confirm`/`forced`); unit + live tested. |
 | SEC‑2 | Centralize + strengthen the destructive‑command denylist (shared by agent + terminal) | ⬜ | `is_dangerous` in `agent.py` is shallow substring matching; move to a shared security module + expand. |
 | SEC‑3 | Tighten HTTP security headers (CSP `default-src 'self'`, `frame-ancestors 'self'`, Permissions‑Policy) | ⬜ | Now feasible (all assets local). Verify via frontend gate (zero console errors). |
 | SEC‑4 | Encrypt `cloud_api_key` at rest (use existing `cryptography` dep; key from machine‑local secret) | ⬜ | Stored plaintext in DB today. Low threat (local) but flagged. |
@@ -89,7 +89,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **Active priorities:** P0 Security (6 open) · P0 Tests (6 open) · P1 Outcome (5) · P1 Stability (5).
-- **Next:** SEC‑1 → SEC‑2 → SEC‑3 (then TST‑1).
+- **Active priorities:** P0 Security (5 open, SEC‑1 ✅) · P0 Tests (6 open) · P1 Outcome (5) · P1 Stability (5).
+- **Next:** SEC‑2 (centralize/strengthen denylist) → SEC‑3 (CSP) → TST‑1.
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).

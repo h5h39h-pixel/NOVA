@@ -12,6 +12,14 @@ const api=(p,o)=>fetch('/api'+p,o).then(async r=>{
 }).catch(e=>{if(window.__toast)window.__toast('error','Network error',String((e&&e.message)||e));return {error:String(e)};});
 const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})});
 const del=p=>api(p,{method:'DELETE'});
+// Run a terminal command, asking for confirmation if the backend flags it destructive (HTTP 409).
+// Raw fetch (not the api() wrapper) so the 409 confirm path doesn't show a generic error toast.
+async function execCommand(cmd, confirmed){
+  let r; try{ r=await fetch('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({command:cmd,confirm:!!confirmed})}).then(x=>x.json()); }catch(e){ r={error:String(e)} }
+  if(r&&r.needs_confirm){ return confirm(r.reason||'This command looks destructive. Run it anyway?') ? execCommand(cmd,true) : null; }
+  return r;
+}
 const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* ---- Professional icons: map every emoji to a consistent Font Awesome vector icon (whole dashboard) ---- */
 const EMOJI_FA={

@@ -132,7 +132,7 @@ function Terminal(){
     const line=(l)=>{const d=document.createElement('div');d.className=l.startsWith('$')?'cmd':(/error|exception/i.test(l)?'err':l.startsWith('[')?'sys':'');d.textContent=l;term.appendChild(d);
       if(/is not recognized as the name of a cmdlet/i.test(l)){const h=document.createElement('div');h.className='sys';h.textContent='💡 PowerShell terminal — to chat with a model use the AI Chat page.';term.appendChild(h)}
       while(term.children.length>800)term.removeChild(term.firstChild);term.scrollTop=term.scrollHeight};
-    const run=()=>{const v=$('#cmd').value.trim();if(!v)return;post('/exec',{command:v});$('#cmd').value=''};
+    const run=()=>{const v=$('#cmd').value.trim();if(!v)return;execCommand(v);$('#cmd').value=''};
     $('#rb').onclick=run;$('#cl').onclick=()=>term.innerHTML='';
     $('#cmd').addEventListener('keydown',e=>{if(e.key==='Enter')run()});$('#cmd').focus();
     return [bus.on('term',m=>line(m.line))];
@@ -252,7 +252,9 @@ function Chat(){
       const isAr=/[؀-ۿ]/.test(v);
       if(v.startsWith('!')){const cmd=v.slice(1).split(/&&|\|\|/).map(s=>s.trim().replace(/^!/,'')).filter(Boolean).join(' ; ');addMsg('user',v);$('#ci').value='';
         const out=addMsg('ai','');out.firstChild.textContent='⌨️ $ '+cmd+'\n';
-        const r=await post('/exec',{command:cmd});execJobs[r.job]=out;renderChips();return}
+        const r=await execCommand(cmd);
+        if(r&&r.job)execJobs[r.job]=out; else out.firstChild.textContent+=(r===null?'(cancelled)':('error: '+((r&&r.error)||'failed')));
+        renderChips();return}
       let context='',markers='';
       if(attached.length){
         context=attached.map(a=>`### File: ${a.filename}\n${a.text}`).join('\n\n');
@@ -988,7 +990,7 @@ function Batch(){
   let q=[];
   function render(){$('#bq').innerHTML=q.length?q.map((c,i)=>`<div class="row"><span class="name mono">${esc(c)}</span><button class="btn sm danger" data-d="${i}">✕</button></div>`).join(''):'<div class="empty">queue empty</div>';
     $$('#bq [data-d]').forEach(b=>b.onclick=()=>{q.splice(+b.dataset.d,1);render()})}
-  async function runAll(){if(!q.length)return;toast('info','Running batch',q.length+' commands');for(const c of q){await post('/exec',{command:c});await new Promise(r=>setTimeout(r,1200))}q=[];render();toast('success','Batch complete','')}
+  async function runAll(){if(!q.length)return;toast('info','Running batch',q.length+' commands');for(const c of q){await execCommand(c);await new Promise(r=>setTimeout(r,1200))}q=[];render();toast('success','Batch complete','')}
   function mount(){render();$('#ba').onclick=()=>{const v=$('#bi').value.trim();if(v){q.push(v);$('#bi').value='';render()}};
     $('#bi').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ba').click()});$('#br').onclick=runAll;return []}
   return {html,mount};
