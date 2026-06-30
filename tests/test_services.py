@@ -97,6 +97,15 @@ def test_make_backup_bundle(tmpdb):
     assert "auth_token" not in b["settings"]   # secrets excluded from bundle
 
 
+def test_screen_lang_allowlist():
+    """SEC-6: OCR lang must be allowlisted (no shell injection via /api/screen/read)."""
+    from nova.services.screen import _valid_lang
+    assert _valid_lang("eng") and _valid_lang("ara") and _valid_lang("eng+ara")
+    assert not _valid_lang("eng; Remove-Item C:\\x")
+    assert not _valid_lang("eng -Command calc")
+    assert not _valid_lang("") and not _valid_lang(None)
+
+
 def test_run_action(tmpdb):
     from nova.services.schedules import run_action
     assert run_action("notify", {"text": "hi"}, "t") == "notified"

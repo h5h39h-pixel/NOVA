@@ -514,3 +514,18 @@ Made the six project files the **mandatory, permanent** source of truth and the 
 - **Verified:** enable → config True + cert files created; disable → config False (HTTP restored).
   Gate green.
 - **Next:** SEC-6 (audit every subprocess/exec call site).
+
+## M48 — SEC-6: exec call-site audit + screen `lang` injection fix (2026-06-30)  [P0 Security]
+
+- **What:** audited every external-process call site (`docs/exec-audit.md`). Confirmed **no
+  `shell=True`** and all calls use argv-list form. **Found + fixed a real injection:** `screen.py`
+  `read_screen(lang=…)` interpolated the request's `lang` into a PowerShell `-Command` string
+  **unquoted**, and `/api/screen/read` is not behind the exec gate — so a crafted `lang` could run
+  arbitrary PowerShell (a LAN bypass of SEC-1/2/exec_allowed). Now allowlisted via `_valid_lang()`
+  (`^[A-Za-z]{2,8}(\+[A-Za-z]{2,8})*$`); anything else is ignored.
+- **Why:** close the last command-injection vector; complete the P0 Security phase.
+- **Verified:** `tests/test_screen_lang_allowlist`; gate green; live suite 42/42.
+
+### ✅ P0 Security phase COMPLETE (M43–M48)
+SEC-1 confirm-guard · SEC-2 centralized denylist · SEC-3 strict CSP/headers · SEC-4 at-rest key
+encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next phase: P0 Tests (TST-1).**

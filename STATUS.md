@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **SEC‑5** One‑command HTTPS enablement. (P0)
-2. **SEC‑6** Audit every `subprocess`/exec call site. (P0)
-3. **TST‑1** Replace smoke tests with real per‑service assertions. (P0)
+1. **TST‑1** Replace smoke tests with real per‑service assertions. (P0)
+2. **TST‑2** Hermetic test mode (mock Ollama/ComfyUI so tests don't need them). (P0)
+3. **TST‑3** Agent‑loop integration tests with a mocked model. (P0)
 
-_Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** denylist (M44) · **SEC‑3** CSP/headers (M45) · **SEC‑4** cloud_api_key at‑rest encryption (M46)._
+_**P0 Security phase COMPLETE** ✅ (SEC‑1…6, M43–M48). Next phase: P0 Tests._
 
 ---
 
@@ -46,7 +46,7 @@ _Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** denylist (M
 ## Fragile — works but needs improvement 🟧
 | Item | The issue |
 |---|---|
-| **Command‑exec surface** | Terminal `/api/exec` confirm‑guards destructive commands (SEC‑1) using a centralized, regex/boundary‑aware denylist `nova/core/safety.py` shared with the agent (SEC‑2). Still open: SEC‑3 CSP/headers, SEC‑4 key encryption, SEC‑6 full call‑site audit; no global exec kill‑switch. |
+| **Command‑exec surface** | Hardened (P0 Security complete): confirm‑guard (SEC‑1) + centralized denylist (SEC‑2) + strict CSP/headers (SEC‑3) + at‑rest key encryption (SEC‑4) + HTTPS turnkey (SEC‑5) + call‑site audit incl. the `screen lang` injection fix (SEC‑6). Residual by design: localhost exec is unrestricted (the product's purpose) — gated on LAN. No global kill‑switch (optional). |
 | **Agent reliability** | Loop mechanics tested; real multi‑step success rate with 14B is **unmeasured** and inconsistent. |
 | **Tests are shallow** | Mostly "returns 200 / CRUD works." Whole services have ~0 real assertions. Live suite needs Ollama/ComfyUI running (not hermetic). |
 | **`screen_if` (conditional screen actions)** | Implemented + unit‑tested **with a mocked screen**; never run against a real screen / real vision matching. |

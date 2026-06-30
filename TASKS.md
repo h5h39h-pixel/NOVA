@@ -16,7 +16,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | SEC‑3 | Tighten HTTP security headers (CSP `default-src 'self'`, `frame-ancestors 'self'`, Permissions‑Policy) | ✅ | M45. Strict CSP (local‑only, `object-src 'none'`, `frame-ancestors 'self'`), `X-Frame-Options`, `Permissions-Policy` (mic=self). Verified: all 11 routes render with zero console/CSP errors + header test. |
 | SEC‑4 | Encrypt `cloud_api_key` at rest (use existing `cryptography` dep; key from machine‑local secret) | ✅ | M46. `nova/core/secretbox.py` (Fernet; key in git‑ignored `<data>/.nova_key`, not in DB). Encrypt‑on‑save (`enc:…`), transparent decrypt via `get_cloud_api_key()`; legacy plaintext still readable. 4 tests. |
 | SEC‑5 | One‑command HTTPS enablement + doc (`https_enabled` + cert) | ✅ | M47. `scripts/https.py enable|disable` flips config + pre‑generates the self‑signed cert; documented in SECURITY.md. Round‑trip verified. |
-| SEC‑6 | Security review pass of every `subprocess`/exec call site | ⬜ | Audit `run_action`, agent tools, tts, screen, owui. |
+| SEC‑6 | Security review pass of every `subprocess`/exec call site | ✅ | M48. `docs/exec-audit.md` — no `shell=True`, all argv‑form. **Fixed** a real injection: `screen.py` OCR `lang` was interpolated unquoted into a `-Command` (LAN bypass of the exec gate) → now allowlisted (`_valid_lang`, tested). |
 | SEC‑E | Exec **LAN gate** (`allow_remote_exec`) + audit + `exec_allowed()` | ✅ | M‑B. Localhost always allowed by design; LAN requires opt‑in. |
 | SEC‑E2 | Hashed auth tokens · rate limiting · security headers (baseline) · audit log | ✅ | M26/M‑B. |
 
@@ -89,7 +89,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **Active priorities:** P0 Security (2 open, SEC‑1/2/3/4 ✅) · P0 Tests (6 open) · P1 Outcome (5) · P1 Stability (5).
-- **Next:** SEC‑5 (HTTPS turnkey) → SEC‑6 (exec call‑site audit) → TST‑1.
+- **P0 Security: COMPLETE ✅** (SEC‑1…6 + baseline). · P0 Tests (6 open) · P1 Outcome (5) · P1 Stability (5).
+- **Next:** TST‑1 (deepen unit tests) → TST‑2 (hermetic mode) → TST‑3 (agent‑loop tests).
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).

@@ -9,7 +9,13 @@ toolkit's Windows OCR, and understanding uses the local qwen2.5-VL vision model.
 Depends only on config (+ toolkit ocr.ps1 + Ollama). Routes/agent live in server.py
 and call into here, per ARCHITECTURE.md.
 """
-import time, uuid, subprocess, threading, base64, json, urllib.request
+import time, uuid, subprocess, threading, base64, json, urllib.request, re
+
+# SEC-6: OCR language codes are passed into a PowerShell -Command; allowlist them strictly
+# (e.g. "eng", "ara", "eng+ara") so a malicious `lang` can't inject shell content.
+_LANG_RE = re.compile(r"[A-Za-z]{2,8}(\+[A-Za-z]{2,8})*")
+def _valid_lang(lang):
+    return bool(lang) and bool(_LANG_RE.fullmatch(str(lang)))
 import numpy as np
 import mss
 from config import WORKSPACE, TOOLKIT, OLLAMA
@@ -50,7 +56,7 @@ def read_screen(vision=False, region=None, lang=None):
         return {"ok": d.get("ok", True), "text": d.get("description", ""), "file": d.get("file"), "mode": "vision"}
     fn, path = capture_screenshot(region)
     cmd = '& "{}" "{}"'.format(TOOLKIT / "ocr.ps1", path)
-    if lang: cmd += f' -Lang {lang}'
+    if _valid_lang(lang): cmd += f' -Lang {lang}'   # SEC-6: only allowlisted lang codes
     full = "& {" + cmd + "} 2>&1 | Out-String"
     r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", full],
                        capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")
