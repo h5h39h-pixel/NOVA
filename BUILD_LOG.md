@@ -625,3 +625,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   agent code at boot — a restart applies the fix to the running instance (the eval ran in a fresh
   process, so its 5/5 reflects the fixed code).
 - **Next:** P1 Stability (STB-1 watchdog) and more P1 Outcome (OUT-2 training, OUT-5 RAG).
+
+## M55 — STB-1: hardened watchdog (real-python fix) (2026-06-30)  [P1 Stability]
+
+- **What:** rewrote `watchdog.ps1`. The original used `(Get-Command python).Source` to relaunch the
+  server -> on this machine that resolves to the **Windows Store python stub**, so every restart would
+  silently do nothing. New `Resolve-Python` finds a real interpreter (skips *WindowsApps*, verifies
+  `import sys` exit 0). Also: timestamped `watchdog.log`, `-FailsBeforeRestart` threshold (default 2,
+  ignores transient blips), post-restart re-probe (no duplicate spawns), and a `-Once` self-check mode.
+- **Verified:** `watchdog.ps1 -Once` -> "python=...\Python312\python.exe server_up=True", exit 0
+  (the real interpreter, not the stub). `watchdog.log` git-ignored.
+- **Next:** STB-3 (background loops surface errors instead of `except: pass`).

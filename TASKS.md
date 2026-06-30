@@ -46,7 +46,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 
 | ID | Task | Status | Notes / issue |
 |---|---|---|---|
-| STB‑1 | **Watchdog/supervisor** to auto‑restart `server.py` on crash | ⬜ | `watchdog.ps1` exists — verify/own it. |
+| STB‑1 | **Watchdog/supervisor** to auto‑restart `server.py` on crash | ✅ | M55. Hardened `watchdog.ps1`: **fixed the python‑stub bug** (old `(Get-Command python).Source` resolved to the WindowsApps stub → every restart silently failed) via `Resolve-Python`; added timestamped `watchdog.log`, N‑consecutive‑fail threshold, post‑restart re‑probe, and a `-Once` self‑check. Verified: `-Once` resolves the real Python312 + detects the live server. |
 | STB‑2 | Persist/resume training & recording across server restart | ⬜ | Job Object kills them on restart (by design today). |
 | STB‑3 | Error recovery + surfacing in background loops (no silent `except: pass`) | 🟧 | A dead loop is invisible except via `/api/health`. |
 | STB‑4 | Back up generated media/uploads (only the DB is snapshotted today) | ⬜ | |

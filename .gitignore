@@ -53,3 +53,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# watchdog runtime log
+watchdog.log
