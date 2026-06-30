@@ -80,8 +80,8 @@ auto‑narration loop, click‑event capture, wire the Live page directly to `ac
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | DOC‑1 | Update the six source‑of‑truth files **every** session | 🟦 | Permanent rule (`WORKFLOW.md`). |
-| DOC‑2 | Refresh `README.md` / `SETUP.md` for current state | ⬜ | |
-| DOC‑3 | Document (or vendor) the external training pipeline | ⬜ | `C:\AI\training` scripts. |
+| DOC‑2 | Refresh `README.md` / `SETUP.md` for current state | ✅ | M65. README highlights updated: chat DeepThink/Web Search/⏹ mic, and the new **AI Screen Vision (Live)** entry, with doc links. |
+| DOC‑3 | Document (or vendor) the external training pipeline | ✅ | M65. `docs/training-pipeline.md` — full map of `C:\AI\training` (learn.ps1/run_all.ps1/train_lora.py/harvest_chats.py/Modelfile), data flow, how the Control Center integrates, requirements, and the OUT‑2 verification boundary. |
 | DOC‑E | `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `docs/*`, OpenAPI export | ✅ | M‑D. |
 
 ## P1 — Chat interface improvements (CHAT · owner request)

@@ -11,8 +11,10 @@ own hardware.
 
 ## ✨ Highlights
 - **AI Chat** — projects, file upload (PDF/DOCX/TXT/code/images+OCR) with previews, **RAG with
-  cited sources**, model comparison, voice in/out (Piper), Markdown rendering, live preview,
-  export (TXT/MD/JSON/PDF), generation **speed (tok/s)**, and 👍→training.
+  cited sources**, **DeepThink** (step‑by‑step reasoning) + **Web Search** (live DuckDuckGo results
+  with citations, opt‑in) toggles, model comparison, voice in/out (Piper, with an explicit **⏹ Stop**
+  mic control), Markdown rendering, live preview, export (TXT/MD/JSON/PDF), generation
+  **speed (tok/s)**, and 👍→training. _(spec: `docs/chat-deepthink-websearch.md`)_
 - **Agent Mode (v2)** — redesigned page: animated **Nova avatar**, real-time thinking log, a
   categorized example side panel, Send button + Enter-to-send. Autonomous ReAct loop with tools
   (KB search, run command, **read/write files**, **browse the web**, video, notify, speak, schedule),
@@ -26,6 +28,10 @@ own hardware.
 - **Screen Studio** — record the screen to MP4 (native mss + ffmpeg), read it (Windows OCR or
   qwen2.5‑VL vision), understand it in natural language, play recordings back in the dashboard.
   Wired to the **Agent** (`see_screen`/`read_screen`/`screenshot`), Automation, and the KB.
+- **AI Screen Vision (Live)** — a real‑time `#/live` page: live screen stream (throttled MJPEG),
+  live cursor overlay, focused‑window context, and on‑demand "describe what's on screen" (VLM) —
+  so the AI can see exactly what you see. **Privacy‑first:** every capture is opt‑in, local‑only,
+  non‑persistent, off by default. _(design: `PROJECT_PLAN.md` Phase 7)_
 - **Knowledge Base (RAG)** — local embeddings (`nomic-embed-text`) → SQLite vector store → cosine
   retrieval, drag‑drop indexing, folder auto‑index automation.
 - **Training Studio + Learning** — one‑click LoRA retrain of `nova-local`, live progress, dataset

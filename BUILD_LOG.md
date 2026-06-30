@@ -777,3 +777,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   toggles + ddgs dep + Screen Vision pointers + the "pin new deps in requirements.txt AND .in, verify
   with ci_local.py" rule) so future sessions see it automatically.
 - **Verified:** quality gate green (docs-only).
+
+## M65 — DOC-2 + DOC-3: README refresh + training-pipeline doc (2026-06-30)  [P2 Docs]
+
+- **DOC-3:** `docs/training-pipeline.md` documents the external `C:\AI	raining` LoRA pipeline
+  (learn.ps1, run_all.ps1, train_lora.py, harvest_chats.py, make_dataset.py, Modelfile): roles, data
+  flow diagram, base/output models, how the Control Center orchestrates + parses [PROGRESS], config
+  paths, requirements, and the honest OUT-2 verification boundary (orchestration verified; fine-tune
+  quality is owner-run).
+- **DOC-2:** README highlights refreshed — chat now lists DeepThink + Web Search + the ⏹ Stop mic;
+  added an "AI Screen Vision (Live)" highlight; linked the new docs.
+- **Verified:** quality gate green (docs-only). P2 Docs now complete (DOC-1 ongoing rule, DOC-2/3 ✅).
