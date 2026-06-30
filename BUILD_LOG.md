@@ -397,3 +397,26 @@ Global `beforeunload` guard (in `shell.js boot`, so it applies to **every** page
   only prompt after the user has interacted with the page — both are browser security rules.
 - _Verified_ with Playwright: handler cancels the event (`defaultPrevented=true`) and a native
   `beforeunload` dialog fires on close. Gate green (pytest 24, live 42/42).
+
+## M41 — Open WebUI upgraded to v0.10.1
+
+Reviewed the 0.10.1 source, updated our integration for its one breaking change, upgraded the
+running container, and verified everything — custom Nova features preserved, suite 42/42.
+
+- **Breaking change found:** the OWUI `config` table was reshaped from a single-row JSON blob
+  (`id, data`) to **per-key rows** (`key, value`) — migration `3ff2c63645b8_reshape_config_to_per_key_rows`.
+  The `tool` and `model` tables are unchanged.
+- **Integration made schema-agnostic** (`nova/services/owui.py`): `OWUI_LIST` and `OWUI_APPLY` now
+  detect the live `config` shape and read/write either the legacy blob or the new per-key rows
+  (`code_interpreter.enable` / `code_execution.enable`). Works before *and* after the upgrade.
+- **Upgrade performed** (standard, recoverable Docker procedure):
+  1. Backed up `webui.db` → `data/owui-backup/webui-<ts>.db`.
+  2. `docker pull ghcr.io/open-webui/open-webui:v0.10.1` (old `:main` image kept for rollback).
+  3. Recreated the container reusing the **same named volume** `open-webui` + Desktop bind mount,
+     same port (3000→8080) + restart policy. OWUI ran its own migrations (config data preserved).
+- **Verified:** version `0.10.1`; custom **tools** (subprocess, windows_system_control) and **models**
+  (smart-tools, tools-assistant, hasher) survived; config flags preserved + migrated; our `/api/owui`
+  read path + `/api/owui/apply-recommended` write path both work on the new per-key schema; live
+  suite **42/42**, gate green (pyflakes + node + pytest 24).
+- **Rollback path** (if ever needed): recreate container from the retained `:main` image + restore
+  the `webui.db` backup.
