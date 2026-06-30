@@ -87,6 +87,8 @@ def init_db():
         jid TEXT, name TEXT, kind TEXT, status TEXT, started REAL, ended REAL, exit_code INTEGER, source TEXT);
     CREATE TABLE IF NOT EXISTS memory (id INTEGER PRIMARY KEY AUTOINCREMENT,
         ts REAL, kind TEXT DEFAULT 'fact', text TEXT, tags TEXT, source TEXT, pinned INTEGER DEFAULT 0);
+    CREATE TABLE IF NOT EXISTS quality_runs (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts REAL, suite TEXT, score REAL, total REAL, pct REAL, detail TEXT);
     """)
     # migrate older chat tables to the richer schema
     chat_cols = [r[1] for r in c.execute("PRAGMA table_info(chat)")]

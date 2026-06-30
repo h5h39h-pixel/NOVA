@@ -1362,3 +1362,17 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
     "act when absent" checkbox.
   - Tests: new `test_screen_if_region_and_absent` (present/absent/region passthrough + validation);
     updated `test_screen_if_trigger` for the new lambda signature + "no trigger" wording. Gate ✅.
+
+### M105g — IDEA-6 quality dashboard
+- **IDEA-6:** track scored eval/health results over time to catch regressions.
+  - `nova/core/db.py`: `quality_runs` table.
+  - `nova/services/quality.py`: `record(suite,score,total)`, `history`, `summary` (latest + delta vs
+    previous per suite), `health_snapshot()` (cheap composite: services up + no runtime errors + KB
+    indexed — no heavy model calls, safe to schedule).
+  - `nova/api/quality.py`: `GET /api/quality` (history+summary), `POST /api/quality` (record),
+    `POST /api/quality/snapshot`.
+  - `nova/services/schedules.py`: `quality_check` action (periodic snapshot).
+  - `scripts/agent_eval.py`: `--record` flag feeds the trend (in-process; other evals can POST).
+  - Diagnostics page: "📈 Quality Trend" card (per-suite latest % with ▲/▼ delta + snapshot button).
+  - Test `test_quality_record_and_summary` + live roundtrip (snapshot 4/5 — one service genuinely down;
+    agent record 100%; summary shows both suites). Gate ✅ · live 42/42 ✅.

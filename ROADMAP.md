@@ -127,8 +127,9 @@ Original ideas that extend Nova's vision without breaking the core principle. Tr
 4. **Hands‑free voice conversation** — speak → STT → answer → TTS loop (building blocks already exist).
 5. ✅ **Folder Q&A** (M105) — point at a folder → auto‑index (recursive, skips secrets) → chat over it
    with citations (RAG over a directory). `/api/kb/ingest-folder` + Knowledge‑page input.
-6. **Quality dashboard** — schedule the eval batteries (agent/RAG/gen) and chart quality over time to
-   catch regressions after model/dep updates.
+6. ✅ **Quality dashboard** (M105) — `/api/quality` records scored eval/health runs; the Diagnostics
+   "Quality Trend" card charts latest % + delta per suite; `quality_check` schedule action + eval
+   `--record` feed it. Catches regressions after model/dep/prompt updates.
 7. ✅ **Region watch → act** (M105) — pin a screen `region` and/or trigger on text *absence*; extends
    the `screen_if` automation (region + "act when absent" in the builder).
 8. ✅ **Local persistent memory** (M105) — durable user facts/preferences recalled across sessions;

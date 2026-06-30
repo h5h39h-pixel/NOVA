@@ -140,6 +140,7 @@ from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
 from nova.api.insights import router as insights_router
 from nova.api.memory import router as memory_router
+from nova.api.quality import router as quality_router
 # tags group the routes in the auto-generated API docs at /docs
 app.include_router(bugs_router, tags=["bugs"])
 app.include_router(notifications_router, tags=["notifications"])
@@ -170,6 +171,7 @@ app.include_router(tts_router, tags=["media"])
 app.include_router(backup_router, tags=["backup"])
 app.include_router(insights_router, tags=["insights"])
 app.include_router(memory_router, tags=["memory"])
+app.include_router(quality_router, tags=["quality"])
 
 # auth gate (token_ok) + AUTH_EXEMPT live in nova/services/settings.py; used by the middleware below
 from nova.services.settings import token_ok, AUTH_EXEMPT

@@ -83,6 +83,11 @@ def run_action(action, params, name="task"):
                 if kb_ingest_file(f) > 0: added += 1
         add_notification("success", "KB indexed", f"{added} new files from {folder.name}")
         return f"indexed {added} new files from {folder}"
+    if action == "quality_check":
+        # IDEA-6: record a lightweight health/quality snapshot (schedule e.g. hourly to chart a trend).
+        from nova.services.quality import health_snapshot
+        r = health_snapshot()
+        return f"quality_check: {r['score']}/{r['total']} ({r['pct']}%)"
     if action == "screen_memory":
         # IDEA-2: periodic local screen memory (opt-in). Schedule e.g. every 300s to build a searchable
         # log of what was on screen. Gated by screen_memory_enabled; nothing happens if it's off.

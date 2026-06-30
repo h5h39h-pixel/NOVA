@@ -128,6 +128,20 @@ def test_screen_memory_gate(monkeypatch, tmpdb):
     assert any("main.py" in h["text"] for h in KB.kb_search("which file was open"))
 
 
+def test_quality_record_and_summary(tmpdb):
+    """IDEA-6: scored runs persist; summary reports latest + delta vs the previous run."""
+    from nova.services import quality as Q
+    Q.record("agent", 8, 10, "battery v1")          # 80%
+    Q.record("agent", 9, 10, "battery v2")          # 90%
+    Q.record("rag", 11, 12)                          # 91.7%
+    hist = Q.history("agent")
+    assert len(hist) == 2 and hist[0]["pct"] == 90.0   # newest first
+    summ = {s["suite"]: s for s in Q.summary()}
+    assert summ["agent"]["latest"] == 90.0 and summ["agent"]["delta"] == 10.0
+    assert summ["rag"]["latest"] == 91.7 and summ["rag"]["delta"] is None  # only one run
+    assert Q.record("x", 0, 0)["pct"] == 0.0          # no divide-by-zero
+
+
 def test_screen_if_region_and_absent(monkeypatch, tmpdb):
     """IDEA-7: screen_if supports a pinned region + an inverted (absent) trigger."""
     import nova.services.schedules as SCH

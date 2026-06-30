@@ -203,7 +203,11 @@ function Diagnostics(){
    ${card('🩺 System Self-Test <span class="tag" id="dgsum"></span>',`
      <p class="muted" style="font-size:12.5px">Runs a full health check across every subsystem — services, database, embeddings, GPU, safety guards, and more.</p>
      <button class="btn p mt" id="dgrun">▶ Run self-test</button>
-     <div id="dglist" class="mt"></div>`)}`;
+     <div id="dglist" class="mt"></div>`)}
+   ${card('📈 Quality Trend <span class="tag" id="dgqtag"></span>',`
+     <p class="muted" style="font-size:12.5px">Scored eval/health runs over time — watch for regressions after model, dependency, or prompt changes. Eval scripts can POST results to <code>/api/quality</code>; schedule the <code>quality_check</code> automation for periodic health snapshots.</p>
+     <button class="btn p mt" id="dgqsnap">📸 Take a health snapshot now</button>
+     <div id="dgquality" class="mt"></div>`)}`;
   async function run(){const el=$('#dglist');if(!el)return;el.innerHTML='<span class="spin"></span> running checks…';
     const r=await api('/selftest');const s=$('#dgsum');if(s){s.className='tag '+(r.ok?'on':'err');s.textContent=`${r.passed}/${r.total} passed`}
     el.innerHTML=r.checks.map(c=>`<div class="row"><span style="font-size:16px">${c.ok?'✅':'❌'}</span><span class="name">${esc(c.name)}</span><span class="muted" style="font-size:11.5px">${esc(c.detail)}</span></div>`).join('')}
@@ -214,9 +218,16 @@ function Diagnostics(){
       ['Errors logged',h.errors_total]].map(([k,v])=>`<div class="metarow"><span class="mut">${k}</span><span>${v}</span></div>`).join('')}
   async function loadErrors(){const el=$('#dgerrors');if(!el)return;const r=await api('/errors');const tot=$('#dgerrtot');if(tot)tot.textContent=(r.total||0)+' total';
     el.innerHTML=(r.errors&&r.errors.length)?r.errors.map(e=>`<div class="row"><span class="tag err">${e.count}×</span><span class="name" title="${esc(e.signature)}">${esc(e.signature)}</span><span class="muted" style="font-size:11px">${esc(e.where||'')}</span></div>`).join(''):'<div class="empty">No errors recorded 🎉</div>'}
-  function mount(){run();loadHealth();loadErrors();$('#dgrun').onclick=run;
+  async function loadQuality(){const el=$('#dgquality');if(!el)return;const r=await api('/quality');
+    const sum=(r&&r.summary)||[];const tag=$('#dgqtag');if(tag)tag.textContent=sum.length?sum.length+' suites':'no runs yet';
+    if(!sum.length){el.innerHTML='<div class="empty">no quality runs yet — take a snapshot or run an eval script</div>';return}
+    el.innerHTML=sum.map(s=>{const d=s.delta;const arrow=d==null?'':(d>0?`<span style="color:var(--ok)">▲ +${d}</span>`:(d<0?`<span style="color:var(--err)">▼ ${d}</span>`:'<span class="mut">→ 0</span>'));
+      return `<div class="metarow"><span>${esc(s.suite)}</span><span><b>${s.latest}%</b> ${arrow}</span></div>`}).join('')}
+  function mount(){run();loadHealth();loadErrors();loadQuality();$('#dgrun').onclick=run;
     const hv=setInterval(loadHealth,5000);
     const ce=$('#dgerrclear');if(ce)ce.onclick=()=>del('/errors').then(loadErrors);
+    const qs=$('#dgqsnap');if(qs)qs.onclick=async()=>{qs.disabled=true;const r=await post('/quality/snapshot',{});
+      toast('info','Health snapshot',r&&r.run?`${r.run.score}/${r.run.total} (${r.run.pct}%)`:'recorded');qs.disabled=false;loadQuality()};
     return [()=>clearInterval(hv)]}
   return {html,mount};
 }

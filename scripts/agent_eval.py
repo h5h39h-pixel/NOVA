@@ -131,6 +131,7 @@ def main():
     ap.add_argument("--model", default="qwen2.5:14b")
     ap.add_argument("--steps", type=int, default=6)
     ap.add_argument("--write-doc", action="store_true")
+    ap.add_argument("--record", action="store_true", help="record the score to the quality dashboard (IDEA-6)")
     args = ap.parse_args()
 
     _prep()
@@ -148,6 +149,11 @@ def main():
     passed = sum(1 for r in results if r["ok"])
     rate = round(100 * passed / len(results)) if results else 0
     print(f"\n=== BASELINE: {passed}/{len(results)} ({rate}%) goals achieved with {args.model} ===")
+
+    if args.record:                                   # IDEA-6: feed the quality trend
+        from nova.services.quality import record
+        record("agent", passed, len(results), f"model={args.model}")
+        print("recorded to quality dashboard (suite=agent)")
 
     if args.write_doc:
         ts = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M %Z")
