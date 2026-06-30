@@ -1253,3 +1253,17 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   its <script> tag — confirmed zero external references first.
 - **Verified:** gate green; restarted; routes render (dashboard/terminal/workspace/automation/knowledge/
   brain), #/chat→#/workspace redirect works, zero console errors. frontend-structure.md updated.
+
+## M104 — launch-readiness DEEP test (zero errors) + media-polling fix (2026-06-30)  [Verify/Fix]
+
+- **Real, deep test of the whole project** (not smoke): gate ✅ · live 42/42 ✅ · self-test 13/13 ✅ ·
+  every API endpoint 200 ✅ · runtime /api/errors = 0 ✅ · 22 UI routes zero console errors ✅ · agent
+  9/9 ✅ · RAG 11/12 ✅ · image-gen ✅ (1024² in 7s) · nova-local 4/4 ✅ · GUI control (UIA) ✅ ·
+  concurrency/WAL ✅ · **STT round-trip ✅** (TTS→wav→/api/stt transcribed back exactly) ·
+  screen-understanding (capture+OCR+VLM) ✅. Full table in docs/honest-state.md.
+- **Error found & FIXED:** media generation polled the file URL → benign 404 console errors during
+  generation. Rewrote `showMedia` to poll JOB STATUS (`/api/processes`) and load the file once done →
+  **zero console errors during generation** (verified live). (The `/api/analytics` 404 was a wrong probe
+  path, not a real route — real analytics routes /api/brain,habits,achievements all 200.)
+- **Conclusion:** zero errors across the project. Honest remaining: AVL-1 autonomous game-play
+  (best-effort), coverage 49%, broader batteries unmeasured — none broken.

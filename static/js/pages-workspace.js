@@ -162,9 +162,9 @@ function Workspace(){
     $('#tg-shot').onclick = async () => { clearEmpty(); addMsg('user', AR?'📸 التقط الشاشة':'📸 Capture screen');
       const r = await post('/screen/shot'); if(r&&r.file) showMedia(r.file, AR?'لقطة الشاشة':'screenshot','shot'); else toast('error','Capture failed',''); };
     $('#tg-img').onclick = async () => { const p = prompt(AR?'صف الصورة المطلوبة:':'Describe the image to generate:'); if(!p) return;
-      addMsg('user', '🎨 '+p); const r = await post('/toolkit/image',{prompt:p,model:'sdxl'}); if(r&&r.file) showMedia(r.file, p, 'img'); else toast('error','Image gen failed',''); };
+      addMsg('user', '🎨 '+p); const r = await post('/toolkit/image',{prompt:p,model:'sdxl'}); if(r&&r.file) showMedia(r.file, p, 'img', r.job); else toast('error','Image gen failed',''); };
     $('#tg-vid').onclick = async () => { const p = prompt(AR?'صف الفيديو المطلوب:':'Describe the video to generate:'); if(!p) return;
-      addMsg('user', '🎬 '+p); const r = await post('/toolkit/video',{prompt:p}); if(r&&r.file){ showMedia(r.file, p, 'video'); toast('info',AR?'توليد فيديو (قد يستغرق دقائق)':'Generating video (may take minutes)',''); } };
+      addMsg('user', '🎬 '+p); const r = await post('/toolkit/video',{prompt:p}); if(r&&r.file){ showMedia(r.file, p, 'video', r.job); toast('info',AR?'توليد فيديو (قد يستغرق دقائق)':'Generating video (may take minutes)',''); } };
     $('#wsfile').onchange = e => { [...e.target.files].forEach(uploadFile); e.target.value=''; };
     thread.addEventListener('dragover', e=>{e.preventDefault();thread.classList.add('over');});
     thread.addEventListener('dragleave', ()=>thread.classList.remove('over'));
@@ -173,20 +173,26 @@ function Workspace(){
     // ---- busy state ----
     function setBusy(b){ busy=b; $('#wssend').style.display=b?'none':''; $('#wsstop').style.display=(b&&mode==='agent')?'':'none'; }
 
-    // ---- media: render a generated/captured image or video (polls until the file is ready) ----
-    function showMedia(file, label, kind){
+    // ---- media: render a generated/captured image or video. If a jobId is given, wait on JOB STATUS
+    //      (no 404 polling); only load the file once the job is done. ----
+    function renderMedia(m, file, label, kind){
+      if(kind==='video'){ m.span.innerHTML=`<video class="genvid" controls src="${file}?t=${Date.now()}"></video><div class="muted" style="font-size:11px">${esc(label)}</div>`; }
+      else { m.span.innerHTML=`<a href="${file}" target="_blank"><img class="genimg" src="${file}?t=${Date.now()}"></a><div class="muted" style="font-size:11px">${esc(label)}</div>`; }
+      scroll();
+    }
+    async function showMedia(file, label, kind, jobId){
       const m = addMsg('ai',''); m.span.innerHTML = `<div class="muted">${kind==='video'?'🎬':kind==='shot'?'📸':'🎨'} ${esc(label)} — ${AR?'جارٍ التحضير…':'generating…'}</div>`;
-      let tries=0; const max = kind==='video'?160:50;
-      (function load(){
-        if(kind==='video'){ const vid=document.createElement('video'); vid.controls=true; vid.className='genvid';
-          vid.onloadeddata=()=>{ m.span.innerHTML=''; m.span.appendChild(vid); const c=document.createElement('div'); c.className='muted'; c.style.fontSize='11px'; c.textContent=label; m.span.appendChild(c); scroll(); };
-          vid.onerror=()=>{ if(tries++<max) setTimeout(load,2000); else m.span.innerHTML='<span class="muted">⚠️ '+(AR?'انتهى وقت التوليد':'timed out')+'</span>'; };
-          vid.src=file+'?t='+Date.now(); return; }
-        const img=new Image();
-        img.onload=()=>{ m.span.innerHTML=`<a href="${file}" target="_blank"><img class="genimg" src="${file}"></a><div class="muted" style="font-size:11px">${esc(label)}</div>`; scroll(); };
-        img.onerror=()=>{ if(tries++<max) setTimeout(load,1200); else m.span.innerHTML='<span class="muted">⚠️ '+(AR?'انتهى وقت التوليد':'timed out / failed')+'</span>'; };
-        img.src=file+'?t='+Date.now();
-      })();
+      if(!jobId){ renderMedia(m, file, label, kind); return; }   // screenshot: instant
+      const max = kind==='video'?180:60;
+      for(let i=0;i<max;i++){
+        await new Promise(r=>setTimeout(r,1000));
+        let done=false, ok=true;
+        try{ const procs=await api('/processes'); const j=(procs||[]).find(p=>p.id===jobId);
+          if(j && (j.status==='done'||j.status==='error'||j.status==='stopped'||j.exit_code!=null)){ done=true; ok=(j.exit_code===0||j.status==='done'); } }catch(e){}
+        if(done){ if(ok){ await new Promise(r=>setTimeout(r,400)); renderMedia(m, file, label, kind); }
+          else m.span.innerHTML='<span class="muted">⚠️ '+(AR?'فشل التوليد':'generation failed')+'</span>'; return; }
+      }
+      m.span.innerHTML='<span class="muted">⚠️ '+(AR?'انتهى الوقت':'timed out')+'</span>';
     }
     async function tryMediaCommand(v){
       const s=v.trim();
@@ -202,11 +208,11 @@ function Workspace(){
       let m=s.match(/^(?:generate|create|make|draw|render|اصنع|ارسم|ولّ?د)\s+(?:an?\s+|me\s+|صورة\s+)?(?:image|picture|photo|drawing|art|صورة|رسم)(?:\s+of)?[:\s]+(.+)/i);
       if(m){ addMsg('user', v);
         const r=await post('/toolkit/image',{prompt:m[1],model:'sdxl'});
-        if(r&&r.file) showMedia(r.file, m[1], 'img'); else toast('error','Image gen failed',''); return true; }
+        if(r&&r.file) showMedia(r.file, m[1], 'img', r.job); else toast('error','Image gen failed',''); return true; }
       // video generation
       m=s.match(/^(?:generate|create|make|ولّ?د|اصنع)\s+(?:an?\s+|me\s+)?(?:video|clip|animation|movie|فيديو|مقطع)(?:\s+of)?[:\s]+(.+)/i);
       if(m){ addMsg('user', v); const r=await post('/toolkit/video',{prompt:m[1]});
-        if(r&&r.file) showMedia(r.file, m[1], 'video'); else { addMsg('ai', AR?'🎬 بدأ توليد الفيديو في الخلفية — سيظهر في الملفات.':'🎬 video generation started in the background — it will appear in /files.'); }
+        if(r&&r.file) showMedia(r.file, m[1], 'video', r.job); else { addMsg('ai', AR?'🎬 بدأ توليد الفيديو في الخلفية — سيظهر في الملفات.':'🎬 video generation started in the background — it will appear in /files.'); }
         toast('info', AR?'توليد فيديو':'Generating video', m[1].slice(0,40)); return true; }
       return false;
     }

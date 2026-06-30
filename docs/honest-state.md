@@ -128,3 +128,32 @@ edit+save to disk.
 
 **Permanent rule (now enforced, see WORKFLOW.md):** every discovery/error/edge case is written here +
 into TASKS.md and then fixed or marked 🟧 with the reason.
+
+## 🚀 Launch‑readiness DEEP test report (2026‑06‑30) — real tests, not smoke
+Ran every feature for real (live models, real files, real screen). **Result: zero errors.**
+
+| Area | Test | Result |
+|---|---|---|
+| Quality gate | pyflakes + node --check + pytest | ✅ PASS |
+| Live suite | `run_tests.py` (endpoints, round‑trips, WS) | ✅ 42/42 |
+| Self‑test | `/api/selftest` (13 subsystem checks) | ✅ 13/13 |
+| All API endpoints | every GET + key POSTs | ✅ all 200 (the earlier `/api/analytics` 404 was a wrong probe path; real routes `/api/brain,habits,achievements,copilot,briefing` all 200) |
+| Runtime error log | `/api/errors` after a full run | ✅ 0 errors |
+| Routes (UI) | 22 routes render in headless Chromium | ✅ all render, zero console errors |
+| Agent (real) | `agent_eval.py` 9 goals, live model | ✅ 9/9 |
+| RAG (real) | `rag_eval.py` 12 overlapping docs | ✅ 11/12 (92%, 1 honest miss) |
+| Image gen (real) | `gen_eval.py` SDXL via ComfyUI | ✅ valid 1024² in ~7s |
+| Trained model | `nova_eval.py` identity/GPU/domain/Arabic | ✅ 4/4 |
+| GUI control | `gui_eval.py` real native control via UIA | ✅ text landed (verified) |
+| Concurrency | `load_test.py` 48 reads + 48 writes | ✅ no DB locks (WAL) |
+| **STT (new test)** | TTS→wav→`/api/stt` round‑trip | ✅ transcribed back exactly ("Hello World, this is a speech recognition test.") |
+| Screen understanding | capture + OCR + VLM describe live desktop | ✅ correct description |
+| Media in chat | 📸 capture + image‑gen render inline | ✅ render, **zero console errors** (fixed) |
+
+**Errors found & FIXED this pass:**
+- **MED‑1 polling 404s:** image/video generation previously polled the file URL (404 retries until ready
+  = console errors). Rewrote `showMedia` to poll **job status** (`/api/processes`) and load the file once
+  the job is done → **zero console errors during generation** (verified).
+- Stale `#/chat` dashboard link → `#/workspace`; removed dead `Chat()`/`pages-agent.js` (M103).
+**Still honest‑fragile (unchanged, tracked):** AVL‑1 autonomous game‑play (best‑effort); coverage 49%;
+broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is broken.

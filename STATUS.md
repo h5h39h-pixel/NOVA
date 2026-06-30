@@ -12,6 +12,12 @@ _Last updated: 2026-06-30_
 
 ---
 
+## 🚀 Launch‑readiness deep test (2026‑06‑30) — ZERO errors
+Real (non‑smoke) tests of every feature: gate ✅ · live 42/42 ✅ · self‑test 13/13 ✅ · all endpoints 200 ✅
+· runtime errors 0 ✅ · 22 routes zero console errors ✅ · agent 9/9 ✅ · RAG 11/12 ✅ · image‑gen ✅ ·
+nova‑local 4/4 ✅ · GUI control ✅ · concurrency ✅ · **STT round‑trip ✅** · screen‑understanding ✅ ·
+media‑in‑chat zero console errors ✅ (fixed the 404 polling). Full table: `docs/honest-state.md`.
+
 ## Where we are right now (honest)
 The original roadmap (P0→P3 + Phases 7/8) is **built and smoke‑verified**, and the architecture / security
 baseline / test scaffolding / feature breadth are genuinely strong. **But** a candid self‑audit
