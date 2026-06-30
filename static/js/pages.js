@@ -565,6 +565,64 @@ function ScreenStudio(){
   return {html,mount};
 }
 
+/* ---- AI Screen Vision (Phase 7): live stream + mouse/window tracking + on-demand VLM ---- */
+function LiveVision(){
+  const AR=State.lang==='ar';
+  const html=`<div class="livevision">
+    <div class="card"><div class="hd"><h3>👁️ ${t('nav_live')}</h3><span class="pill" id="lvstatus">off</span></div>
+      <div class="bd">
+        <p class="muted">🔒 ${AR?'كل شيء هنا اختياري ومحلي ولا يُحفظ. أوقفه في أي وقت.':'Privacy: everything here is opt-in, local-only, and never saved. Toggle off any time.'}</p>
+        <div class="lvtoggles">
+          <label class="lvsw"><input type="checkbox" id="lv_enabled"> <span>${AR?'تفعيل الرؤية الحيّة (بث الشاشة)':'Enable screen vision (live stream)'}</span></label>
+          <label class="lvsw"><input type="checkbox" id="lv_mouse"> <span>${AR?'تتبّع مؤشر الفأرة':'Track mouse position'}</span></label>
+          <label class="lvsw"><input type="checkbox" id="lv_kbd"> <span>${AR?'تتبّع النافذة النشطة (سياق)':'Track focused window (context)'}</span></label>
+          <label class="lvfps">${AR?'إطارات/ث':'FPS'} <input type="range" id="lv_fps" min="1" max="15" value="4"> <b id="lv_fpsv">4</b></label>
+        </div>
+      </div></div>
+    <div class="card"><div class="hd"><h3>${AR?'الشاشة الحيّة':'Live screen'}</h3>
+      <span class="muted" id="lv_mousepos"></span><span class="spacer"></span>
+      <button class="btn sm p" id="lv_describe">🧠 ${AR?'صف ما على الشاشة':"Describe what's on screen"}</button></div>
+      <div class="bd">
+        <div class="lvstage"><img id="lv_img" alt="${AR?'فعّل الرؤية بالأعلى':'enable vision above to see the live screen'}"><div id="lv_cursor" class="lvcursor" hidden></div></div>
+        <div id="lv_ctx" class="muted" style="margin-top:8px"></div>
+        <div id="lv_desc" class="lvdesc"></div>
+      </div></div>
+  </div>`;
+  function mount(){
+    let mouseTimer=null, ctxTimer=null;
+    async function refresh(){
+      let st; try{st=await api('/vision/state')}catch(e){return}
+      $('#lv_enabled').checked=st.enabled; $('#lv_mouse').checked=st.track_mouse; $('#lv_kbd').checked=st.track_keyboard;
+      $('#lv_fps').value=st.fps; $('#lv_fpsv').textContent=st.fps;
+      const badge=$('#lvstatus'); badge.textContent=st.enabled?'LIVE':'off'; badge.classList.toggle('on',st.enabled);
+      const img=$('#lv_img');
+      if(st.enabled){img.src='/api/vision/stream?t='+Date.now()} else {img.removeAttribute('src')}
+      clearInterval(mouseTimer); mouseTimer=null;
+      if(st.enabled&&st.track_mouse){mouseTimer=setInterval(pollMouse,200)} else {$('#lv_cursor').hidden=true; $('#lv_mousepos').textContent=''}
+      clearInterval(ctxTimer); ctxTimer=null;
+      if(st.enabled&&st.track_keyboard){ctxTimer=setInterval(pollCtx,1500); pollCtx()} else {$('#lv_ctx').textContent=''}
+    }
+    async function pollMouse(){try{const r=await api('/vision/mouse'); if(r&&r.mouse){
+      $('#lv_mousepos').textContent='🖱 '+r.mouse.x+', '+r.mouse.y;
+      const img=$('#lv_img'), cur=$('#lv_cursor');
+      if(img.clientWidth&&(screen.width||0)){cur.hidden=false;
+        cur.style.left=(r.mouse.x*img.clientWidth/screen.width)+'px';
+        cur.style.top=(r.mouse.y*img.clientHeight/screen.height)+'px'}}}catch(e){}}
+    async function pollCtx(){try{const r=await api('/vision/context'); if(r&&r.window)$('#lv_ctx').textContent='🪟 '+(r.window.title||'(no title)')}catch(e){}}
+    function save(patch){post('/settings',patch).then(s=>{State.settings=s;refresh()})}
+    $('#lv_enabled').onchange=e=>save({screen_vision_enabled:e.target.checked});
+    $('#lv_mouse').onchange=e=>save({track_mouse:e.target.checked});
+    $('#lv_kbd').onchange=e=>save({track_keyboard:e.target.checked});
+    $('#lv_fps').oninput=e=>{$('#lv_fpsv').textContent=e.target.value};
+    $('#lv_fps').onchange=e=>save({vision_fps:+e.target.value});
+    $('#lv_describe').onclick=async()=>{const d=$('#lv_desc'); d.textContent='⏳ '+(AR?'ينظر…':'looking…');
+      const r=await post('/vision/describe',{}); d.innerHTML=(r&&r.description)?mdRender(r.description):('error: '+((r&&r.error)||'vision off'))};
+    refresh();
+    return ()=>{clearInterval(mouseTimer);clearInterval(ctxTimer);const img=$('#lv_img');if(img)img.removeAttribute('src')};
+  }
+  return {html,mount};
+}
+
 function Bugs(){
   const html=`<div class="grid g2" style="align-items:start">
     ${card('🐞 Report a Bug',`

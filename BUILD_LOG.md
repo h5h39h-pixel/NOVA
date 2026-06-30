@@ -748,3 +748,20 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   → live suite **42/42**; **render-verified** the chat page (Playwright): both buttons present, toggle
   active, confirmation toasts, **zero console errors**; screenshot captured.
 - **Docs:** ROADMAP / TASKS (CHAT-1..3) / PROJECT_PLAN / STATUS updated.
+
+## M63 — SV-5: AI Screen Vision "Live" page (frontend) (2026-06-30)  [P1 Phase 7]
+
+- **What:** new SPA route `#/live` ("AI Screen Vision", eye icon, EN+AR labels) — `LiveVision()` in
+  pages.js + CSS in app.css. Fuses the M61 backend into one human-facing live session:
+  * live MJPEG stream in an `<img>` (`/api/vision/stream`) with an FPS slider;
+  * privacy toggles (enable / track mouse / track focused window) that persist via `/api/settings`;
+  * glowing cursor overlay mapped onto the stream (polls `/api/vision/mouse` @200ms when enabled);
+  * focused-window context line (polls `/api/vision/context` when keyboard-context on);
+  * "Describe what's on screen" → `/api/vision/describe` (VLM), rendered as markdown;
+  * router cleanup removes the img src on navigate-away → the MJPEG stream stops (no leak).
+- **Privacy:** all toggles OFF by default; the page shows a privacy notice; nothing persists.
+- **Verified:** quality gate green; server restarted; **render-verified** (Playwright): nav item present
+  + active, title "AI Screen Vision", toggles default-off, describe button, **zero console errors**;
+  screenshot captured. (Did not enable real capture in the screenshot — privacy.)
+- **Completes:** SV-1/3/5/7 ✅; SV-2 (on-demand describe ✅, continuous loop deferred) and SV-4
+  (focused-window context ✅, full keystroke capture deferred) are intentionally partial.

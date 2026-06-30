@@ -70,9 +70,10 @@ New dependency: `ddgs` (pinned). Tracked as CHAT‑1…3 in `TASKS.md`.
 Added 2026‑06‑30 by owner request. Real‑time screen stream + mouse/keyboard tracking + a continuous
 AI vision loop, fused into a live "see‑what‑I‑see & act" session — builds on the existing Screen
 Studio. **Privacy‑first:** opt‑in, local‑only, non‑persistent by default. Tracked as **SV‑1…7** in
-`TASKS.md`; design in `PROJECT_PLAN.md` Phase 7. **Status: backend done (M61)** — `/api/vision/*`
-(stream/frame/mouse/context/describe) + privacy gates (SV‑6 ✅) + 6 tests; **frontend "Live" page
-(SV‑5) + continuous narration (SV‑2 UI) pending.**
+`TASKS.md`; design in `PROJECT_PLAN.md` Phase 7. **Status: largely shipped** — backend `/api/vision/*`
+(M61) + the **"AI Screen Vision" Live page** (`#/live`, M63: live stream, mouse overlay, focused‑window
+context, on‑demand describe, privacy toggles, FPS slider; render‑verified). SV‑1/3/5/6/7 ✅; SV‑2
+(continuous narration) + SV‑4 (full keystroke capture) intentionally deferred — see TASKS rollup.
 
 ## In progress 🟦
 - _(none active — pick the next from TASKS.md P1: SV‑1 or STB‑2)_

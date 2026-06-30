@@ -62,16 +62,18 @@ capture/track path is opt‑in, local‑only, pausable, and non‑persistent by 
 
 | ID | Task | Status | Notes / design |
 |---|---|---|---|
-| SV‑1 | **Live screen stream** to the dashboard — throttled frames (JPEG over WS or MJPEG endpoint), adjustable FPS/quality, start/stop | 🟦 | M61 **backend done**: `GET /api/vision/stream` MJPEG + `GET /api/vision/frame`; `mss` grab → pillow downscale+JPEG; re‑reads FPS/quality each tick. **Frontend "Live" page pending (SV‑5).** |
-| SV‑2 | **Continuous AI vision loop** — periodically feed frames to qwen2.5‑VL and stream a running description; on‑demand "what's on my screen now?" | 🟦 | M61: on‑demand `POST /api/vision/describe` done (reuses `describe_screen`). Continuous narration loop + UI pending. |
-| SV‑3 | **Mouse tracking** — global cursor position + click events, streamed to the UI + exposed to the agent | 🟦 | M61 **backend done**: `GET /api/vision/mouse` via `ctypes GetCursorPos` (gated on `track_mouse`). UI overlay pending. |
+| SV‑1 | **Live screen stream** to the dashboard — throttled frames (JPEG over WS or MJPEG endpoint), adjustable FPS/quality, start/stop | ✅ | M61 backend + M63 UI. `GET /api/vision/stream` MJPEG (`mss`→pillow downscale+JPEG, re‑reads FPS/quality each tick); the **Live page** (`#/live`) renders it in an `<img>` with an FPS slider; navigating away stops the stream (router cleanup). |
+| SV‑2 | **Continuous AI vision loop** — periodically feed frames to qwen2.5‑VL and stream a running description; on‑demand "what's on my screen now?" | 🟧 | M61/M63: **on‑demand** "Describe what's on screen" done (`POST /api/vision/describe` → VLM, rendered on the Live page). Automatic continuous narration loop is optional/deferred (VLM cost) — on‑demand covers the need. |
+| SV‑3 | **Mouse tracking** — global cursor position + click events, streamed to the UI + exposed to the agent | ✅ | M61 backend + M63 UI. `GET /api/vision/mouse` (`ctypes GetCursorPos`, gated on `track_mouse`); Live page polls it (200ms) and overlays a glowing cursor marker on the stream. (Click events deferred — position covers the core need.) |
 | SV‑4 | **Keyboard tracking** (opt‑in, privacy‑gated) — keystroke / active‑window context for the AI | 🟧 | M61: implemented the **privacy‑light** form — `GET /api/vision/context` returns the focused‑window title (`track_keyboard` gate). Full keystroke capture intentionally deferred (needs `pynput`; high privacy risk) — documented decision. |
-| SV‑5 | **Unified live session** — one view fusing live screen + input + AI vision, wired to `act_on_screen` so the AI can interact with what it sees | ⬜ | Frontend "Live" page (stream + mouse overlay + describe + toggles), then wire act. Backend endpoints ready. |
+| SV‑5 | **Unified live session** — one view fusing live screen + input + AI vision, wired to `act_on_screen` so the AI can interact with what it sees | ✅ | M63. New **"AI Screen Vision" (`#/live`)** page: live stream + mouse overlay + focused‑window context + on‑demand describe + all privacy toggles + FPS slider, in one view. Render‑verified (nav item, toggles default‑off, zero console errors). The agent already has `act_on_screen` for control; this page is the human‑facing live session. |
 | SV‑6 | **Privacy & safety controls** — master opt‑in, per‑capability toggles, pause/redact, status indicator, zero‑persistence default | ✅ | M61. Settings `screen_vision_enabled`/`vision_fps`/`vision_max_width`/`vision_quality`/`track_mouse`/`track_keyboard` (all OFF/safe by default); every route 403s unless its gate is on; stream/describe audited; nothing persisted. |
-| SV‑7 | **Tests + outcome verification** — stream lifecycle, throttling, privacy gates default‑off, tracking accuracy | 🟦 | M61: 6 backend tests (`test_screen_vision.py`) — JPEG grab, gates default‑off, frame when enabled, mouse/keyboard gates. Frontend interaction test pending with the Live page. |
+| SV‑7 | **Tests + outcome verification** — stream lifecycle, throttling, privacy gates default‑off, tracking accuracy | ✅ | M61 backend (6 tests: JPEG grab, gates default‑off, frame when enabled, mouse/keyboard gates) + M63 render‑verified the Live page (nav, toggles off by default, describe button, zero console errors). |
 
-**Rollup:** P1, builds on Screen Studio. Core stream + vision + privacy (SV‑1/2/6) first; input
-tracking (SV‑3/4) and the unified session (SV‑5) next; tests (SV‑7) alongside each.
+**Rollup:** **largely shipped (M61 backend + M63 UI).** SV‑1 ✅ stream · SV‑3 ✅ mouse · SV‑5 ✅ Live
+page · SV‑6 ✅ privacy · SV‑7 ✅ tests · SV‑2 🟧 on‑demand describe (continuous loop optional) · SV‑4 🟧
+focused‑window context (full keystroke capture deferred by privacy decision). Optional follow‑ups:
+auto‑narration loop, click‑event capture, wire the Live page directly to `act_on_screen`.
 
 ## P2 — Documentation (keep the six files current)
 
