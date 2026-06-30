@@ -5,7 +5,7 @@ Personal single‑user system (not a product). Update this file on **every** wor
 
 _Last updated: 2026-06-30_
 
-**Health gate (must stay green):** `python scripts/check.py` → pyflakes + node --check + pytest (~74 hermetic + 4 live frontend)
+**Health gate (must stay green):** `python scripts/check.py` → pyflakes + node --check + pytest (~84 hermetic + 4 live frontend)
 · live suite `python run_tests.py` → 42/42 · self‑test 13/13 · local CI `python scripts/ci_local.py` · agent baseline `python scripts/agent_eval.py`.
 
 **Status legend:** ✅ DONE · 🟧 FRAGILE (works but has a known issue) · 🟦 IN PROGRESS · ⬜ TODO · 🚫 EXCLUDED (owner decision)
@@ -61,11 +61,18 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 | **Watchdog** | **Fixed (STB‑1, M55):** `watchdog.ps1` now resolves a real python (was the WindowsApps stub → restarts silently failed), logs, and uses a fail threshold. Still: a server restart kills running training/recording (Job Object) — STB‑2 will address resume. |
 | **beforeunload text** | Browser shows generic wording + only after interaction (browser limitation, not fixable). |
 
+## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62
+DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckGo via `ddgs`, cited;
+opt‑in/online), and an explicit microphone **⏹ Stop** control. Render‑verified; live suite 42/42.
+New dependency: `ddgs` (pinned). Tracked as CHAT‑1…3 in `TASKS.md`.
+
 ## 🆕 New core feature — AI Screen Vision (Phase 7, P1)
 Added 2026‑06‑30 by owner request. Real‑time screen stream + mouse/keyboard tracking + a continuous
 AI vision loop, fused into a live "see‑what‑I‑see & act" session — builds on the existing Screen
 Studio. **Privacy‑first:** opt‑in, local‑only, non‑persistent by default. Tracked as **SV‑1…7** in
-`TASKS.md`; design in `PROJECT_PLAN.md` Phase 7. Status: ⬜ TODO (not started).
+`TASKS.md`; design in `PROJECT_PLAN.md` Phase 7. **Status: backend done (M61)** — `/api/vision/*`
+(stream/frame/mouse/context/describe) + privacy gates (SV‑6 ✅) + 6 tests; **frontend "Live" page
+(SV‑5) + continuous narration (SV‑2 UI) pending.**
 
 ## In progress 🟦
 - _(none active — pick the next from TASKS.md P1: SV‑1 or STB‑2)_

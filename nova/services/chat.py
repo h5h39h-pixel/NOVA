@@ -67,19 +67,28 @@ def chat_count():
     c = db(); n = c.execute("SELECT COUNT(*) FROM chat").fetchone()[0]; c.close(); return n
 
 
-def stream_chat_send(prompt, model, cid, context="", target=None, use_rag=False):
+def stream_chat_send(prompt, model, cid, context="", target=None, use_rag=False,
+                     deepthink=False, websearch=False):
     """Run one chat turn on a background thread, streaming tokens over the WS bus.
-    Optionally retrieves RAG context and/or runs a second model for side-by-side compare.
-    Returns immediately after spawning the worker."""
-    sources = []  # knowledge-base retrieval citations
+    Optionally retrieves RAG context, runs a live web search, enables deep step-by-step
+    reasoning, and/or runs a second model for side-by-side compare. Returns immediately."""
+    sources = []  # knowledge-base + web retrieval citations
+    DEEPTHINK_SYS = ("Think carefully and reason step by step before answering. Work through the "
+                     "problem methodically, consider edge cases, then give a clear, well-structured "
+                     "final answer.")
 
     def run_model(mdl, ev_prefix=""):
         msgs = []
+        if deepthink:
+            msgs.append({"role": "system", "content": DEEPTHINK_SYS})
         if context:
             msgs.append({"role": "system", "content": "Use this attached document as context:\n" + context[:8000]})
         msgs += conv_messages(cid, 40)
         push({"type": "chat", "ev": "start", "model": mdl, "slot": ev_prefix, "cid": cid})
-        data = json.dumps({"model": mdl, "messages": msgs, "stream": True}).encode()
+        body = {"model": mdl, "messages": msgs, "stream": True}
+        if deepthink:
+            body["options"] = {"num_predict": 1536}   # give reasoning room to breathe
+        data = json.dumps(body).encode()
         rq = urllib.request.Request(f"{OLLAMA}/api/chat", data=data,
                                     headers={"Content-Type": "application/json"}, method="POST")
         full = ""; toks = 0
@@ -109,6 +118,14 @@ def stream_chat_send(prompt, model, cid, context="", target=None, use_rag=False)
                     seen = set()
                     for h in hits:
                         if h["doc"] not in seen: seen.add(h["doc"]); sources.append({"doc": h["doc"], "score": h["score"]})
+            if websearch:                             # live web search (opt-in, online)
+                from nova.services.web_search import web_context
+                web_ctx, web_src = web_context(prompt, 4)
+                if web_ctx:
+                    context = (context + "\n\n" + web_ctx) if context else web_ctx
+                    sources.extend(web_src)
+                else:
+                    push({"type": "chat", "ev": "token", "text": "_(web search returned no results / offline)_\n\n"})
             if target and target != model:            # model comparison: run both, save primary
                 a_full, a_tok = run_model(model, "A")
                 b_full, b_tok = run_model(target, "B")

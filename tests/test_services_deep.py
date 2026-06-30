@@ -130,6 +130,25 @@ def test_learning_stats_mocked(tmpdb, monkeypatch):
     assert T.training_history() == []
 
 
+def test_web_search_mocked(monkeypatch):
+    """Web Search (chat toggle) — formats DDGS results into a context block + citations; safe offline."""
+    import ddgs
+
+    class FakeDDGS:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def text(self, q, max_results=4):
+            return [{"title": "RTX 5090", "href": "http://example.com/gpu", "body": "32 GB VRAM"}]
+
+    monkeypatch.setattr(ddgs, "DDGS", FakeDDGS)
+    from nova.services.web_search import web_search, web_context
+    r = web_search("gpu vram", 4)
+    assert r and r[0]["title"] == "RTX 5090" and r[0]["url"] == "http://example.com/gpu"
+    block, src = web_context("gpu vram", 4)
+    assert "RTX 5090" in block and "example.com/gpu" in block and src[0]["url"] == "http://example.com/gpu"
+    assert web_search("") == []                                # empty query short-circuits
+
+
 def test_extract_text(tmp_path):
     from nova.services.files import extract_text
     p = tmp_path / "x.txt"; p.write_text("hello world", encoding="utf-8")

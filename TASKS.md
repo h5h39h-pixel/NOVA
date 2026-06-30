@@ -82,6 +82,16 @@ tracking (SV‑3/4) and the unified session (SV‑5) next; tests (SV‑7) alongs
 | DOC‑3 | Document (or vendor) the external training pipeline | ⬜ | `C:\AI\training` scripts. |
 | DOC‑E | `ARCHITECTURE.md`, `DATA_MODEL.md`, `SECURITY.md`, `docs/*`, OpenAPI export | ✅ | M‑D. |
 
+## P1 — Chat interface improvements (CHAT · owner request)
+
+Core chat UX, requested 2026‑06‑30. Toggle buttons styled like the existing RAG/compare toggles.
+
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| CHAT‑1 | **DeepThink toggle** — reason step by step before answering | ✅ | M62. `#dtbtn` (🧠 DeepThink); sends `deepthink:true` → backend prepends a step‑by‑step reasoning system message + raises `num_predict` to 1536. Render‑verified (active state + toast). |
+| CHAT‑2 | **Web Search toggle** — answer with live web results | ✅ | M62. `#wsbtn` (🌐 Search); sends `websearch:true` → backend `web_search` (new `ddgs` lib, DuckDuckGo, no API key) injects top‑4 results + URL citations into the turn. Opt‑in/online; degrades to a notice when offline. Test `test_web_search_mocked`. |
+| CHAT‑3 | **Microphone stop control** — end voice input manually | ✅ | M62. Mic button now swaps to **"⏹ Stop"** (red pulse) while recording and reverts to 🎤 — explicit, obvious stop (the toggle existed but the affordance was unclear). Applies to chat + agent mics via `_micUI`. |
+
 ## P2 — Feature improvements
 
 | ID | Task | Status | Notes / issue |

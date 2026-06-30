@@ -161,6 +161,8 @@ function Chat(){
         <select class="t" id="cm" style="width:auto;padding:5px 9px;font-size:12px"></select>
         <button class="btn sm" id="cmpbtn" title="Compare two models">⚖</button>
         <button class="btn sm" id="ragbtn" title="Answer from your Knowledge Base (RAG)">📚</button>
+        <button class="btn sm" id="dtbtn" title="DeepThink — reason step by step before answering">🧠 DeepThink</button>
+        <button class="btn sm" id="wsbtn" title="Web Search — answer with live results from the web">🌐 Search</button>
         <button class="btn sm" id="spkbtn" title="Auto-read replies aloud (Piper TTS)">🔊</button>
         <select class="t" id="cm2" style="width:auto;padding:5px 9px;font-size:12px;display:none"></select>
         <span class="tokbadge" id="tok">0 tokens</span>
@@ -182,7 +184,7 @@ function Chat(){
       </div>
       <input type="file" id="fileinp" multiple style="display:none" accept=".txt,.md,.json,.csv,.log,.py,.js,.ps1,.pdf,.docx,.png,.jpg,.jpeg,.webp,.bmp">
     </div></div>`;
-  let curAI=null,lastUser='',attached=[],comparing=false,ragOn=false,speakOn=false;
+  let curAI=null,lastUser='',attached=[],comparing=false,ragOn=false,speakOn=false,deepThink=false,webSearch=false;
   function mount(){
     const chat=$('#chat');
     const addMsg=(role,text,user)=>{const d=document.createElement('div');d.className='msg '+role;
@@ -264,6 +266,8 @@ function Chat(){
       if(context)body.context=context;
       if(comparing)body.target=$('#cm2').value;
       if(ragOn)body.rag=true;
+      if(deepThink)body.deepthink=true;
+      if(webSearch)body.websearch=true;
       post('/chat-send',body);usage('chat');attached=[];renderAttach();renderChips()}
     $('#cs').onclick=send;$('#ci').addEventListener('keydown',e=>{if(e.key==='Enter')send()});
 
@@ -273,6 +277,10 @@ function Chat(){
     $('#ragbtn').onclick=async()=>{ragOn=!ragOn;$('#ragbtn').classList.toggle('p',ragOn);
       if(ragOn){const st=await api('/kb/status');toast(st.docs?'info':'error',ragOn?'Knowledge Base ON':'',st.docs?`searching ${st.docs} docs · ${st.chunks} chunks`:'No documents yet — add some in Knowledge');}
       else toast('info','Knowledge Base off','')};
+    // ---- DeepThink toggle ----
+    $('#dtbtn').onclick=()=>{deepThink=!deepThink;$('#dtbtn').classList.toggle('p',deepThink);toast('info',deepThink?'DeepThink on':'DeepThink off',deepThink?'replies reason step by step':'')};
+    // ---- Web Search toggle ----
+    $('#wsbtn').onclick=()=>{webSearch=!webSearch;$('#wsbtn').classList.toggle('p',webSearch);toast('info',webSearch?'Web Search on':'Web Search off',webSearch?'answers use live web results':'')};
     // ---- voice output toggle ----
     $('#spkbtn').onclick=()=>{speakOn=!speakOn;$('#spkbtn').classList.toggle('p',speakOn);toast('info',speakOn?'Auto-speak on':'Auto-speak off',speakOn?'replies will be read aloud':'')};
 
@@ -585,16 +593,21 @@ function Bugs(){
 
 /* ---- LOCAL speech-to-text: record mic → POST to /api/stt (Whisper) → fill target ---- */
 let _mediaRec=null,_sttChunks=[];
+function _micUI(btnEl,recording){
+  if(!btnEl)return;
+  if(recording){btnEl.dataset.icon=btnEl.dataset.icon||btnEl.textContent;btnEl.textContent='⏹ Stop';btnEl.classList.add('rec');btnEl.title='Stop recording & transcribe';}
+  else{btnEl.classList.remove('rec');if(btnEl.dataset.icon)btnEl.textContent=btnEl.dataset.icon;btnEl.title='Voice input';}
+}
 async function dictate(targetSel,btnSel){
   const targetEl=$(targetSel), btnEl=$(btnSel);
   if(!targetEl)return;
-  if(_mediaRec&&_mediaRec.state==='recording'){_mediaRec.stop();return}
+  if(_mediaRec&&_mediaRec.state==='recording'){_mediaRec.stop();return}   // manual stop (button is now ⏹ Stop)
   if(!navigator.mediaDevices||!window.MediaRecorder){toast('error','Mic unavailable','This browser cannot record audio');return}
   let stream; try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){toast('error','Microphone blocked','Allow microphone access');return}
   _sttChunks=[]; const mr=new MediaRecorder(stream); _mediaRec=mr;
   mr.ondataavailable=e=>{if(e.data&&e.data.size)_sttChunks.push(e.data)};
-  mr.onstop=async()=>{stream.getTracks().forEach(t=>t.stop()); if(btnEl)btnEl.classList.remove('rec'); _mediaRec=null;
-    const blob=new Blob(_sttChunks,{type:'audio/webm'}); if(blob.size<800)return;
+  mr.onstop=async()=>{stream.getTracks().forEach(t=>t.stop()); _micUI(btnEl,false); _mediaRec=null;
+    const blob=new Blob(_sttChunks,{type:'audio/webm'}); if(blob.size<800){toast('info','No audio captured','');return}
     const old=targetEl.value, ph=targetEl.placeholder; targetEl.placeholder='⏳ Transcribing…';
     const fd=new FormData(); fd.append('audio',blob,'rec.webm'); fd.append('lang',State.lang);
     let r; try{r=await fetch('/api/stt',{method:'POST',body:fd}).then(x=>x.json())}catch(e){r={error:String(e)}}
@@ -602,7 +615,7 @@ async function dictate(targetSel,btnSel){
     if(r&&r.text){targetEl.value=(old?old.trim()+' ':'')+r.text; targetEl.dispatchEvent(new Event('input')); targetEl.focus()}
     else toast('error','Could not transcribe',(r&&r.error)||'no speech detected');
   };
-  mr.start(); if(btnEl)btnEl.classList.add('rec'); toast('info','🎤 Listening…','Tap the mic again to stop & transcribe');
+  mr.start(); _micUI(btnEl,true); toast('info','🎤 Listening…','Click ⏹ Stop to end & transcribe');
 }
 
 function Agent(){

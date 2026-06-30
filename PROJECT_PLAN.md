@@ -78,4 +78,15 @@ act on it — "it sees exactly what I see."
 - **Risks:** keylogging is sensitive even on a personal box (treat config like a secret); VLM latency;
   CPU under continuous capture. Each is addressed by the gating + throttling above.
 
+## 7. Chat interface improvements (CHAT — shipped M62)
+Owner‑requested chat UX, 2026‑06‑30:
+- **DeepThink** toggle → backend prepends a step‑by‑step reasoning system message and raises
+  `num_predict`; model‑agnostic (works with any local model).
+- **Web Search** toggle → new `nova/services/web_search.py` using the `ddgs` library (DuckDuckGo, no
+  API key) injects top results + URL citations into the turn. This is the one deliberately **online**
+  feature: opt‑in per message, off by default, degrades gracefully offline (the rest stays local).
+- **Microphone stop** → the mic button becomes an explicit **⏹ Stop** while recording (the stop logic
+  existed; the affordance was unclear). `web_search` is the first new runtime dependency since the
+  pinning (`ddgs` added to `requirements.txt`/`.in`).
+
 ## 🚫 Out of scope (permanent): multi‑user/RBAC, RTL mirroring, cloud/scaling.

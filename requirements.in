@@ -19,3 +19,4 @@ imageio-ffmpeg>=0.4
 # click-to-act (Screen Studio automation)
 pyautogui>=0.9.54
 pyperclip>=1.8
+ddgs            # web search for the chat Web Search toggle (DuckDuckGo, no API key)

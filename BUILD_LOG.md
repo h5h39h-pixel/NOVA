@@ -730,3 +730,21 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   Full gate green. (server.py changed → live after next restart.)
 - **Pending:** SV-5 frontend "Live" page (stream + mouse overlay + describe + toggles) and the
   continuous narration loop (SV-2 UI).
+
+## M62 — CHAT: DeepThink + Web Search toggles + mic Stop control (2026-06-30)  [P1 Chat UX]
+
+- **Owner request:** add DeepThink + Web Search toggle buttons to chat (like a modern assistant UI),
+  and fix the microphone so it can be stopped manually.
+- **DeepThink (CHAT-1):** `#dtbtn` (🧠 DeepThink) toggle → `deepthink:true` → `stream_chat_send`
+  prepends a step-by-step reasoning system message and raises `num_predict` to 1536. Model-agnostic.
+- **Web Search (CHAT-2):** `#wsbtn` (🌐 Search) toggle → `websearch:true` → new
+  `nova/services/web_search.py` using the **`ddgs`** library (DuckDuckGo, no API key; installed +
+  pinned `ddgs==9.14.4`) injects the top-4 results + URL citations into the turn. Opt-in/online;
+  degrades to a notice offline. The first new runtime dep since pinning.
+- **Mic stop (CHAT-3):** the mic button now swaps to **"⏹ Stop"** (red pulse) while recording and
+  reverts to 🎤 — explicit manual stop (the stop-on-second-click logic existed but the affordance was
+  unclear). Shared `_micUI` covers the chat + agent mics.
+- **Verified:** quality gate green; `test_web_search_mocked` (hermetic, mocked DDGS); server restarted
+  → live suite **42/42**; **render-verified** the chat page (Playwright): both buttons present, toggle
+  active, confirmation toasts, **zero console errors**; screenshot captured.
+- **Docs:** ROADMAP / TASKS (CHAT-1..3) / PROJECT_PLAN / STATUS updated.

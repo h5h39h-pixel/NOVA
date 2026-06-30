@@ -18,5 +18,7 @@ async def api_chat_send(req: Request):
     stream_chat_send(prompt, model, cid,
                      context=(b.get("context") or "").strip(),
                      target=b.get("target"),
-                     use_rag=bool(b.get("rag")))
+                     use_rag=bool(b.get("rag")),
+                     deepthink=bool(b.get("deepthink")),
+                     websearch=bool(b.get("websearch")))
     return {"ok": True, "model": model, "cid": cid}

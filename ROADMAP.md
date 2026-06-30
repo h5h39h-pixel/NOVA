@@ -35,7 +35,7 @@ are ✅ complete (see BUILD_LOG M28–M41).
 | Area | Notes |
 |---|---|
 | Core dashboard (SPA + FastAPI + SQLite), ~25 pages, WS live updates | M5+ |
-| AI Chat (projects, RAG+citations, upload, compare, export) | suite‑covered |
+| AI Chat (projects, RAG+citations, upload, compare, export, **DeepThink**, **Web Search**, voice in/out) | suite‑covered; chat UX M62 |
 | Agent Mode (full‑access, tools, live log, stop/pause, settings) | M21/M23 (reliability: see 🟧 OUT‑1) |
 | Browser automation (Playwright visible browser, open_url, YouTube) | M20/M22 |
 | Screen Studio (record / OCR / vision / playback / KB) | M29 (mss+imageio, qwen2.5‑VL) |
@@ -83,6 +83,10 @@ than replacing it. Scope:
   (keyboard/mouse capture is sensitive; consistent with the single‑user, private‑by‑design posture).
 
 See `TASKS.md` → "AI Screen Vision (SV)" for SV‑1…7 and `PROJECT_PLAN.md` Phase 7 for the design.
+
+## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62
+DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckGo results via `ddgs`, with
+citations; opt‑in/online), and an explicit microphone **⏹ Stop** control. See `TASKS.md` → CHAT‑1…3.
 
 ## 🟧 Known fragile / caveats (see STATUS.md for the live list)
 - Command‑exec surface unguarded on localhost (by design; now has a destructive confirm‑guard + denylist).
