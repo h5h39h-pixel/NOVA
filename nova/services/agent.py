@@ -187,7 +187,11 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             parts = []
             if r.get("text"): parts.append("TEXT:\n" + str(r["text"])[:1500])
             if r.get("description"): parts.append("UNDERSTANDING:\n" + str(r["description"])[:1500])
-            return "\n\n".join(parts) or ("error: " + r.get("error", "could not read"))
+            body = "\n\n".join(parts)
+            if not body:
+                return "error: " + r.get("error", "could not read")
+            from nova.services.web_search import wrap_untrusted   # HON-10: file/screen text is DATA, not instructions
+            return wrap_untrusted(body)
         if name == "recall":                          # IDEA-8: read durable user facts
             from nova.services.memory import recall as _recall
             facts = _recall(a.get("query", ""))
@@ -283,13 +287,14 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
                     u = open_url_default(url); audit("agent", "browse", f"{url} (fallback)", "fallback")
                     return f"opened {u} in your default browser (visible-browser fallback: {e})."
                 return f"browse error: {e}"
+            from nova.services.web_search import wrap_untrusted   # HON-10: web page text/titles are DATA
             if search:
                 lines = [f"Opened a real browser and searched YouTube for '{r.get('query')}'. Top results:"]
                 for i, v in enumerate(r.get("results", [])[:5], 1): lines.append(f"  {i}. {v['title']}")
                 if r.get("opened"): lines.append(f"Now playing in the browser: {r['opened']['title']} ({r['opened']['url']})")
                 elif r.get("click_error"): lines.append(f"(could not auto-click first video: {r['click_error']})")
-                return "\n".join(lines)
-            return f"Opened a real, visible browser window at {r.get('url')} — title: {r.get('title')}"
+                return wrap_untrusted("\n".join(lines))
+            return wrap_untrusted(f"Opened a real, visible browser window at {r.get('url')} — title: {r.get('title')}")
         if name == "see_screen":
             if dry_run: return "[dry-run] would look at the screen with the vision model"
             r = screen_svc.describe_screen(a.get("question"))
