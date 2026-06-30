@@ -121,8 +121,8 @@ Original ideas that extend Nova's vision without breaking the core principle. Tr
 1. **Visual macro recorder** — record a sequence of UIA/mouse actions and replay as a named local macro.
 2. **Local screen memory (opt‑in)** — periodically OCR+embed the screen into the KB so you can later ask
    "what was that error I saw earlier?" — local, opt‑in, with a retention cap and a clear indicator.
-3. **Save a successful agent run as a reusable Workflow/Automation** — one click turns a good run into a
-   repeatable task.
+3. ✅ **Save a successful agent run as a reusable Workflow/Automation** (M105) — a "💾 Save as workflow"
+   button on the agent's final answer; the `agent` action replays the goal on re-run.
 4. **Hands‑free voice conversation** — speak → STT → answer → TTS loop (building blocks already exist).
 5. ✅ **Folder Q&A** (M105) — point at a folder → auto‑index (recursive, skips secrets) → chat over it
    with citations (RAG over a directory). `/api/kb/ingest-folder` + Knowledge‑page input.

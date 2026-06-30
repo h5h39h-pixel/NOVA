@@ -47,6 +47,18 @@ def test_selftest_endpoint(client):
     assert r.status_code == 200 and "passed" in r.json() and "total" in r.json()
 
 
+def test_agent_save_workflow(client):
+    """IDEA-3: saving an agent run persists a one-step 'agent' workflow that replays the goal."""
+    r = client.post("/api/agent/save-workflow",
+                    json={"goal": "summarize my notes folder", "model": "auto", "deepthink": True}).json()
+    assert r["ok"] and r["id"]
+    wfs = client.get("/api/workflows").json()
+    wf = next(w for w in wfs if w["id"] == r["id"])
+    assert wf["steps"][0]["action"] == "agent"
+    assert wf["steps"][0]["params"]["goal"] == "summarize my notes folder"
+    assert wf["steps"][0]["params"]["deepthink"] is True
+
+
 def test_memory_api_crud(client):
     """IDEA-8: add → list → recall → delete a durable memory via the API."""
     add = client.post("/api/memory", json={"text": "I prefer concise answers", "pinned": True}).json()

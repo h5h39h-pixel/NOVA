@@ -61,6 +61,7 @@ function Workspace(){
     const thread = $('#wsthread');
     let mode = localStorage.getItem('ws_mode') || 'chat';
     let attached = [], curAI = null, lastUser = '', busy = false, maxSteps = 8, workingFile = null;
+    let lastAgentRun = null;   // IDEA-3: the last agent goal+settings, for "save as workflow"
     const tg = { deep: localStorage.getItem('ws_deep')==='1', web: localStorage.getItem('ws_web')==='1', full: false };
 
     // ---- helpers ----
@@ -237,6 +238,7 @@ function Workspace(){
       setBusy(true);
       if(mode==='agent'){
         let tools = SET_TOOLS();   // all agent tools (so it can decide to capture/record/monitor)
+        lastAgentRun = { goal:v, model, deepthink:tg.deep, unrestricted:tg.full };  // IDEA-3: enable "save as workflow"
         post('/agent', { goal:v, model, dry_run:false, unrestricted:tg.full,
                          deepthink:tg.deep, tools, websearch:tg.web });
         usage('agent');
@@ -278,7 +280,13 @@ function Workspace(){
       else if(m.ev==='action'){ addStep('⚙️', (AR?'إجراء: ':'Action: ')+esc(m.action||''), `<code class="ic">${esc(JSON.stringify(m.args||{}).slice(0,300))}</code>`); }
       else if(m.ev==='observation'){ addStep('👁', (AR?'النتيجة':'Result'), `<pre class="code">${esc((m.text||'').slice(0,1000))}</pre>`); }
       else if(m.ev==='ask'){ addStep('❓', (AR?'يحتاج توضيحاً':'Needs clarification'), esc(m.text||'')); setBusy(false); }
-      else if(m.ev==='final'){ const d=addMsg('ai', m.text||''); setBusy(false); }
+      else if(m.ev==='final'){ const d=addMsg('ai', m.text||''); setBusy(false);
+        if(lastAgentRun){ const run=lastAgentRun; const btn=document.createElement('button');
+          btn.className='btn sm'; btn.style.marginTop='8px'; btn.textContent='💾 '+(AR?'حفظ كسير عمل':'Save as workflow');
+          btn.onclick=async()=>{ const name=prompt(AR?'اسم سير العمل:':'Workflow name:', run.goal.slice(0,60)); if(!name)return;
+            const r=await post('/agent/save-workflow', {...run, name});
+            toast(r&&r.ok?'success':'error', r&&r.ok?(AR?'تم الحفظ':'Saved'):(AR?'فشل':'Failed'), r&&r.ok?(AR?'في صفحة سير العمل':'see Workflows'):''); btn.disabled=!!(r&&r.ok); };
+          d.span.appendChild(document.createElement('br')); d.span.appendChild(btn); } }
       else if(m.ev==='stopped'){ addStep('⏹', (AR?'تم الإيقاف':'Stopped'), ''); setBusy(false); }
       else if(m.ev==='error'){ addStep('❌', (AR?'خطأ':'Error'), esc(m.text||'')); setBusy(false); }
       else if(m.ev==='done'){ setBusy(false); }

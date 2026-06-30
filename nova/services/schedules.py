@@ -83,6 +83,21 @@ def run_action(action, params, name="task"):
                 if kb_ingest_file(f) > 0: added += 1
         add_notification("success", "KB indexed", f"{added} new files from {folder.name}")
         return f"indexed {added} new files from {folder}"
+    if action == "agent":
+        # IDEA-3: re-run a saved agent task (a successful agent run saved as a workflow step).
+        from nova.services.agent import agent_run
+        from nova.core.db import get_settings
+        goal = (p.get("goal") or "").strip()
+        if not goal: return "agent: no goal configured"
+        mdl = p.get("model") or get_settings().get("default_local_model") or "qwen2.5:14b"
+        try:
+            final = agent_run(goal, mdl, dry_run=bool(p.get("dry_run")),
+                              unrestricted=bool(p.get("unrestricted")),
+                              max_steps=int(p.get("max_steps", 8)), tools=p.get("tools"),
+                              deepthink=bool(p.get("deepthink")))
+        except Exception as e:
+            return f"agent: error ({e})"
+        return f"agent: {str(final)[:300]}" if final else "agent: completed (no final answer)"
     if action == "screen_if":
         # Conditional screen trigger: if `match` text appears on screen, run `then_action`.
         # Use as a schedule (e.g., every 60s) for "if X on screen → do Y".

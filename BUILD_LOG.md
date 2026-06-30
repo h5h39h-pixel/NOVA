@@ -1312,3 +1312,17 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
     retrieval finds the content). Live roundtrip verified (2 files → search returned the right doc),
     test docs cleaned up afterward.
   - Gate ✅ · live 42/42 ✅.
+
+### M105c — IDEA-3 Save an agent run as a reusable workflow
+- **IDEA-3:** turn a successful agent run into a repeatable workflow.
+  - `nova/services/schedules.py`: new **`agent` action** in `run_action` — re-runs `agent_run` with a
+    stored goal/model/flags (imports `agent_run` lazily; agent uses an *injected* run_action so there's
+    no circular import).
+  - `nova/api/agent.py`: `POST /api/agent/save-workflow` persists a one-step `agent` workflow (goal,
+    model, deepthink, unrestricted, max_steps).
+  - `static/js/pages-workspace.js`: a **"💾 Save as workflow"** button appears on the agent's final
+    answer (tracks `lastAgentRun`); prompts for a name and saves. Re-running from the Workflows page
+    replays the goal.
+  - Test: `test_agent_save_workflow` (asserts the persisted step is `action:agent` with the goal/flags).
+    Live roundtrip verified (saved → step correct → cleaned up).
+  - Gate ✅.

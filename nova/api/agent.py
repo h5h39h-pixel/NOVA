@@ -33,6 +33,27 @@ def api_agent_stop():
     audit("agent", "stop", "user requested stop")
     return {"ok": True}
 
+@router.post("/api/agent/save-workflow")
+async def api_agent_save_workflow(req: Request):
+    """IDEA-3: persist an agent run as a reusable one-step workflow. Re-running the workflow replays
+    the same goal via the `agent` action. Returns the new workflow id."""
+    import json, time
+    from nova.core.db import db
+    b = await req.json()
+    goal = (b.get("goal") or "").strip()
+    if not goal: return JSONResponse({"error": "empty goal"}, status_code=400)
+    name = (b.get("name") or goal)[:80]
+    params = {"goal": goal, "model": b.get("model") or "auto",
+              "deepthink": bool(b.get("deepthink")), "unrestricted": bool(b.get("unrestricted")),
+              "max_steps": int(b.get("max_steps", 8))}
+    steps = [{"action": "agent", "params": params}]
+    c = db()
+    wid = c.execute("INSERT INTO workflows(name,steps,created) VALUES(?,?,?)",
+                    (name, json.dumps(steps), time.time())).lastrowid
+    c.commit(); c.close()
+    audit("agent", "save_workflow", f"{name} (#{wid})")
+    return {"ok": True, "id": wid, "name": name}
+
 @router.post("/api/browse")
 async def api_browse(req: Request):
     b = await req.json(); url = (b.get("url") or "").strip()
