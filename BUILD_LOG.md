@@ -572,3 +572,21 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Scope note:** this tests loop *mechanics*, not real-world success rate with a 14B model — that's
   OUT-1 (P1 Outcome).
 - **Next:** TST-5 (make CI actually run) / TST-4 (clean-venv install).
+
+## M52 — TST-4 + TST-5: clean-venv install proof + local CI runner (2026-06-30)  [P0 Tests]
+
+- **What:** `scripts/ci_local.py` — runs the SAME steps as `.github/workflows/ci.yml` on this machine:
+  create a fresh venv -> `pip install -r requirements.txt -r requirements-dev.txt` -> `scripts/check.py`.
+  Flags: `--venv DIR`, `--keep`.
+- **Proven (2026-06-30):** clean install succeeded with **every pin resolving to a cp312 win_amd64
+  wheel — zero source builds, zero version conflicts**; the quality gate then PASSED inside that fresh
+  venv -> "LOCAL CI PASSED". This is the first real proof the lock installs together (TST-4) and that
+  the CI commands actually pass on a clean environment (TST-5).
+- **Why honest-caveats matter:**
+  * TST-4: only *direct* deps are pinned; transitive deps (starlette, pydantic, etc.) install at
+    latest-compatible -> not a hermetic lockfile. Good enough for a personal system; noted in STATUS.
+  * TST-5: `act` cannot emulate the `windows-latest` runner, and there is no Git remote, so
+    GitHub-*hosted* execution is still pending a remote the owner creates. The runner is the faithful
+    local equivalent and is documented as such in the script.
+- **Verified:** quality gate green (incl. pyflakes on the new script); main suite still 72 passed.
+- **Result:** P0 Tests is down to its last item — TST-6 (frontend interaction tests).

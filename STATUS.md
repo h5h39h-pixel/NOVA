@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **TST‑5** Make CI actually run (local `act` or a Git remote). (P0)
-2. **TST‑4** Clean‑venv install of pinned `requirements.txt`. (P0)
-3. **TST‑6** Frontend interaction tests (beyond the load gate). (P0)
+1. **TST‑6** Frontend interaction tests (beyond the load/zero‑console gate). (P0)
+2. **OUT‑1** Agent goal battery — measure real multi‑step success rate. (P1)
+3. **STB‑1** Watchdog/supervisor to auto‑restart `server.py` on crash. (P1)
 
-_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests in progress:** TST‑1 ✅ deep service tests (M49) · TST‑2 ✅ hermetic mode (M50) · TST‑3 ✅ agent‑loop tests (M51)._
+_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests:** TST‑1 deep service tests (M49) · TST‑2 hermetic mode (M50) · TST‑3 agent‑loop tests (M51) · TST‑4+5 clean‑venv install + local CI run (M52) — **only TST‑6 left**._
 
 ---
 
@@ -54,8 +54,8 @@ _**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests in progress:** TST‑1 ✅
 | **Training pipeline** | The fine‑tune scripts live **outside the repo** in `C:\AI\training` (`learn.ps1`, `train_lora.py`, `harvest_chats.py`). We only orchestrate + parse logs — never verified they produce a good model. |
 | **Click‑to‑act** | Best‑effort only — 7B vision grounding imprecise at 4K + Win11 focus rules. Don't rely on it. |
 | **STT (Arabic/noisy)** | base/CPU Whisper; weak on Arabic. Size now configurable. |
-| **CI** | `.github/workflows/ci.yml` written but **never executed** (no Git remote). |
-| **Pinned deps** | Pinned to *installed* versions; **never proven to install together from a clean venv**. |
+| **CI** | The CI *commands* now **actually run** locally via `scripts/ci_local.py` (clean‑venv install → gate → PASS, M52). GitHub‑hosted execution still needs a Git remote the owner must create (`act` can't emulate `windows-latest`). |
+| **Pinned deps** | **Proven to clean‑install** from a fresh venv (M52, all wheels, no conflicts). Caveat: only *direct* deps are pinned — transitive deps resolve to latest‑compatible at install time (not a full lockfile). |
 | **Secrets** | `cloud_api_key` now **encrypted at rest** (SEC‑4, Fernet; key in `.nova_key`); tokens hashed; config.json git‑ignored. (Resolved.) |
 | **Background loops** | Swallow exceptions silently (`except: pass`) — a dead loop is invisible except via `/api/health`. |
 | **No watchdog** | If `server.py` crashes nothing restarts it; a server restart kills running training/recording (Job Object). |

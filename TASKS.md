@@ -27,8 +27,8 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | TST‑1 | Deepen **unit tests** per service (real assertions, not "returns 200") | ✅ | M49. `tests/test_services_deep.py` — 10 tests with real assertions: audit, notifications+category, metrics history, chat conv_touch/count, run_schedule DB update, run_action webhook/kb branches (mocked), backup↔restore round-trip, ollama_models (mocked), learning_stats (mocked), files.extract_text. |
 | TST‑2 | **Hermetic test mode** — mock Ollama/ComfyUI so tests don't need them running | ✅ | M50. `conftest.py` autouse `_no_network` fixture blocks real outbound HTTP at the one chokepoint (`urllib.request.urlopen`); `http_ok`→False, `http_json` raises so callers degrade; service‑level tests mock above it. Full pytest suite (63) passes with **network fully blocked** — no Ollama/ComfyUI required. (Live `run_tests.py` is still environment‑coupled by design — it tests the running stack.) |
 | TST‑3 | Agent‑loop integration tests with a mocked model (tool dispatch, JSON parse, stop) | ✅ | M51. `tests/test_agent_loop.py` — 9 tests driving `agent_run` with a scripted `ollama_chat_once`: parse_action (nested/garbage), tool dispatch→observation→final, reformat recovery on non‑JSON, step‑budget termination, mid‑run Stop (no dispatch), tool gating, `ask` path, + `agent_tool` destructive‑command block & confined‑write block. No model/network/side effects. |
-| TST‑4 | Clean‑venv install test — prove pinned `requirements.txt` installs together | 🟧 | Pinned to *installed* versions; never clean‑installed. |
-| TST‑5 | Make CI actually run (local `act` or a Git remote) | 🟧 | `.github/workflows/ci.yml` written, **never executed**. |
+| TST‑4 | Clean‑venv install test — prove pinned `requirements.txt` installs together | ✅ | M52. `scripts/ci_local.py` builds a fresh venv and installs `requirements.txt`+`requirements-dev.txt`. **Proven 2026‑06‑30:** all pins resolved to cp312 win_amd64 **wheels — no source builds, no conflicts**; gate passed inside the clean venv. Caveat: only *direct* deps are pinned (transitive deps install at latest‑compatible). |
+| TST‑5 | Make CI actually run (local `act` or a Git remote) | ✅ | M52. `scripts/ci_local.py` runs the **exact workflow steps** (clean‑venv install → `scripts/check.py`) on this machine → **LOCAL CI PASSED**. `act` can't emulate the `windows-latest` runner, so GitHub‑hosted execution still needs a remote (documented in the script). The CI *commands* are now verified to pass on a clean environment. |
 | TST‑6 | Frontend interaction tests (beyond the load/zero‑console gate) | ⬜ | |
 | TST‑E | pytest suite (24) + live suite (42) + Playwright load gate + pre‑commit hook | ✅ | M‑C. Foundation; shallow — see TST‑1. |
 
@@ -89,7 +89,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **P0 Security: COMPLETE ✅** · **P0 Tests: in progress** (TST‑1 ✅ TST‑2 ✅ TST‑3 ✅; 3 open) · P1 Outcome (5) · P1 Stability (5).
-- **Next:** TST‑5 (make CI run) → TST‑4 (clean‑venv install) → TST‑6 (frontend interaction).
+- **P0 Security: COMPLETE ✅** · **P0 Tests: in progress** (TST‑1…5 ✅; TST‑6 open) · P1 Outcome (5) · P1 Stability (5).
+- **Next:** TST‑6 (frontend interaction tests) → then **P1 Outcome** (OUT‑1 agent goal battery).
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).
