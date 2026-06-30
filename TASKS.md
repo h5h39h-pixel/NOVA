@@ -29,7 +29,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | TST‑3 | Agent‑loop integration tests with a mocked model (tool dispatch, JSON parse, stop) | ✅ | M51. `tests/test_agent_loop.py` — 9 tests driving `agent_run` with a scripted `ollama_chat_once`: parse_action (nested/garbage), tool dispatch→observation→final, reformat recovery on non‑JSON, step‑budget termination, mid‑run Stop (no dispatch), tool gating, `ask` path, + `agent_tool` destructive‑command block & confined‑write block. No model/network/side effects. |
 | TST‑4 | Clean‑venv install test — prove pinned `requirements.txt` installs together | ✅ | M52. `scripts/ci_local.py` builds a fresh venv and installs `requirements.txt`+`requirements-dev.txt`. **Proven 2026‑06‑30:** all pins resolved to cp312 win_amd64 **wheels — no source builds, no conflicts**; gate passed inside the clean venv. Caveat: only *direct* deps are pinned (transitive deps install at latest‑compatible). |
 | TST‑5 | Make CI actually run (local `act` or a Git remote) | ✅ | M52. `scripts/ci_local.py` runs the **exact workflow steps** (clean‑venv install → `scripts/check.py`) on this machine → **LOCAL CI PASSED**. `act` can't emulate the `windows-latest` runner, so GitHub‑hosted execution still needs a remote (documented in the script). The CI *commands* are now verified to pass on a clean environment. |
-| TST‑6 | Frontend interaction tests (beyond the load/zero‑console gate) | ⬜ | |
+| TST‑6 | Frontend interaction tests (beyond the load/zero‑console gate) | ✅ | M53. `tests/test_frontend.py` +4 live Playwright interaction tests: nav‑click routing (title/active/hash/body), deep‑link routing (`#/brain`), theme toggle (light↔dark, reversible), command palette (Ctrl+K → filter → Escape). Auto‑skip without a server (like the load gate). |
 | TST‑E | pytest suite (24) + live suite (42) + Playwright load gate + pre‑commit hook | ✅ | M‑C. Foundation; shallow — see TST‑1. |
 
 ## P1 — Outcome verification (does it actually work?)
@@ -89,7 +89,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **P0 Security: COMPLETE ✅** · **P0 Tests: in progress** (TST‑1…5 ✅; TST‑6 open) · P1 Outcome (5) · P1 Stability (5).
-- **Next:** TST‑6 (frontend interaction tests) → then **P1 Outcome** (OUT‑1 agent goal battery).
+- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** (TST‑1…6) · P1 Outcome (5 open) · P1 Stability (5 open).
+- **Next:** **P1 Outcome** — OUT‑1 (agent goal battery) — and **P1 Stability** — STB‑1 (watchdog).
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).

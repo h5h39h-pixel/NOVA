@@ -19,8 +19,8 @@ The active plan:
 | Phase | Goal (priority) | Exit criteria | Status |
 |---|---|---|---|
 | **P‑1 Security** | P0 — lock down exec surface, auth, HTTPS | exec destructive‑guard + tightened CSP + key encryption + HTTPS turnkey; every exec call‑site audited | ✅ done (M43–M48) |
-| **P‑2 Tests** | P0 — real coverage | deep unit + integration + hermetic (no live deps) + agent tests + CI actually runs + clean‑venv install proven | 🟦 next |
-| **P‑3 Outcome** | P1 — prove it works | measured agent success baseline; training/generation/`screen_if`/RAG verified end‑to‑end | ⬜ |
+| **P‑2 Tests** | P0 — real coverage | deep unit + integration + hermetic (no live deps) + agent tests + CI actually runs + clean‑venv install proven | ✅ done (M49–M53) |
+| **P‑3 Outcome** | P1 — prove it works | measured agent success baseline; training/generation/`screen_if`/RAG verified end‑to‑end | 🟦 next |
 | **P‑4 Stability** | P1 — resilience | watchdog auto‑restart; jobs survive restart; loops recover + surface errors; media backup; WAL | ⬜ |
 | **P‑5 Docs** | P2 — upkeep | six files always current; README/SETUP refreshed; training pipeline documented | 🟦 ongoing |
 | **P‑6 Features/Polish** | P2/P3 | click‑to‑act reliability, STT, voice; perf budget, a11y, mobile | ⬜ |

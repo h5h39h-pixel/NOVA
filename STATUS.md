@@ -5,8 +5,8 @@ Personal single‑user system (not a product). Update this file on **every** wor
 
 _Last updated: 2026-06-30_
 
-**Health gate (must stay green):** `python scripts/check.py` → pyflakes + node --check + pytest (72, hermetic)
-· live suite `python run_tests.py` → 42/42 · self‑test 13/13.
+**Health gate (must stay green):** `python scripts/check.py` → pyflakes + node --check + pytest (72 hermetic + 4 live frontend = 76)
+· live suite `python run_tests.py` → 42/42 · self‑test 13/13 · local CI `python scripts/ci_local.py`.
 
 **Status legend:** ✅ DONE · 🟧 FRAGILE (works but has a known issue) · 🟦 IN PROGRESS · ⬜ TODO · 🚫 EXCLUDED (owner decision)
 
@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **TST‑6** Frontend interaction tests (beyond the load/zero‑console gate). (P0)
-2. **OUT‑1** Agent goal battery — measure real multi‑step success rate. (P1)
-3. **STB‑1** Watchdog/supervisor to auto‑restart `server.py` on crash. (P1)
+1. **OUT‑1** Agent goal battery — run fixed goals, measure real multi‑step success rate, record a baseline. (P1)
+2. **STB‑1** Watchdog/supervisor to auto‑restart `server.py` on crash. (P1)
+3. **STB‑3** Surface errors from background loops (no silent `except: pass`). (P1)
 
-_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests:** TST‑1 deep service tests (M49) · TST‑2 hermetic mode (M50) · TST‑3 agent‑loop tests (M51) · TST‑4+5 clean‑venv install + local CI run (M52) — **only TST‑6 left**._
+_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests COMPLETE** ✅ (M49–M53: deep service · hermetic · agent‑loop · clean‑venv+local‑CI · frontend interaction). Next phase: **P1 Outcome + Stability**._
 
 ---
 
@@ -48,7 +48,7 @@ _**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests:** TST‑1 deep service te
 |---|---|
 | **Command‑exec surface** | Hardened (P0 Security complete): confirm‑guard (SEC‑1) + centralized denylist (SEC‑2) + strict CSP/headers (SEC‑3) + at‑rest key encryption (SEC‑4) + HTTPS turnkey (SEC‑5) + call‑site audit incl. the `screen lang` injection fix (SEC‑6). Residual by design: localhost exec is unrestricted (the product's purpose) — gated on LAN. No global kill‑switch (optional). |
 | **Agent reliability** | Loop **mechanics now integration‑tested** with a mocked model (TST‑3, M51: dispatch/parse/stop/budget/gating/guards). Real multi‑step success rate with 14B is still **unmeasured** (that's OUT‑1). |
-| **Tests are shallow** | Improving: deep per‑service assertions added (TST‑1, M49) + pytest now **hermetic** — 63 pass with network blocked (TST‑2, M50). Still missing: agent‑loop integration tests (TST‑3), CI actually executed (TST‑5), clean‑venv install proof (TST‑4). The live `run_tests.py` (42) still needs the real stack by design. |
+| **Tests** | **P0 Tests complete** (M49–M53): deep per‑service assertions, **hermetic** pytest (network‑blocked), agent‑loop integration tests, clean‑venv install proof + local CI runner, and live frontend interaction tests. Suite = 72 hermetic + 4 live. Remaining test‑adjacent gap is **outcome verification** (does the agent/training/generation actually succeed?) — that's the P1 Outcome phase, not unit tests. |
 | **`screen_if` (conditional screen actions)** | Implemented + unit‑tested **with a mocked screen**; never run against a real screen / real vision matching. |
 | **Image/video generation** | Endpoints fire + jobs start; **actual generation success/quality never verified**. |
 | **Training pipeline** | The fine‑tune scripts live **outside the repo** in `C:\AI\training` (`learn.ps1`, `train_lora.py`, `harvest_chats.py`). We only orchestrate + parse logs — never verified they produce a good model. |

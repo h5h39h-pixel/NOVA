@@ -590,3 +590,16 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
     local equivalent and is documented as such in the script.
 - **Verified:** quality gate green (incl. pyflakes on the new script); main suite still 72 passed.
 - **Result:** P0 Tests is down to its last item — TST-6 (frontend interaction tests).
+
+## M53 — TST-6: frontend interaction tests (P0 Tests COMPLETE) (2026-06-30)  [P0 Tests]
+
+- **What:** `tests/test_frontend.py` gains a module-scoped browser fixture + 4 live Playwright
+  interaction tests (auto-skip without a server, like the load gate):
+  * nav-click routing — clicking sidebar links swaps page, sets title, marks link active, updates hash, fills body.
+  * deep-link routing — `#/brain` renders Nova Brain directly (not the default dashboard).
+  * theme toggle — `#themebtn` flips `body.light` and is reversible.
+  * command palette — Ctrl+K opens `#palette`, typing filters `#palres`, Escape closes.
+- **Verified live (server on :8900):** 5 frontend tests pass; full suite **76 passed** (72 hermetic +
+  4 live frontend); quality gate green.
+- **Milestone:** this completes **P0 Tests** (TST-1..6) — after P0 Security, the second P0 phase is done.
+- **Next:** P1 Outcome verification, starting with OUT-1 (agent goal battery / real success baseline).
