@@ -801,3 +801,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Verified:** `test_reconcile_interrupted_jobs` (running→interrupted, finished untouched); full gate
   green; server restarted; live suite 42/42.
 - **Next:** P2 Features (FEA-4 screen_if UI), P3 polish, and the externally-blocked OUT-2/3/4.
+
+## M67 — OUT-3: image generation verified end-to-end (2026-06-30)  [P1 Outcome]
+
+- **What:** `scripts/gen_eval.py` triggers a real image generation through the live API
+  (`POST /api/toolkit/image` → ComfyUI via TOOLKIT/generate.ps1), polls for the output PNG, and
+  validates it opens as a real image of sane dimensions. Writes `docs/generation-baseline.md`.
+- **Result:** **PASS** — SDXL produced a valid **1024×1024** PNG (1082 KB) in **9.1s**; the image was
+  visually confirmed to match the prompt ("a single red apple on a white table, studio photo"). This
+  upgrades generation from "job starts" to "actually produces correct output."
+- **Scope:** image verified; video (LTX) runs the same path but is slower and not auto-verified yet.
+- **Verified:** quality gate green. (ComfyUI was up on :8188 with SDXL/Flux/LTX checkpoints present.)

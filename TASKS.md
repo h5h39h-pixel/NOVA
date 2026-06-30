@@ -38,7 +38,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 |---|---|---|---|
 | OUT‑1 | **Agent goal battery** — run fixed goals, measure real success rate, record baseline | ✅ | M54. `scripts/agent_eval.py` runs 5 safe verifiable goals through the real loop + model; baseline in `docs/agent-baseline.md`. **First run 2/5 exposed a real bug** (relative `write_file` paths nested a doubled `agent-output/`; `read_file` resolved against CWD → agent couldn't read back what it wrote). Fixed (`_strip_output_prefix` + `resolve_read_path`, regression‑tested) → **5/5 with qwen2.5:14b**. |
 | OUT‑2 | Verify **training** produces a usable nova‑local end‑to‑end | 🟧 | External scripts in `C:\AI\training`; only log‑parsing verified. |
-| OUT‑3 | Verify **image/video generation** actually succeeds (not just job‑starts) | 🟧 | Plumbing only. |
+| OUT‑3 | Verify **image/video generation** actually succeeds (not just job‑starts) | ✅ | M67. `scripts/gen_eval.py` triggers a real generation via the live API + ComfyUI and validates the PNG. **Verified:** SDXL produced a correct 1024×1024 image ("red apple on a white table") in **9.1s** — visually confirmed. `docs/generation-baseline.md`. (Video/LTX uses the same path — slower; verify manually.) |
 | OUT‑4 | `screen_if` real‑screen matching test (OCR/vision against live content) | 🟧 | Unit‑tested with a **mocked** screen only. |
 | OUT‑5 | RAG retrieval quality check (relevance of citations) | ✅ | M58. `scripts/rag_eval.py` seeds an isolated KB with single‑topic docs and checks each paraphrased query retrieves the right one. Baseline `docs/rag-baseline.md`: **precision@1 = 5/5 (100%), MRR = 1.0** (nomic‑embed‑text). |
 
