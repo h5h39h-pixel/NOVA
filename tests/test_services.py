@@ -80,6 +80,27 @@ def test_kb_chunk_text():
     assert chunk_text("") == []
 
 
+def test_kb_ingest_folder(tmp_path, monkeypatch, tmpdb):
+    """IDEA-5: folder Q&A indexes supported files, skips unsupported + credential stores."""
+    import nova.services.kb as KB
+    monkeypatch.setattr(KB, "embed", lambda t: [0.1, 0.2, 0.3])   # no Ollama needed
+    d = tmp_path / "docs"; d.mkdir()
+    (d / "a.txt").write_text("alpha content about gpus", encoding="utf-8")
+    (d / "b.md").write_text("beta notes on training", encoding="utf-8")
+    (d / "ignore.bin").write_bytes(b"\x00\x01")                   # unsupported → skipped
+    (d / ".env").write_text("SECRET=x", encoding="utf-8")         # credential → skipped
+
+    res = KB.kb_ingest_folder(str(d))
+    assert res["ok"] and res["indexed"] == 2 and res["chunks"] >= 2
+    assert res["skipped"] >= 2
+    # the indexed text is now searchable
+    hits = KB.kb_search("gpus")
+    assert any("alpha" in h["text"] for h in hits)
+
+    bad = KB.kb_ingest_folder(str(tmp_path / "nope"))
+    assert bad["ok"] is False
+
+
 def test_backup_snapshot(tmp_path, monkeypatch, tmpdb):
     import os
     import nova.services.backup as B

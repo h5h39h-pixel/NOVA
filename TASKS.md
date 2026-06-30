@@ -158,7 +158,7 @@ and opt‑in where it touches the screen/privacy. (Full descriptions in `ROADMAP
 | IDEA‑2 | Local screen memory — opt‑in OCR+embed of the screen into the KB ("what did I see earlier?") | P2 | ⬜ |
 | IDEA‑3 | Save a successful agent run as a reusable Workflow/Automation | P2 | ⬜ |
 | IDEA‑4 | Hands‑free voice conversation loop (STT→answer→TTS) | P2 | ⬜ |
-| IDEA‑5 | Folder Q&A — index a directory, chat over it with citations | P2 | ⬜ |
+| IDEA‑5 | Folder Q&A — index a directory, chat over it with citations | P2 | ✅ M105. `kb_ingest_folder()` walks a directory (recursive, capped 200 files), indexes supported types (txt/md/pdf/docx/code), **skips credential stores** (shared `is_credential_path` in `nova/core/safety.py`) + unsupported types. `POST /api/kb/ingest-folder` (exec_allowed‑gated, audited, threadpool‑offloaded). Knowledge page got a "📁 Index a folder" input. Then chat with RAG (use_rag) cites the folder's files. Service test + live roundtrip (2 files → retrieval correct) verified. |
 | IDEA‑6 | Quality dashboard — scheduled eval batteries charted over time | P3 | ⬜ |
 | IDEA‑7 | Region watch → act (pin a screen region; act on text change) | P3 | ⬜ |
 | IDEA‑8 | Local persistent memory (durable user facts/preferences) | P2 | ✅ M105. `nova/services/memory.py` + `memory` table + `/api/memory` (list/add/recall/delete) + Settings "🧠 Persistent Memory" card. Facts are injected as a system block into **chat** and **agent** prompts (keyword‑ranked, pinned‑first, de‑duped). Agent gained `remember`/`recall` tools. Tests: service + API + UI render. Local‑only. |

@@ -53,3 +53,15 @@ def danger_reason(cmd):
 def is_dangerous(cmd):
     """True if the command matches a destructive pattern."""
     return danger_reason(cmd) is not None
+
+
+# ─── credential-store read denylist (shared) ────────────────────────────────
+# Paths that must never be read by any feature (file read, KB/folder ingest, agent understand).
+# Same list the agent enforces; centralized here so every reader uses one source of truth.
+DENY_READ = (".ssh", ".aws", ".env", "credentials", "login data", "id_rsa", "id_ed25519",
+             "ntuser.dat", "\\.git\\config", ".npmrc", ".pypirc")
+
+
+def is_credential_path(path) -> bool:
+    """True if `path` points into a credential/secret store and must not be read."""
+    return any(d in str(path).lower() for d in DENY_READ)

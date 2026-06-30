@@ -1296,3 +1296,19 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
   *are* the loop helper. (Sustained game-play reliability remains AVL-1's 🟧 keyboard-suppression caveat.)
 - **Gate:** `scripts/check.py` ✅ · `run_tests.py` 42/42 ✅. Live server restarted to serve the new
   route (the watchdog's interval is >40s; started manually and verified `/api/memory` → 200).
+
+### M105b — IDEA-5 Folder Q&A
+- **IDEA-5 — Folder Q&A:** index a whole local directory into the KB, then chat over it with citations.
+  - `nova/services/kb.py`: `kb_ingest_folder(folder, recursive, max_files)` walks the dir, indexes
+    supported types (`KB_EXTS`: txt/md/json/csv/log/py/js/ps1/pdf/docx), **skips credential stores +
+    unsupported files**, caps at 200 files; reuses `kb_ingest_file`.
+  - `nova/core/safety.py`: centralized `DENY_READ` + `is_credential_path()` (shared credential
+    denylist — was duplicated in agent.py; this is now the canonical source, kb uses it).
+  - `nova/api/kb.py`: `POST /api/kb/ingest-folder` — `exec_allowed`-gated (reads arbitrary local
+    paths), audited, offloaded to a thread (`asyncio.to_thread`) so embedding many files doesn't block
+    the event loop.
+  - Knowledge page: "📁 Index a folder" input + button.
+  - Test: `test_kb_ingest_folder` (mocks `embed`; asserts indexed=2, secrets/binaries skipped, then
+    retrieval finds the content). Live roundtrip verified (2 files → search returned the right doc),
+    test docs cleaned up afterward.
+  - Gate ✅ · live 42/42 ✅.

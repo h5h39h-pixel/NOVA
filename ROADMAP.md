@@ -124,7 +124,8 @@ Original ideas that extend Nova's vision without breaking the core principle. Tr
 3. **Save a successful agent run as a reusable Workflow/Automation** — one click turns a good run into a
    repeatable task.
 4. **Hands‑free voice conversation** — speak → STT → answer → TTS loop (building blocks already exist).
-5. **Folder Q&A** — point at a folder → auto‑index → chat over it with citations (RAG over a directory).
+5. ✅ **Folder Q&A** (M105) — point at a folder → auto‑index (recursive, skips secrets) → chat over it
+   with citations (RAG over a directory). `/api/kb/ingest-folder` + Knowledge‑page input.
 6. **Quality dashboard** — schedule the eval batteries (agent/RAG/gen) and chart quality over time to
    catch regressions after model/dep updates.
 7. **Region watch → act** — pin a screen region; when its text changes, trigger an action (extends

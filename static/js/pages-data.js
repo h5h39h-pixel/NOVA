@@ -65,7 +65,9 @@ function Knowledge(){
      <div class="card"><div class="bd" style="display:flex;align-items:center;height:100%"><button class="btn p" id="kbup" style="width:100%">⬆ Add document</button><input type="file" id="kbf" multiple style="display:none" accept=".txt,.md,.json,.csv,.log,.py,.js,.ps1,.pdf,.docx"></div></div>
    </div>
    <div class="grid g2">
-     ${card('Library',`<div class="drop" id="kbdrop" style="border:2px dashed var(--line2);border-radius:10px;padding:18px;text-align:center;color:var(--mut);margin-bottom:11px">📥 Drop files here to index them (PDF, DOCX, TXT, code)</div><div id="kblist"><div class="empty">…</div></div>`)}
+     ${card('Library',`<div class="drop" id="kbdrop" style="border:2px dashed var(--line2);border-radius:10px;padding:18px;text-align:center;color:var(--mut);margin-bottom:11px">📥 Drop files here to index them (PDF, DOCX, TXT, code)</div>
+       <div class="flex" style="margin-bottom:11px"><input class="t" id="kbfolder" placeholder="📁 Folder Q&amp;A — paste a local folder path to index it all" style="flex:1"><button class="btn" id="kbfolderbtn">Index folder</button></div>
+       <div id="kblist"><div class="empty">…</div></div>`)}
      ${card('Test Retrieval <span class="tag">cosine search</span>',`<input class="t" id="kbq" placeholder="Ask the knowledge base…"><button class="btn p mt" id="kbsearch" style="width:100%">🔎 Search</button><div id="kbres" class="mt"></div>`)}
    </div>`;
   async function loadStatus(){const s=await api('/kb/status');set('kb_docs',s.docs);set('kb_chunks',s.chunks);
@@ -83,6 +85,12 @@ function Knowledge(){
     const dz=$('#kbdrop');dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
     dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
     dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');[...e.dataTransfer.files].forEach(up)});
+    const ingestFolder=async()=>{const f=$('#kbfolder').value.trim();if(!f)return;
+      toast('info','Indexing folder',f);usage('kb-ingest-folder');
+      const r=await post('/kb/ingest-folder',{folder:f});
+      if(r&&r.ok){toast('success','Folder indexed',`${r.indexed} files · ${r.chunks} chunks${r.capped?' (capped)':''}`);$('#kbfolder').value='';loadStatus();loadDocs()}
+      else toast('error','Folder ingest failed',(r&&r.error)||'')};
+    $('#kbfolderbtn').onclick=ingestFolder;$('#kbfolder').addEventListener('keydown',e=>{if(e.key==='Enter')ingestFolder()});
     $('#kbsearch').onclick=search;$('#kbq').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
     return [bus.on('kb_done',()=>{loadStatus();loadDocs();toast('success','Indexed','added to knowledge base')})];
   }
