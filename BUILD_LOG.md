@@ -1070,3 +1070,11 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - HON-2 → 🟧 (awareness verified; end-to-end GUI control unverified/flaky). New HON-2b: do it with an
   isolated disposable target app. The HON-1 panic stop is the backstop for misbehaving GUI control.
 - **Verified:** gate green (script is pyflakes-clean; not run again).
+
+## M89 — HON-5: load / concurrency test (2026-06-30)  [P1 Stability]
+
+- `scripts/load_test.py` (non-destructive, on-demand): 48 concurrent reads across 6 endpoints (p95
+  ~100ms, 48/48 ok) + **48 concurrent conversation create/delete writes with NO "database is locked"**
+  → confirms WAL holds under write contention; chat single-flight returns cleanly without wedging.
+  Self-cleans its throwaway conversations.
+- **Verified:** ran against the live server — PASS; gate green.
