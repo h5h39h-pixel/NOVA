@@ -31,6 +31,28 @@ def test_settings_service(tmpdb):
     assert verify_login("secret") and not verify_login("nope")
 
 
+def test_secretbox_roundtrip(tmp_path, monkeypatch):
+    import nova.core.secretbox as sb
+    monkeypatch.setattr(sb, "_KEY_FILE", tmp_path / ".nova_key")
+    monkeypatch.setattr(sb, "_fernet", None)
+    enc = sb.encrypt_secret("sk-secret-123")
+    assert enc.startswith("enc:") and "sk-secret-123" not in enc
+    assert sb.decrypt_secret(enc) == "sk-secret-123"
+    assert sb.encrypt_secret("") == ""                                   # empty passes through
+    assert sb.decrypt_secret("plaintext-legacy") == "plaintext-legacy"  # legacy plaintext untouched
+
+
+def test_settings_encrypts_cloud_key(tmp_path, monkeypatch, tmpdb):
+    import nova.core.secretbox as sb
+    from nova.services.settings import settings_save, get_cloud_api_key
+    from nova.core.db import get_settings
+    monkeypatch.setattr(sb, "_KEY_FILE", tmp_path / ".nova_key")
+    monkeypatch.setattr(sb, "_fernet", None)
+    settings_save({"cloud_api_key": "sk-live-xyz"})
+    assert get_settings()["cloud_api_key"].startswith("enc:")   # stored encrypted at rest
+    assert get_cloud_api_key() == "sk-live-xyz"                 # decrypts transparently for use
+
+
 def test_training_datasets(tmp_path, monkeypatch, tmpdb):
     import nova.services.training as T
     monkeypatch.setattr(T, "DS_BASE", tmp_path / "b.jsonl")

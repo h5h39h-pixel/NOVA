@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **SEC‑4** Encrypt `cloud_api_key` at rest. (P0)
-2. **SEC‑5** One‑command HTTPS enablement. (P0)
-3. **SEC‑6** Audit every `subprocess`/exec call site, then **TST‑1**. (P0)
+1. **SEC‑5** One‑command HTTPS enablement. (P0)
+2. **SEC‑6** Audit every `subprocess`/exec call site. (P0)
+3. **TST‑1** Replace smoke tests with real per‑service assertions. (P0)
 
-_Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** centralized denylist `nova/core/safety.py` (M44) · **SEC‑3** strict CSP/security headers (M45)._
+_Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** denylist (M44) · **SEC‑3** CSP/headers (M45) · **SEC‑4** cloud_api_key at‑rest encryption (M46)._
 
 ---
 
@@ -56,7 +56,7 @@ _Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** centralized
 | **STT (Arabic/noisy)** | base/CPU Whisper; weak on Arabic. Size now configurable. |
 | **CI** | `.github/workflows/ci.yml` written but **never executed** (no Git remote). |
 | **Pinned deps** | Pinned to *installed* versions; **never proven to install together from a clean venv**. |
-| **Secrets** | `cloud_api_key` stored **plaintext** in the DB (config.json git‑ignored; tokens hashed). |
+| **Secrets** | `cloud_api_key` now **encrypted at rest** (SEC‑4, Fernet; key in `.nova_key`); tokens hashed; config.json git‑ignored. (Resolved.) |
 | **Background loops** | Swallow exceptions silently (`except: pass`) — a dead loop is invisible except via `/api/health`. |
 | **No watchdog** | If `server.py` crashes nothing restarts it; a server restart kills running training/recording (Job Object). |
 | **beforeunload text** | Browser shows generic wording + only after interaction (browser limitation, not fixable). |

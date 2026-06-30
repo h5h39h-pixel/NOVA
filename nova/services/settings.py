@@ -7,6 +7,7 @@ import hashlib
 import secrets
 from nova.core.db import get_settings, set_settings
 from nova.core.events import push
+from nova.core.secretbox import encrypt_secret, decrypt_secret
 from nova.services.audit import audit
 
 SECRET_KEYS = ("auth_token", "auth_token_hash", "cloud_api_key")
@@ -37,6 +38,11 @@ def settings_get():
     return _redact(get_settings())
 
 
+def get_cloud_api_key():
+    """Decrypted cloud API key for use by callers (empty string if unset)."""
+    return decrypt_secret(get_settings().get("cloud_api_key", "")) or ""
+
+
 def settings_save(patch):
     """Apply a settings patch; on first auth-enable, mint a one-time token (returned once)."""
     cur = get_settings(); new_token = None
@@ -44,6 +50,8 @@ def settings_save(patch):
         new_token = secrets.token_hex(16)                 # shown to the user exactly once
         patch["auth_token_hash"] = _hash(new_token)
         patch["auth_token"] = ""                            # never store the raw token (supersede legacy)
+    if patch.get("cloud_api_key"):                         # SEC-4: encrypt the cloud key at rest
+        patch["cloud_api_key"] = encrypt_secret(patch["cloud_api_key"])
     s = set_settings(patch)
     sec = [k for k in patch if k in ("auth_enabled", "lan_access", "webhook_enabled", "webhook_url", "cloud_api_key")]
     audit("settings", "update", ", ".join(k + "=" + str(patch[k] if k not in SECRET_KEYS else "***") for k in patch) if not sec else "security: " + ", ".join(sec))

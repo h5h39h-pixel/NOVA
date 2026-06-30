@@ -490,3 +490,17 @@ Made the six project files the **mandatory, permanent** source of truth and the 
 - **Verified:** the Playwright frontend gate loads all 11 routes with **zero console/CSP errors**;
   new header regression test (`test_security_headers`); gate green; live suite 42/42.
 - **Next:** SEC-4 (encrypt cloud_api_key at rest).
+
+## M46 — SEC-4: encrypt cloud_api_key at rest (2026-06-30)  [P0 Security]
+
+- **What:** `nova/core/secretbox.py` — Fernet (AES-128-CBC+HMAC, via the existing `cryptography`
+  dep). Encryption key stored in a git-ignored file `<data>/.nova_key` (NOT in the DB), so a stolen
+  `control.db` alone can't reveal secrets. `settings_save` encrypts `cloud_api_key` on write
+  (stored as `enc:<token>`); `get_cloud_api_key()` decrypts transparently for callers; legacy
+  plaintext values still decrypt (pass-through), so migration is automatic on next save. `_redact`
+  continues to mask the key in all API responses.
+- **Why:** the key was stored plaintext (flagged in the honest assessment). Low threat on a personal
+  machine, but a real defense-in-depth win and a P0 item.
+- **Verified:** `tests/test_secretbox_roundtrip` + `tests/test_settings_encrypts_cloud_key` (raw
+  value is `enc:…`, `get_cloud_api_key()` returns the plaintext). Gate green; live suite 42/42.
+- **Next:** SEC-5 (one-command HTTPS enablement).
