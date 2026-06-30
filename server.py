@@ -279,16 +279,20 @@ async def metrics_loop():
         except Exception as e: record_error("metrics_loop", e)   # surfaced via /api/errors (deduped)
         await asyncio.sleep(float(get_settings().get("metrics_interval", 1.5)))
 
+def _status_snapshot():
+    """Blocking service probes — run in a thread so up to ~9s of timeouts never stalls the event loop."""
+    from nova.services.screen_vision import reconcile_kb_listener
+    reconcile_kb_listener()   # SV-4: stop the keystroke listener promptly after opt-out (off the loop)
+    return {"type": "services",
+            "ollama": http_ok(f"{OLLAMA}/api/tags"),
+            "comfy":  http_ok(f"{COMFY_URL}/system_stats"),
+            "owui":   http_ok(f"{OWUI_URL}/")}
+
 async def status_loop():
     while True:
         try:
-            st = {"type": "services",
-                  "ollama": http_ok(f"{OLLAMA}/api/tags"),
-                  "comfy":  http_ok(f"{COMFY_URL}/system_stats"),
-                  "owui":   http_ok(f"{OWUI_URL}/")}
+            st = await asyncio.to_thread(_status_snapshot)   # don't block the loop on slow/offline probes
             await _send_all(st)
-            from nova.services.screen_vision import reconcile_kb_listener
-            reconcile_kb_listener()   # SV-4: stop the keystroke listener promptly after opt-out
         except Exception as e: record_error("status_loop", e)     # surfaced via /api/errors (deduped)
         await asyncio.sleep(5)
 

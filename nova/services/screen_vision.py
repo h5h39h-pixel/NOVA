@@ -141,39 +141,54 @@ def active_window():
 # A SMALL in-memory rolling buffer of recently typed text, captured by a pynput listener that runs
 # ONLY while `track_keyboard` is on. Never persisted, capped, cleared the moment the gate is turned
 # off. Privacy: this is a global capture while active — gated, off by default, with a clear warning.
+import threading
 from collections import deque
 _KB = {"listener": None, "buf": None, "keys": 0}
+_KB_LOCK = threading.Lock()   # _ensure_kb_listener runs from BOTH the threadpool and the event loop
+
+
+def _on_kb_press(key):
+    """pynput listener-thread callback — append to the buffer under the lock (the buffer may be swapped
+    to None by a concurrent stop)."""
+    try:
+        with _KB_LOCK:
+            if _KB["buf"] is None:
+                return
+            _KB["keys"] += 1
+            ch = getattr(key, "char", None)
+            if ch is not None:
+                _KB["buf"].append(ch)
+            else:
+                name = str(key).replace("Key.", "")
+                if name == "space": _KB["buf"].append(" ")
+                elif name == "enter": _KB["buf"].append("\n")
+                elif name == "tab": _KB["buf"].append("\t")
+                elif name == "backspace" and _KB["buf"]:
+                    _KB["buf"].pop()
+    except Exception:
+        pass
 
 
 def _ensure_kb_listener(on):
-    if on and _KB["listener"] is None:
-        try:
-            from pynput import keyboard
-        except Exception:
-            return
-        _KB["buf"] = deque(maxlen=240); _KB["keys"] = 0
-
-        def on_press(key):
+    # Lock the check-then-(start|stop) so two threads (the threadpool context call + the event-loop
+    # reconcile) can't both create a listener — that would orphan a global keyboard hook that never
+    # stops (a privacy leak). stop() is called OUTSIDE the lock to avoid any join-under-lock stall.
+    to_stop = None
+    with _KB_LOCK:
+        if on and _KB["listener"] is None:
             try:
-                _KB["keys"] += 1
-                ch = getattr(key, "char", None)
-                if ch is not None:
-                    _KB["buf"].append(ch)
-                else:
-                    name = str(key).replace("Key.", "")
-                    if name == "space": _KB["buf"].append(" ")
-                    elif name == "enter": _KB["buf"].append("\n")
-                    elif name == "tab": _KB["buf"].append("\t")
-                    elif name == "backspace" and _KB["buf"]:
-                        _KB["buf"].pop()
+                from pynput import keyboard
             except Exception:
-                pass
-        lst = keyboard.Listener(on_press=on_press)
-        lst.start(); _KB["listener"] = lst
-    elif not on and _KB["listener"] is not None:
-        try: _KB["listener"].stop()
+                return
+            _KB["buf"] = deque(maxlen=240); _KB["keys"] = 0
+            lst = keyboard.Listener(on_press=_on_kb_press)
+            lst.start(); _KB["listener"] = lst
+        elif not on and _KB["listener"] is not None:
+            to_stop = _KB["listener"]
+            _KB["listener"] = None; _KB["buf"] = None; _KB["keys"] = 0
+    if to_stop is not None:
+        try: to_stop.stop()
         except Exception: pass
-        _KB["listener"] = None; _KB["buf"] = None; _KB["keys"] = 0
 
 
 def reconcile_kb_listener():
@@ -194,8 +209,10 @@ def keyboard_context():
     win = active_window()
     if not on:
         return {"enabled": False, "window": win}
-    recent = ("".join(_KB["buf"]) if _KB["buf"] else "")[-200:]
-    return {"enabled": True, "window": win, "recent_text": recent, "keys": _KB["keys"]}
+    with _KB_LOCK:                                  # snapshot atomically — the listener thread mutates buf
+        recent = ("".join(_KB["buf"]) if _KB["buf"] else "")[-200:]
+        keys = _KB["keys"]
+    return {"enabled": True, "window": win, "recent_text": recent, "keys": keys}
 
 
 # ---- SV-2: continuous VLM narration loop (opt-in, throttled) ----------------
@@ -223,7 +240,11 @@ async def narration_loop():
                 push({"type": "vision_narration", "text": desc, "ts": time.time()})
         except Exception:
             pass
-        await asyncio.sleep(interval)
+        # sleep in short slices so disabling / interval changes take effect within ~2s, not a full interval
+        waited = 0
+        while waited < interval and narrate_enabled():
+            await asyncio.sleep(2)
+            waited += 2
 
 
 # ---- live MJPEG frame generator --------------------------------------------

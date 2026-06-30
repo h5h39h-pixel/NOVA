@@ -188,6 +188,15 @@ Closed every remaining 🟧 with real implementation, and re‑audited from scra
 - **HON‑10** output‑side injection detection (defense‑in‑depth). **HON‑7** measured STT WER (EN ~93% /
   AR ~74%) via a new reusable `stt_eval.py`. **AVL‑1** drag + all control blocks verified.
   **POL‑2/POL‑3** finished/reclassified.
+- **3rd audit (post‑implementation) — found & fixed 5 more in the code I'd just written:** (1) a
+  **listener double‑start race** (threadpool `keyboard_context` + event‑loop `reconcile` could both
+  create a keylogger → one orphaned forever) → guarded `_ensure_kb_listener` with a lock, `stop()` outside
+  the lock; (2) `status_loop` ran blocking `http_ok` ×3 on the event loop (up to ~9s stall, delaying the
+  privacy stop) → moved to `asyncio.to_thread`; (3) deque read could raise mid‑mutation → snapshot under
+  the lock; (4) `wrap_untrusted` echoed the matched injection text outside the fence → neutral warning
+  only; (5) narration loop ignored settings for up to one interval → now sleeps in 2s slices. All tested,
+  gate green. *Lesson: concurrency bugs hide in the "obviously fine" glue — the lock matters most exactly
+  where the feature's whole value is "it stops when you turn it off."*
 - **Honest framing of the "all ✅" table:** ✅ here means "done to the right bar for a single‑user local
   tool," not "perfect forever." HON‑10 is strong layered mitigation (no injection defense is absolute);
   AVL‑1 game‑play is still bounded by OS keyboard suppression; SV‑4 is a deliberate, gated keylogger the
