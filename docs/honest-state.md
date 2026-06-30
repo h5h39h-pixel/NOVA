@@ -157,3 +157,28 @@ Ran every feature for real (live models, real files, real screen). **Result: zer
 - Stale `#/chat` dashboard link → `#/workspace`; removed dead `Chat()`/`pages-agent.js` (M103).
 **Still honest‑fragile (unchanged, tracked):** AVL‑1 autonomous game‑play (best‑effort); coverage 49%;
 broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is broken.
+
+## M105 (2026‑06‑30) — backlog: self‑healing + persistent memory (+ honest notes)
+**Shipped this pass** (gate ✅ · live 42/42 ✅ · live API roundtrip ✅):
+- **IDEA‑10 self‑healing loops** — `_supervise()` auto‑restarts a background loop that crashes hard.
+  *Honest scope:* the four loops are already `while True` with a per‑iteration `try`, so a *single*
+  bad iteration never killed them before. `_supervise` only adds protection against the rarer case of
+  an exception escaping the whole loop body or the coroutine returning. It's a real safety net, not a
+  fix for a frequent crash. Not yet exercised by a real in‑prod crash (only the unit test forces one).
+- **IDEA‑8 persistent memory** — durable local facts injected into chat + agent.
+  *Honest scope:* recall is **keyword‑overlap**, not semantic — "car" won't match a fact about your
+  "vehicle." Good enough for a small, mostly‑pinned fact set; if it grows large or needs fuzzy recall,
+  switch to embeddings (we already have `nomic-embed-text` + the KB cosine path to reuse). Facts are
+  injected as *trusted* context (unlike web/file content which is fenced as untrusted) — correct, since
+  only the owner or the agent's own `remember` writes them, but worth remembering if a future feature
+  ever lets untrusted text reach `remember`.
+- **AVL‑2 closed** — the perceive→act→observe loop is the existing ReAct controller + perception tools +
+  the mandated footer rule. No new code; the capability was already present and is now documented as
+  such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
+  synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
+
+**Operational note (discovery):** the running server must be **restarted** to serve a newly added route
+— the watchdog's restart interval is >40s, so after killing the stale process I started `server.py`
+manually and confirmed `/api/memory → 200` before the frontend console‑error gate could pass. Lesson:
+when adding an API route, restart the live server *before* running the frontend gate (which tests the
+live `:8900`, not the in‑process TestClient).

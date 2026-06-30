@@ -81,6 +81,13 @@ def stream_chat_send(prompt, model, cid, context="", target=None, use_rag=False,
         msgs = []
         if deepthink:
             msgs.append({"role": "system", "content": DEEPTHINK_SYS})
+        try:                                          # IDEA-8: durable user facts (local memory)
+            from nova.services.memory import context_block
+            mem = context_block(prompt)
+            if mem:
+                msgs.append({"role": "system", "content": mem})
+        except Exception:
+            pass
         if context:
             msgs.append({"role": "system", "content": "Use this attached document as context:\n" + context[:8000]})
         msgs += conv_messages(cid, 40)

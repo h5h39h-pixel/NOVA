@@ -57,3 +57,24 @@ def test_events_push_without_loop():
     from nova.core import events
     events.push({"type": "test"})            # must not raise when no loop is set
     assert isinstance(events.clients, set)
+
+
+def test_supervise_restarts_crashed_loop(tmpdb, monkeypatch):
+    """IDEA-10: a background loop that crashes hard is auto-restarted by _supervise; a clean
+    CancelledError (shutdown) stops it without a restart."""
+    import asyncio, pytest, server
+    calls = {"n": 0}
+
+    async def flaky():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("boom")            # hard crash → supervisor must restart it
+        raise asyncio.CancelledError()            # second run → stop the supervisor
+
+    async def no_sleep(*a, **k):                   # don't actually wait out the backoff
+        return
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
+
+    with pytest.raises(asyncio.CancelledError):
+        asyncio.run(server._supervise(flaky))
+    assert calls["n"] == 2                         # restarted exactly once after the crash

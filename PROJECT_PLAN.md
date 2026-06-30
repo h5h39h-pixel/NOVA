@@ -63,6 +63,9 @@ fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each p
 - **M34–M35** full backend modularization (server.py 2400→~550).
 - **M36** vibrant/living UI. **M37** Nova Brain 2.0. **M38** hardening Phases 0–4.
 - **M39** bespoke per‑page UI. **M40** close‑tab confirm. **M41** Open WebUI 0.10.1.
+- **M42–M96** Phases 5–8, HON‑1…12 hardening, full front/back modularization, GitHub + CI, lockfile.
+- **M97–M104** unified Workspace + ✨Auto model, media‑in‑chat, CORE PRINCIPLE, launch‑readiness deep test.
+- **M105** post‑launch backlog: IDEA‑10 self‑healing loops, IDEA‑8 local persistent memory, AVL‑2 closed.
 
 ## 5. Definition of Done & risks
 - **DoD:** see `WORKFLOW.md` quality gate (lint + tests + live suite + render‑if‑visual + docs + commit).

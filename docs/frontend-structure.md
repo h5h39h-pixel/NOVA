@@ -34,8 +34,10 @@ Loaded after the fonts/FA in this order (later files override earlier — preser
 
 ## Backend — layered DAG (unchanged)
 `config ← core ← services ← api ← server`; nothing imports `server.py`. Routes live in `nova/api/*`
-(now incl. `toolkit.py`, `control.py`, `screen_vision.py`, `understand.py`, **`exec.py`, `stt.py`,
-`files_api.py`**); logic in `nova/services/*` (now incl. `stt.py` for the Whisper loader). After the
+(now incl. `toolkit.py`, `control.py`, `screen_vision.py`, `understand.py`, `exec.py`, `stt.py`,
+`files_api.py`, **`memory.py`** [IDEA‑8]); logic in `nova/services/*` (now incl. `stt.py` for the
+Whisper loader and **`memory.py`** for local persistent memory). `server.py` also gained `_supervise()`
+[IDEA‑10] which auto‑restarts any background loop that crashes hard. After the
 M96 extraction, `server.py` is **~576 lines** — closer to a pure composition root (lifespan, loops,
 middleware, router includes + a small set of app‑state‑coupled routes: ws, health/errors, selftest,
 db‑status, chat‑export, kb/ingest).

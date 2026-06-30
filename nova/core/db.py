@@ -83,6 +83,8 @@ def init_db():
         ts REAL, cpu REAL, ram REAL, gpu_util REAL, vram_used REAL, vram_total REAL, gpu_temp REAL);
     CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY AUTOINCREMENT,
         jid TEXT, name TEXT, kind TEXT, status TEXT, started REAL, ended REAL, exit_code INTEGER, source TEXT);
+    CREATE TABLE IF NOT EXISTS memory (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts REAL, kind TEXT DEFAULT 'fact', text TEXT, tags TEXT, source TEXT, pinned INTEGER DEFAULT 0);
     """)
     # migrate older chat tables to the richer schema
     chat_cols = [r[1] for r in c.execute("PRAGMA table_info(chat)")]

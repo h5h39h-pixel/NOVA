@@ -81,6 +81,10 @@ AGENT_TOOL_DEFS = {
     "write_file": ("- write_file {path, content}: write a text file. Pass just a bare filename (e.g. report.txt) — "
                    "it is saved in your output folder automatically; do NOT prefix 'agent-output/'.\n"),
     "schedule": "- schedule {name, action, params, interval_sec}: create a background automation.\n",
+    "remember": ("- remember {text}: durably store a fact/preference about the operator (local memory) so "
+                 "you recall it in future sessions, e.g. 'the user prefers English explanations'.\n"),
+    "recall": ("- recall {query}: retrieve durable facts you previously stored about the operator. Use when "
+               "personal context would help. Omit query to list the most relevant facts.\n"),
 }
 AGENT_FOOTER_TMPL = (
     "- ask {{text}}: if the goal is ambiguous or you need information only the user has, ask them and stop.\n"
@@ -184,6 +188,18 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             if r.get("text"): parts.append("TEXT:\n" + str(r["text"])[:1500])
             if r.get("description"): parts.append("UNDERSTANDING:\n" + str(r["description"])[:1500])
             return "\n\n".join(parts) or ("error: " + r.get("error", "could not read"))
+        if name == "recall":                          # IDEA-8: read durable user facts
+            from nova.services.memory import recall as _recall
+            facts = _recall(a.get("query", ""))
+            return "\n".join(f"- {f['text']}" for f in facts) or "no stored facts about the user yet"
+        if name == "remember":                         # IDEA-8: persist a durable user fact
+            from nova.services.memory import remember as _remember
+            txt = (a.get("text", "") or "").strip()
+            if not txt: return "nothing to remember (empty text)"
+            if dry_run: return f"[dry-run] would remember: {txt}"
+            _remember(txt, source="agent")
+            audit("agent", "remember", txt[:80])
+            return f"remembered: {txt}"
         if name == "screen_awareness":
             from nova.services.control import awareness
             r = awareness(); act = r["active"]; sc = r["screen"]
@@ -336,6 +352,13 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
         sys_prompt += ("\nDEEPTHINK mode: in each step's 'thought', reason carefully and thoroughly before "
                        "choosing an action — consider alternatives, edge cases, and whether the previous "
                        "observation actually achieved the sub-goal. Prefer correctness over speed.")
+    try:                                              # IDEA-8: seed durable user facts as context
+        from nova.services.memory import context_block
+        mem = context_block(goal)
+        if mem:
+            sys_prompt += "\n\n" + mem
+    except Exception:
+        pass
     msgs = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": "GOAL: " + goal}]
     final = None
     for step in range(max_steps):

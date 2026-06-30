@@ -89,10 +89,11 @@ async def lifespan(app: FastAPI):
         log.warning(f"job reconcile failed: {e}")
     log.info("AI Control Center starting up")
     psutil.cpu_percent(interval=None)  # prime
-    asyncio.create_task(metrics_loop())
-    asyncio.create_task(status_loop())
-    asyncio.create_task(scheduler_loop())
-    asyncio.create_task(backup_loop())
+    # IDEA-10: every background loop runs under _supervise so a hard crash (an exception that
+    # escapes the loop's own try, or an unexpected return) auto-restarts it instead of silently
+    # dying for the rest of the process lifetime. Self-healing, local-only, no new surface.
+    for fn in (metrics_loop, status_loop, scheduler_loop, backup_loop):
+        asyncio.create_task(_supervise(fn))
     yield
     # ---- graceful shutdown: finalize in-flight work so nothing is lost ----
     try:
@@ -138,6 +139,7 @@ from nova.api.settings import router as settings_router
 from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
 from nova.api.insights import router as insights_router
+from nova.api.memory import router as memory_router
 # tags group the routes in the auto-generated API docs at /docs
 app.include_router(bugs_router, tags=["bugs"])
 app.include_router(notifications_router, tags=["notifications"])
@@ -167,6 +169,7 @@ app.include_router(settings_router, tags=["settings"])
 app.include_router(tts_router, tags=["media"])
 app.include_router(backup_router, tags=["backup"])
 app.include_router(insights_router, tags=["insights"])
+app.include_router(memory_router, tags=["memory"])
 
 # auth gate (token_ok) + AUTH_EXEMPT live in nova/services/settings.py; used by the middleware below
 from nova.services.settings import token_ok, AUTH_EXEMPT
@@ -234,6 +237,28 @@ async def gate(request: Request, call_next):
     if path == "/" or path.endswith(".html"):
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
+
+async def _supervise(fn, *, max_backoff: float = 30.0):
+    """IDEA-10 self-healing supervisor. Each background loop is a `while True` that catches its
+    own per-iteration errors, so it should never return — but if one ever crashes hard or returns
+    (a bug, an OOM, a cancelled inner await), restart it with exponential backoff instead of
+    leaving the subsystem dead until the next process restart. CancelledError (clean shutdown)
+    propagates so the task can actually stop."""
+    name = getattr(fn, "__name__", "loop")
+    backoff = 1.0
+    while True:
+        try:
+            await fn()
+            # A loop returning is itself unexpected — treat as a crash and restart.
+            log.warning(f"supervised loop '{name}' returned unexpectedly — restarting in {backoff:.0f}s")
+            record_error(f"supervise:{name}", RuntimeError("loop returned unexpectedly"))
+        except asyncio.CancelledError:
+            raise  # graceful shutdown — do not restart
+        except Exception as e:
+            log.warning(f"supervised loop '{name}' crashed: {e!r} — restarting in {backoff:.0f}s")
+            record_error(f"supervise:{name}", e)
+        await asyncio.sleep(backoff)
+        backoff = min(backoff * 2, max_backoff)
 
 async def metrics_loop():
     last_hist = 0.0

@@ -58,6 +58,12 @@ A task is **DONE** only when all of these pass:
 Anything that "works but has a known issue" is **🟧 FRAGILE**, not DONE — record the issue in
 `STATUS.md` and `TASKS.md`.
 
+> **Gotcha (M105):** the frontend gate (`test_frontend.py`) drives the **live** server on `:8900`, not
+> the in‑process TestClient. After adding/changing an API route, **restart the live server first** or the
+> page will hit the old build and log a 404 console error. The watchdog auto‑restarts but its interval is
+> >40s — to restart now: stop the `python server.py` process and relaunch it, then confirm the new route
+> returns 200 before re‑running the gate.
+
 ## Status vocabulary
 ✅ DONE · 🟧 FRAGILE (works, known issue) · 🟦 IN PROGRESS · ⬜ TODO · 🚫 EXCLUDED (owner decision)
 

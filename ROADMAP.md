@@ -129,10 +129,11 @@ Original ideas that extend Nova's vision without breaking the core principle. Tr
    catch regressions after model/dep updates.
 7. **Region watch → act** — pin a screen region; when its text changes, trigger an action (extends
    `screen_if`).
-8. **Local persistent memory** — durable user facts/preferences the assistant recalls across sessions
-   (local file, owner‑editable).
+8. ✅ **Local persistent memory** (M105) — durable user facts/preferences recalled across sessions;
+   owner‑editable in Settings, injected into chat + agent prompts; local‑only.
 9. **Image edit pipeline** — generate then iteratively refine images (ComfyUI img2img) from the chat.
-10. **Self‑healing loops** — if a background loop dies (seen in `/api/errors`), auto‑restart it.
+10. ✅ **Self‑healing loops** (M105) — every background loop auto‑restarts on a hard crash (`_supervise`,
+   exp‑backoff), with the crash recorded to `/api/errors`.
 
 ## 🔒 CORE PRINCIPLE (permanent) — single‑user · local‑only
 See **`docs/PRINCIPLES.md`**. No cloud/telemetry/inbound‑remote/LAN‑control/phone‑control/external‑

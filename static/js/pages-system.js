@@ -293,7 +293,11 @@ function Settings(){
       <button class="btn p mt" id="saveauth" style="width:100%">Save security settings</button>
       ${s.auth_enabled?`<button class="btn mt" id="logout" style="width:100%">Log out</button>`:''}
       <p class="muted mt" style="font-size:11px">Changing LAN access requires restarting the server. On a LAN, traffic is unencrypted (HTTPS is on the roadmap) — use only on trusted networks.</p>`)}
-   ${card('Usage Statistics',`<div id="usagebox"></div>`)}`;
+   ${card('Usage Statistics',`<div id="usagebox"></div>`)}
+   ${card('🧠 Persistent Memory',`
+      <p class="muted" style="font-size:12.5px">Durable facts Nova remembers about you across sessions (local-only). Used to personalise chat &amp; agent answers. The agent can also add facts itself via its <code>remember</code> tool.</p>
+      <div class="flex" style="margin-top:8px"><input class="t" id="memin" placeholder="e.g. I prefer concise answers in English" style="flex:1"><button class="btn p" id="memadd">＋ Remember</button></div>
+      <div id="membox" style="margin-top:10px"></div>`)}`;
   function mount(){
     (async()=>{const list=await api('/models');$('#sl').innerHTML=list.map(m=>`<option ${m.name===s.default_local_model?'selected':''}>${esc(m.name)}</option>`).join('')})();
     const slite=$('#slite');if(slite)slite.onclick=function(){const on=!this.classList.contains('on');
@@ -314,6 +318,12 @@ function Settings(){
       rd.onload=async()=>{try{const data=JSON.parse(rd.result);const r=await post('/restore',data);
         toast(r.ok?'success':'error',r.ok?'Restored':'Restore failed',r.ok?('added '+JSON.stringify(r.added)):(r.error||''));}
         catch(err){toast('error','Invalid backup file','')}};rd.readAsText(f)};
+    const loadMem=async()=>{const r=await api('/memory');const items=(r&&r.items)||[];
+      $('#membox').innerHTML=items.length?items.map(f=>`<div class="metarow"><span>${f.pinned?'📌 ':''}${esc(f.text)}</span><button class="btn" data-mdel="${f.id}" title="Forget">✕</button></div>`).join(''):'<div class="empty">nothing remembered yet</div>';
+      $$('#membox [data-mdel]').forEach(b=>b.onclick=async()=>{await fetch('/api/memory/'+b.dataset.mdel,{method:'DELETE'});loadMem()})};
+    const addMem=async()=>{const v=$('#memin').value.trim();if(!v)return;const r=await post('/memory',{text:v});
+      if(r&&r.ok){$('#memin').value='';toast('success','Remembered','');loadMem()}else toast('error','Could not save',(r&&r.error)||'')};
+    $('#memadd').onclick=addMem;$('#memin').onkeydown=e=>{if(e.key==='Enter')addMem()};loadMem();
     const u=getUsage();const ent=Object.entries(u).sort((a,b)=>b[1]-a[1]);
     $('#usagebox').innerHTML=ent.length?ent.map(([k,v])=>`<div class="metarow"><span>${esc(k)}</span><span class="tag">${v}</span></div>`).join(''):'<div class="empty">no usage yet</div>';
     $('#sn').onclick=function(){this.classList.toggle('on')};

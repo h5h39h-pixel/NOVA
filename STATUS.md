@@ -18,6 +18,12 @@ Real (non‑smoke) tests of every feature: gate ✅ · live 42/42 ✅ · self‑
 nova‑local 4/4 ✅ · GUI control ✅ · concurrency ✅ · **STT round‑trip ✅** · screen‑understanding ✅ ·
 media‑in‑chat zero console errors ✅ (fixed the 404 polling). Full table: `docs/honest-state.md`.
 
+**M105 (post‑launch backlog):** **IDEA‑10 self‑healing loops** (every background loop auto‑restarts on a
+hard crash via `_supervise`, exp‑backoff) · **IDEA‑8 local persistent memory** (durable user facts;
+`/api/memory` + Settings "🧠 Persistent Memory" card; injected into chat + agent prompts; agent
+`remember`/`recall` tools) · **AVL‑2 closed** (the ReAct perceive→act→observe loop *is* the helper).
+All gated (check.py ✅, 42/42 ✅) and live‑verified. Local‑only; no protections disabled.
+
 ## Where we are right now (honest)
 The original roadmap (P0→P3 + Phases 7/8) is **built and smoke‑verified**, and the architecture / security
 baseline / test scaffolding / feature breadth are genuinely strong. **But** a candid self‑audit

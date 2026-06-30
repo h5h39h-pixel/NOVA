@@ -1267,3 +1267,32 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   path, not a real route — real analytics routes /api/brain,habits,achievements all 200.)
 - **Conclusion:** zero errors across the project. Honest remaining: AVL-1 autonomous game-play
   (best-effort), coverage 49%, broader batteries unmeasured — none broken.
+
+## M105 — IDEA-10 self-healing loops + IDEA-8 persistent memory + AVL-2 closed (2026-06-30)  [Feature/Stability]
+
+Continued the backlog autonomously (no protections disabled, single-user/local-only honored).
+
+- **IDEA-10 — self-healing background loops:** new `_supervise(fn)` in `server.py` wraps all four
+  loops (metrics/status/scheduler/backup). If a loop ever crashes hard (an exception escaping its own
+  per-iteration try) or returns unexpectedly, it's auto-restarted with exponential backoff (1→30s cap)
+  and the crash is recorded to `/api/errors`; a clean `CancelledError` (shutdown) propagates and stops
+  it. Previously a hard crash would leave that subsystem dead until a full process restart. Unit test:
+  crash → restart exactly once; cancel → stop.
+- **IDEA-8 — local persistent memory:** durable user facts/preferences across sessions, 100% local.
+  - `nova/core/db.py`: new `memory` table (created on every boot via the baseline `executescript`, so
+    existing DBs pick it up — no migration needed).
+  - `nova/services/memory.py`: `remember/forget/all_facts/recall/context_block`; case-insensitive
+    de-dupe, keyword-overlap ranking, pinned-first, latin+arabic tokenizer, inject cap 12.
+  - `nova/api/memory.py` + router: `GET/POST /api/memory`, `DELETE /api/memory/{id}`.
+  - **Injected** as a trusted system block into both **chat** (`stream_chat_send`) and **agent**
+    (`agent_run`) prompts, keyword-ranked to the current prompt/goal.
+  - Agent gained **`remember`/`recall` tools** so it can persist & retrieve facts itself.
+  - Settings UI: **"🧠 Persistent Memory"** card (add / pin-aware list / delete).
+  - Tests: service (de-dupe/rank/pin/forget), API CRUD, render-verified (settings route, zero console
+    errors). Live roundtrip verified (add→list→recall "english"→delete).
+- **AVL-2 — agent perceive→act→observe loop:** closed. The ReAct controller (`agent_run` loops
+  `max_steps`, feeding each tool observation back) + perception tools (`see_screen`/`screen_awareness`/
+  `find_element`) + `control`/`act_on_screen` + the AGENT_FOOTER's mandated LOOK→ACT→LOOK-AGAIN rule
+  *are* the loop helper. (Sustained game-play reliability remains AVL-1's 🟧 keyboard-suppression caveat.)
+- **Gate:** `scripts/check.py` ✅ · `run_tests.py` 42/42 ✅. Live server restarted to serve the new
+  route (the watchdog's interval is >40s; started manually and verified `/api/memory` → 200).

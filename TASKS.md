@@ -108,7 +108,7 @@ Mutating control is gated by `exec_allowed()` (localhost ok; LAN needs opt‑in)
 |---|---|---|---|
 | MED‑1 | **Image capture / image‑gen / video‑gen from the unified chat** | ✅ | M101 + M104. Composer buttons 📸/🎨/🎬 + natural chat commands (EN+AR). Results render **inline**. **M104 fix:** rewrote `showMedia` to poll **job status** (`/api/processes`) instead of the file URL → **zero console errors** during generation (was: benign 404 retries). Verified end‑to‑end. |
 | AVL‑1 | **Agent vision tasks** — "what's on my desktop?" + autonomous game play | 🟧 | "What's on my desktop?" ✅ verified (see_screen → VLM described the live desktop). Full autonomous "Play Solitaire" (watch→strategize→drag→self‑improve) is **best‑effort**: mouse move/click work, but synthetic keyboard is suppressed (UIA SetValue only) and drag‑and‑drop + a sustained strategy loop are unverified. Building blocks shipped; full game‑play documented as aspirational. |
-| AVL‑2 | Agent screen‑driven control loop helper (perceive→act→observe) | ⬜ | A tool/loop so the agent can iterate see_screen → control → re‑observe for visual tasks. |
+| AVL‑2 | Agent screen‑driven control loop helper (perceive→act→observe) | ✅ | M105. Satisfied by the ReAct controller (`agent_run` iterates up to `max_steps`, each step feeding the prior tool observation back) + the three perception tools (`see_screen`/`screen_awareness`/`find_element`) + `control`/`act_on_screen`, with the AGENT_FOOTER mandating the **LOOK → ACT → LOOK‑AGAIN** loop until the goal is met. The loop *is* the helper; no extra primitive needed. (Sustained game‑play reliability is still AVL‑1's 🟧 caveat — keyboard suppression, not the loop.) |
 | CORE‑P | **Enforce the single‑user/local‑only CORE PRINCIPLE everywhere** | ✅ | M100. `docs/PRINCIPLES.md` + referenced in CLAUDE/STATUS/ROADMAP/PROJECT_PLAN/WORKFLOW. Permanent discovery‑log rule added to WORKFLOW. |
 
 ## P1 — Unified Workspace + Auto model (UWS · owner request)
@@ -161,9 +161,9 @@ and opt‑in where it touches the screen/privacy. (Full descriptions in `ROADMAP
 | IDEA‑5 | Folder Q&A — index a directory, chat over it with citations | P2 | ⬜ |
 | IDEA‑6 | Quality dashboard — scheduled eval batteries charted over time | P3 | ⬜ |
 | IDEA‑7 | Region watch → act (pin a screen region; act on text change) | P3 | ⬜ |
-| IDEA‑8 | Local persistent memory (durable user facts/preferences) | P2 | ⬜ |
+| IDEA‑8 | Local persistent memory (durable user facts/preferences) | P2 | ✅ M105. `nova/services/memory.py` + `memory` table + `/api/memory` (list/add/recall/delete) + Settings "🧠 Persistent Memory" card. Facts are injected as a system block into **chat** and **agent** prompts (keyword‑ranked, pinned‑first, de‑duped). Agent gained `remember`/`recall` tools. Tests: service + API + UI render. Local‑only. |
 | IDEA‑9 | Image edit pipeline (ComfyUI img2img refine from chat) | P3 | ⬜ |
-| IDEA‑10 | Self‑healing loops (auto‑restart a dead background loop) | P2 | ⬜ |
+| IDEA‑10 | Self‑healing loops (auto‑restart a dead background loop) | P2 | ✅ M105. `_supervise()` wraps every background loop (metrics/status/scheduler/backup); a hard crash or unexpected return auto‑restarts the loop with exponential backoff (cap 30s), recording the crash to `/api/errors`; `CancelledError` (clean shutdown) still stops it. Unit‑tested (crash → restart once; cancel → stop). |
 
 ## P2 — Documentation (keep the six files current)
 

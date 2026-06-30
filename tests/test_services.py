@@ -125,3 +125,25 @@ def test_training_progress_json():
     from nova.services.training import _parse_train_sub
     sub = _parse_train_sub('... [PROGRESS] {"step": 40, "total": 120, "loss": 1.5} ...')
     assert sub and sub["step"] == 40 and sub["total"] == 120 and sub["percent"] == 33
+
+
+def test_memory_remember_recall_forget(tmpdb):
+    """IDEA-8: durable facts persist, de-dupe, rank by keyword overlap, pin first, and delete."""
+    from nova.services import memory as M
+    a = M.remember("The operator prefers English explanations")
+    M.remember("the operator prefers english explanations")     # case-insensitive dup → no growth
+    M.remember("The GPU is an RTX 5090", tags="hardware")
+    M.remember("Default chat model is qwen2.5:14b", pinned=True)
+    assert len(M.all_facts()) == 3                                # dup collapsed
+
+    hits = M.recall("which gpu do I have")
+    assert hits and "RTX 5090" in hits[0]["text"]                 # keyword overlap surfaces the GPU fact
+
+    pinned_first = M.recall("anything")
+    assert pinned_first[0]["pinned"] == 1                         # pinned fact always ranks first
+
+    block = M.context_block("english")
+    assert "English explanations" in block
+
+    assert M.forget(a["id"]) is True
+    assert all(f["id"] != a["id"] for f in M.all_facts())

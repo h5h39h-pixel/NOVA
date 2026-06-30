@@ -47,6 +47,19 @@ def test_selftest_endpoint(client):
     assert r.status_code == 200 and "passed" in r.json() and "total" in r.json()
 
 
+def test_memory_api_crud(client):
+    """IDEA-8: add → list → recall → delete a durable memory via the API."""
+    add = client.post("/api/memory", json={"text": "I prefer concise answers", "pinned": True}).json()
+    assert add["ok"] and add["item"]["id"]
+    mid = add["item"]["id"]
+    items = client.get("/api/memory").json()["items"]
+    assert any(f["id"] == mid and f["pinned"] == 1 for f in items)
+    hit = client.get("/api/memory", params={"q": "concise"}).json()["items"]
+    assert any("concise" in f["text"] for f in hit)
+    assert client.request("DELETE", f"/api/memory/{mid}").json()["ok"] is True
+    assert all(f["id"] != mid for f in client.get("/api/memory").json()["items"])
+
+
 def test_index_auto_cache_bust(client):
     html = client.get("/").text
     assert re.search(r"app\.css\?v=\d+", html)   # server-stamped asset version
