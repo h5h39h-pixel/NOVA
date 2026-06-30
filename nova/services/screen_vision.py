@@ -53,7 +53,39 @@ def remember_screen(min_chars=12):
         return {"ok": True, "stored": False, "reason": "no meaningful text on screen", "chars": len(text)}
     name = "screen-memory " + time.strftime("%Y-%m-%d %H:%M:%S")
     chunks = kb_ingest_text(name, text)
-    return {"ok": True, "stored": chunks > 0, "doc": name, "chars": len(text), "chunks": chunks}
+    pruned = _prune_screen_memory()                  # IDEA-2b: enforce the retention cap
+    return {"ok": True, "stored": chunks > 0, "doc": name, "chars": len(text), "chunks": chunks,
+            "pruned": pruned}
+
+
+def _prune_screen_memory():
+    """IDEA-2b: keep only the newest `screen_memory_keep` screen-memory docs (default 50); delete the
+    rest (and their chunks). Returns how many docs were pruned. Prevents unbounded KB growth."""
+    keep = int(get_settings().get("screen_memory_keep", 50) or 50)
+    from nova.core.db import db
+    c = db()
+    rows = c.execute("SELECT id FROM kb_docs WHERE name LIKE 'screen-memory %' ORDER BY created DESC").fetchall()
+    old = [r["id"] for r in rows[keep:]]
+    for did in old:
+        c.execute("DELETE FROM kb_chunks WHERE doc_id=?", (did,))
+        c.execute("DELETE FROM kb_docs WHERE id=?", (did,))
+    if old: c.commit()
+    c.close()
+    return len(old)
+
+
+def purge_screen_memory():
+    """Delete ALL stored screen-memory docs (one-click privacy purge). Returns count removed."""
+    from nova.core.db import db
+    c = db()
+    rows = c.execute("SELECT id FROM kb_docs WHERE name LIKE 'screen-memory %'").fetchall()
+    ids = [r["id"] for r in rows]
+    for did in ids:
+        c.execute("DELETE FROM kb_chunks WHERE doc_id=?", (did,))
+        c.execute("DELETE FROM kb_docs WHERE id=?", (did,))
+    if ids: c.commit()
+    c.close()
+    return len(ids)
 
 
 def _clamp(v, lo, hi):

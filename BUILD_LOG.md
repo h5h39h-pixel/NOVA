@@ -1341,5 +1341,13 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
     setting restored to OFF afterward).
   - Gate ✅ · live 42/42 ✅.
 - **Privacy note (honest):** this is the one feature that *persists* screen content (into the local KB).
-  It is OFF by default, requires explicit opt-in, never leaves the machine, and there is no retention
-  cap yet — a future enhancement (auto-expire old screen-memory docs) is worth adding before heavy use.
+  It is OFF by default, requires explicit opt-in, never leaves the machine.
+
+### M105e — IDEA-2b screen-memory retention policy (closes the M105d gap, same session)
+- `nova/services/screen_vision.py`: `_prune_screen_memory()` (keeps newest `screen_memory_keep`, default
+  50, runs after each snapshot) + `purge_screen_memory()` (delete all).
+- `nova/core/db.py`: `screen_memory_keep` setting (default 50).
+- `nova/api/screen_vision.py`: `DELETE /api/vision/screen-memory` (one-click purge).
+- Settings: "🧹 Purge all screen memories" button.
+- Test `test_screen_memory_retention` (5→keep 3→2 pruned; purge→0; non-screen docs untouched). Live
+  roundtrip verified (keep=1 prunes to 1; purge removes 1; defaults restored). Gate ✅ · live 42/42 ✅.

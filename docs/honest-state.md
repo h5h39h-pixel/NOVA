@@ -185,6 +185,8 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   and store whatever is on screen. *Mitigation present:* opt‑in gate + a min‑chars filter + it never
   leaves the machine. *Still missing:* an auto‑expire / max‑docs retention policy and a one‑click "purge
   screen memories." → tracked as **IDEA‑2b** in TASKS. Don't schedule frequent capture until that lands.
+  **UPDATE (same session): IDEA‑2b shipped** — `screen_memory_keep` cap (default 50, auto‑pruned after
+  each snapshot) + `DELETE /api/vision/screen-memory` purge + a Settings purge button. Gap closed.
 
 **Operational note (discovery):** the running server must be **restarted** to serve a newly added route
 — the watchdog's restart interval is >40s, so after killing the stale process I started `server.py`

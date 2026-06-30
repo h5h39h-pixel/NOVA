@@ -35,6 +35,7 @@ DEFAULT_SETTINGS = {
     "track_mouse": False,            # expose live cursor position (opt-in)
     "track_keyboard": False,         # capture active-window/keyboard context (most sensitive; opt-in)
     "screen_memory_enabled": False,  # IDEA-2: opt-in — OCR snapshots of the screen into the KB ("what did I see earlier?")
+    "screen_memory_keep": 50,        # IDEA-2b: retention cap — keep only the newest N screen-memory docs
     "agent_can_control": True,       # HON-1b: allow the AUTONOMOUS agent to drive mouse/keyboard (control/act_on_screen). Turn OFF to keep the agent from GUI control while still allowing manual control + the kill-switch.
 }
 

@@ -128,6 +128,30 @@ def test_screen_memory_gate(monkeypatch, tmpdb):
     assert any("main.py" in h["text"] for h in KB.kb_search("which file was open"))
 
 
+def test_screen_memory_retention(monkeypatch, tmpdb):
+    """IDEA-2b: screen memory keeps only the newest N docs and purge removes all."""
+    import nova.services.screen_vision as SV
+    from nova.core.db import db, set_settings
+    set_settings({"screen_memory_keep": 3})
+    # seed 5 screen-memory docs with increasing created times
+    c = db()
+    for i in range(5):
+        c.execute("INSERT INTO kb_docs(name,chunks,created) VALUES(?,?,?)",
+                  (f"screen-memory 2026-06-30 10:0{i}:00", 1, 1000.0 + i))
+    c.execute("INSERT INTO kb_docs(name,chunks,created) VALUES(?,?,?)", ("real-doc.txt", 1, 1.0))  # not screen-mem
+    c.commit(); c.close()
+    pruned = SV._prune_screen_memory()
+    assert pruned == 2                                   # 5 → keep 3 → 2 removed
+    c = db(); n = c.execute("SELECT COUNT(*) FROM kb_docs WHERE name LIKE 'screen-memory %'").fetchone()[0]; c.close()
+    assert n == 3
+    removed = SV.purge_screen_memory()
+    assert removed == 3
+    c = db()
+    assert c.execute("SELECT COUNT(*) FROM kb_docs WHERE name LIKE 'screen-memory %'").fetchone()[0] == 0
+    assert c.execute("SELECT COUNT(*) FROM kb_docs WHERE name='real-doc.txt'").fetchone()[0] == 1  # untouched
+    c.close()
+
+
 def test_backup_snapshot(tmp_path, monkeypatch, tmpdb):
     import os
     import nova.services.backup as B

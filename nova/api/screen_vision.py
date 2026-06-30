@@ -67,6 +67,14 @@ def api_vision_remember_screen():
     return r
 
 
+@router.delete("/api/vision/screen-memory")
+def api_vision_purge_screen_memory():
+    """IDEA-2b: one-click purge of ALL stored screen-memory docs (privacy)."""
+    n = sv.purge_screen_memory()
+    audit("vision", "screen_memory_purge", f"removed {n} docs")
+    return {"ok": True, "removed": n}
+
+
 @router.post("/api/vision/describe")
 async def api_vision_describe(req: Request):
     g = _gate()
