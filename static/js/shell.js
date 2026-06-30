@@ -70,6 +70,26 @@ function initParticles(){const cv=$('#particles');if(!cv)return;
     requestAnimationFrame(loop)})()}
 
 /* depth: subtle mouse parallax on background layers + a 3D tilt on hovered cards */
+/* HON-1: panic stop — pause all PC control + stop the agent, from anywhere */
+function _setPanicUI(paused){
+  const b=$('#panicbtn'); if(b){b.classList.toggle('on',paused); b.textContent=paused?'▶':'⛔';
+    b.dataset.tip=paused?'Control PAUSED — click to resume mouse/keyboard control':'Panic stop — pause all mouse/keyboard control & stop the agent';}
+  let ban=document.getElementById('panicban');
+  if(paused){ if(!ban){ban=document.createElement('div');ban.id='panicban';document.body.appendChild(ban);}
+    ban.innerHTML='⛔ <b>Control paused</b> — the AI cannot move the mouse/keyboard. <button id="panicresume">Resume control</button>';
+    const r=document.getElementById('panicresume'); if(r)r.onclick=()=>panicSet(false);
+  } else if(ban){ ban.remove(); }
+}
+async function panicSet(paused){
+  try{ await post(paused?'/control/panic':'/control/resume'); }catch(e){}
+  _setPanicUI(paused);
+  toast(paused?'error':'success', paused?'⛔ Control paused':'Control resumed', paused?'AI mouse/keyboard control is OFF; agent stopped':'AI may control the PC again');
+}
+function initPanic(){
+  const b=$('#panicbtn'); if(!b)return;
+  b.onclick=()=>panicSet(!b.classList.contains('on'));
+  api('/control/panic').then(r=>_setPanicUI(!!(r&&r.paused))).catch(()=>{});
+}
 function autoLite(){
   // POL-1: sample real background FPS for ~2s (after a short settle); if it's low on this GPU,
   // switch to lite visuals automatically. Runs once (remembers via localStorage); respects an
@@ -191,6 +211,7 @@ async function boot(){
   window.addEventListener('hashchange',route);
   if(!location.hash)location.hash='#/dashboard';route();
   $('#langbtn').onclick=()=>setLang(State.lang==='ar'?'en':'ar');
+  initPanic();
   const tb=$('#themebtn');if(tb)tb.onclick=toggleTheme;
   const oc=$('#onbclose');if(oc)oc.onclick=closeOnboard;
   const sc=$('#scclose');if(sc)sc.onclick=()=>$('#shortcuts').classList.remove('open');

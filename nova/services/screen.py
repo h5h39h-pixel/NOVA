@@ -153,6 +153,12 @@ def act_on_screen(instruction, text=None, key=None, double=False):
     """High-level: locate the target described by `instruction`, click it, then optionally type/press
     a key. **Tries precise UI-Automation element detection first** (exact pixel center, fast, reliable);
     falls back to vision-model grounding when the element has no UIA name (FEA-1)."""
+    try:   # HON-1: honor the global panic stop
+        from nova.services.control import control_paused
+        if control_paused():
+            return {"ok": False, "blocked": True, "error": "control is paused (panic stop active)"}
+    except Exception:
+        pass
     loc, via = None, "uia"
     try:
         from nova.services.control import find_element

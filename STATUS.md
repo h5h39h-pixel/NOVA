@@ -28,12 +28,10 @@ is **HON‑1…11** in `TASKS.md`.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority) — from the honest self‑audit
-1. **HON‑1** Confirmation/guard + global panic stop for agent GUI control (mouse/keyboard/`control`/
-   `act_on_screen` are unguarded on localhost). **Top safety priority.**
-2. **HON‑10** Prompt‑injection defense for the web‑augmented agent (it holds PC‑control tools while
-   reading untrusted web text).
-3. **HON‑2 / HON‑3 / HON‑7** Real GUI integration test · coverage measurement · honest larger eval
-   batteries (replace the toy OUT‑1/OUT‑5 smoke tests).
+1. **HON‑10** Prompt‑injection defense for the web‑augmented agent (it holds PC‑control tools while
+   reading untrusted web text). **Now the top safety item** (HON‑1 kill‑switch ✅ M81).
+2. **HON‑2 / HON‑3** Real GUI integration test (drive an app via UIA) · coverage measurement.
+3. **HON‑7** Honest larger eval batteries (replace the toy OUT‑1/OUT‑5 smoke tests) + HON‑12 (OWUI CSP).
 
 _Original roadmap shipped & smoke‑verified (P0/P1/P2/P3 + Phases 7/8). **The honest backlog is HON‑1…11**
 (`TASKS.md` top + `docs/honest-state.md`). ✅ here means "built + verified once," not "battle‑tested."_
@@ -57,7 +55,7 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 ## Fragile — works but needs improvement 🟧
 | Item | The issue |
 |---|---|
-| 🔴 **Agent GUI control is UNGUARDED** (HON‑1) | Mouse/keyboard/`control`/`act_on_screen` are gated only by `exec_allowed()` (always true on localhost) with **no per‑action confirmation and no kill‑switch**. A Full‑Access agent can click/type/delete anywhere on the PC unsupervised. **Highest‑priority risk.** |
+| 🟠 **Agent GUI control — kill‑switch added (HON‑1, M81)** | Now has a **global panic stop**: an always‑visible ⛔ topbar button pauses ALL mouse/keyboard control + stops the agent (red banner, audited, verified). Residual: no *per‑action* confirmation for autonomous runs yet (HON‑1b) — use the kill‑switch + dry‑run. |
 | 🔴 **No prompt‑injection defense** (HON‑10) | The agent reads untrusted web text (Web Search / browse) **while holding PC‑control tools**. A malicious page could try to steer it. No mitigation today. |
 | 🟠 **Verification is smoke‑deep** (HON‑2/3/6/7) | Most ✅ are "verified once," not battle‑tested: no real GUI‑drive integration test, no coverage number, the live stream was never watched streaming, no full Web‑Search chat turn run, OUT‑1/OUT‑5 are toy batteries. |
 | **Command‑exec surface** | Hardened (P0 Security complete): confirm‑guard (SEC‑1) + centralized denylist (SEC‑2) + strict CSP/headers (SEC‑3) + at‑rest key encryption (SEC‑4) + HTTPS turnkey (SEC‑5) + call‑site audit incl. the `screen lang` injection fix (SEC‑6). Residual by design: localhost exec is unrestricted (the product's purpose) — gated on LAN. No global kill‑switch (HON‑1). |

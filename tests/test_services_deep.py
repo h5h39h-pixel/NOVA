@@ -216,6 +216,29 @@ def test_control_awareness():
     assert s["primary"]["w"] > 0 and s["dpi"] > 0 and s["scale"] > 0
 
 
+def test_control_panic_blocks():
+    """HON-1: panic stop blocks all mutating control before any real input is sent."""
+    import nova.services.control as C
+    C.resume_control(); assert C.control_paused() is False
+    C.pause_control(); assert C.control_paused() is True
+    assert C.move_mouse(10, 10).get("blocked") is True      # returns before touching pyautogui
+    assert C.click(1, 2).get("blocked") is True
+    assert C.press_keys("enter").get("blocked") is True
+    assert C.click_element("Save").get("blocked") is True
+    C.resume_control(); assert C.control_paused() is False  # leave clean
+
+
+def test_control_panic_api(client):
+    """HON-1: /api/control/panic pauses control; the mouse endpoint then refuses; resume clears it."""
+    import nova.services.control as C
+    C.resume_control()
+    client.post("/api/control/panic")
+    assert client.get("/api/control/panic").json()["paused"] is True
+    assert client.post("/api/control/mouse", json={"action": "move", "x": 5, "y": 5}).json().get("blocked") is True
+    client.post("/api/control/resume")
+    assert client.get("/api/control/panic").json()["paused"] is False
+
+
 def test_control_find_element_safe():
     """PC-3: find_element returns a list of matches (empty for a nonsense name); no input sent."""
     from nova.services.control import find_element

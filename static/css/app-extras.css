@@ -38,3 +38,12 @@ body.lite .card:hover{transform:none!important}
 .btn:focus-visible,.tbtn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,
 textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
 #main:focus-visible{outline:none}
+
+/* ---- HON-1: panic stop (kill-switch) button + banner ---- */
+.tbtn.panic{border-color:rgba(239,68,68,.5)}
+.tbtn.panic:hover{background:rgba(239,68,68,.18)}
+.tbtn.panic.on{background:linear-gradient(90deg,#ef4444,#f59e0b);color:#fff;box-shadow:0 0 14px rgba(239,68,68,.6);animation:panicpulse 1.2s infinite}
+@keyframes panicpulse{0%,100%{box-shadow:0 0 10px rgba(239,68,68,.5)}50%{box-shadow:0 0 20px rgba(239,68,68,.9)}}
+#panicban{position:fixed;left:0;right:0;bottom:0;z-index:9998;background:linear-gradient(90deg,#7f1d1d,#b91c1c);
+  color:#fff;padding:10px 16px;text-align:center;font-size:14px;box-shadow:0 -4px 20px rgba(0,0,0,.5)}
+#panicban button{margin-left:12px;background:#fff;color:#7f1d1d;border:none;padding:5px 12px;border-radius:7px;font-weight:700;cursor:pointer}

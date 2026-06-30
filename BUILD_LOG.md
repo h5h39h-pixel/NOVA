@@ -979,3 +979,19 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Updated** ROADMAP (Phase 9 maintainability note), PROJECT_PLAN (SPA architecture decision +
   lesson), STATUS (done list), ARCHITECTURE.md (module list + UI workflow + dir tree), TASKS (HON-11 ✅).
 - **Verified:** gate green (docs-only).
+
+## M81 — HON-1: global panic stop / kill-switch for agent GUI control (2026-06-30)  [P0 Safety]
+
+- **The #1 risk from the self-audit, now mitigated.** `control.CONTROL_PAUSED` (threading.Event) gates
+  EVERY mutating control function (move_mouse/click/drag/scroll/type_text/press_keys/click_element) —
+  each returns `{ok:false, blocked:true}` BEFORE touching pyautogui when paused. `screen.act_on_screen`
+  (vision-click path) honors it too.
+- **API:** `POST /api/control/panic` pauses control + sets `AGENT_STOP` (stops a running agent);
+  `POST /api/control/resume` clears; `GET` reports state. Audited (`control/PANIC`).
+- **UI:** an always-visible ⛔ button in the topbar (every page) toggles panic; a red bottom banner
+  ("the AI cannot move the mouse/keyboard" + Resume) shows while paused; the button glows/pulses red.
+- **Verified:** 2 hermetic tests (blocked path + API) — only the blocked branch is exercised so no real
+  input is sent; render-verified end-to-end (button → banner → backend paused → resume clears; the
+  PANIC audit event appears in the live feed); full gate green; live suite 42/42.
+- **Residual:** per-action confirmation for autonomous runs is still not added (HON-1b) — the
+  kill-switch + dry-run cover the immediate risk.

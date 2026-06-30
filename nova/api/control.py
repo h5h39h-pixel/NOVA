@@ -18,6 +18,30 @@ def _gate():
     return None
 
 
+# ---- HON-1: panic stop / kill-switch ----
+@router.get("/api/control/panic")
+def api_panic_status(): return {"paused": C.control_paused()}
+
+
+@router.post("/api/control/panic")
+def api_panic():
+    C.pause_control()
+    try:                       # also stop any running agent immediately
+        from nova.services.agent import AGENT_STOP
+        AGENT_STOP.set()
+    except Exception:
+        pass
+    audit("control", "PANIC", "all PC control paused + agent stopped")
+    return {"ok": True, "paused": True}
+
+
+@router.post("/api/control/resume")
+def api_resume():
+    C.resume_control()
+    audit("control", "resume", "PC control re-enabled")
+    return {"ok": True, "paused": False}
+
+
 # ---- awareness (read-only) ----
 @router.get("/api/control/awareness")
 def api_awareness(): return C.awareness()

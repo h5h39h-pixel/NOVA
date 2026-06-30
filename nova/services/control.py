@@ -13,8 +13,29 @@ These are powerful actions; routes/agent gate + audit them. Windows-only (degrad
 """
 import ctypes
 import ctypes.wintypes as wt
+import threading
 import psutil
 from nova.services import screen as screen_svc
+
+# HON-1: global panic stop. When set, ALL mutating control (mouse/keyboard) is refused until resumed.
+# This is the kill-switch for a runaway agent — defense in depth alongside the exec_allowed() gate.
+CONTROL_PAUSED = threading.Event()
+
+
+def control_paused():
+    return CONTROL_PAUSED.is_set()
+
+
+def pause_control():
+    CONTROL_PAUSED.set()
+
+
+def resume_control():
+    CONTROL_PAUSED.clear()
+
+
+def _blocked():
+    return {"ok": False, "blocked": True, "reason": "control is paused (panic stop active — resume in the UI)"}
 
 _user32 = ctypes.windll.user32
 # Per-monitor DPI awareness so GetWindowRect / cursor coords are real pixels (accurate control).
@@ -100,11 +121,13 @@ def _pag():
 
 
 def move_mouse(x, y, duration=0.1):
+    if CONTROL_PAUSED.is_set(): return _blocked()
     _pag().moveTo(int(x), int(y), duration=duration)
     return {"ok": True, "x": int(x), "y": int(y)}
 
 
 def click(x=None, y=None, button="left", double=False):
+    if CONTROL_PAUSED.is_set(): return _blocked()
     p = _pag()
     if x is not None and y is not None:
         p.moveTo(int(x), int(y), duration=0.1)
@@ -115,6 +138,7 @@ def click(x=None, y=None, button="left", double=False):
 
 
 def drag(x1, y1, x2, y2, duration=0.3):
+    if CONTROL_PAUSED.is_set(): return _blocked()
     p = _pag()
     p.moveTo(int(x1), int(y1), duration=0.1)
     p.dragTo(int(x2), int(y2), duration=duration, button="left")
@@ -122,16 +146,19 @@ def drag(x1, y1, x2, y2, duration=0.3):
 
 
 def scroll(amount):
+    if CONTROL_PAUSED.is_set(): return _blocked()
     _pag().scroll(int(amount))
     return {"ok": True, "amount": int(amount)}
 
 
 def type_text(text):
+    if CONTROL_PAUSED.is_set(): return _blocked()
     return screen_svc.type_text(text)   # clipboard paste — Unicode/Arabic safe
 
 
 def press_keys(keys):
     """keys: 'enter' | 'ctrl+s' | ['ctrl','s']."""
+    if CONTROL_PAUSED.is_set(): return _blocked()
     p = _pag()
     if isinstance(keys, str):
         keys = [k.strip() for k in keys.replace("+", " ").split() if k.strip()]
@@ -184,6 +211,7 @@ def find_element(name, partial=True, max_results=10):
 
 def click_element(name, partial=True, double=False):
     """Find an element by name and click its center."""
+    if CONTROL_PAUSED.is_set(): return _blocked()
     r = find_element(name, partial, max_results=1)
     if not r.get("matches"):
         return {"ok": False, "error": f"no element matching '{name}'"}
