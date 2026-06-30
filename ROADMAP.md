@@ -95,6 +95,11 @@ than replacing it. Scope:
 
 See `TASKS.md` → "AI Screen Vision (SV)" for SV‑1…7 and `PROJECT_PLAN.md` Phase 7 for the design.
 
+## 🆕 Unified Workspace + Auto model (UWS, P1) — ✅ shipped M97/M98
+Chat + Agent merged into one **"Nova"** page (`#/workspace`) with professional toggle buttons
+(mode · DeepThink · Web Search · Full Access · Attach‑any‑file) and **✨ Auto** intelligent model
+selection (`automodel.py`). Bilingual README (EN+AR). See `TASKS.md` → UWS‑1…7.
+
 ## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62
 DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckGo results via `ddgs`, with
 citations; opt‑in/online), and an explicit microphone **⏹ Stop** control. See `TASKS.md` → CHAT‑1…3

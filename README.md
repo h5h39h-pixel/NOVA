@@ -1,124 +1,178 @@
-# ⚡ AI Control Center
+# ⚡ Nova — AI Control Center
 
-A complete, **100% local** AI command center for Windows + NVIDIA GPUs. One dark, bilingual
-(English/Arabic + RTL) dashboard that unifies chat, an autonomous agent, a RAG knowledge base,
-local model training, video generation, automation, and full observability — private, on your
-own hardware.
+A complete, **100% local** AI command center for Windows + NVIDIA GPUs. One bilingual (English/Arabic)
+dashboard that unifies a **Chat + Agent workspace**, screen vision, precise PC control, a RAG knowledge
+base, local model training, media generation, automation, and full observability — private, on your own
+hardware, no cloud required.
 
-> Built and tested on: Intel Core Ultra 9 285K · 95 GB RAM · RTX 5090 (32 GB) · Windows 11.
+> **English first, العربية below ⬇️** · Built & tested on: Intel Core Ultra 9 285K · 95 GB RAM ·
+> RTX 5090 (32 GB) · Windows 11 · Python 3.12.
 
 ---
 
-## ✨ Highlights
-- **AI Chat** — projects, file upload (PDF/DOCX/TXT/code/images+OCR) with previews, **RAG with
-  cited sources**, **DeepThink** (step‑by‑step reasoning) + **Web Search** (live DuckDuckGo results
-  with citations, opt‑in) toggles, model comparison, voice in/out (Piper, with an explicit **⏹ Stop**
-  mic control), Markdown rendering, live preview, export (TXT/MD/JSON/PDF), generation
-  **speed (tok/s)**, and 👍→training. _(spec: `docs/chat-deepthink-websearch.md`)_
-- **Agent Mode (v2)** — redesigned page: animated **Nova avatar**, real-time thinking log, a
-  categorized example side panel, Send button + Enter-to-send. Autonomous ReAct loop with tools
-  (KB search, run command, **read/write files**, **browse the web**, video, notify, speak, schedule),
-  **dry‑run preview**, and a **🔓 Full Access** mode (runs any command / writes anywhere; credential
-  reads stay denied).
-- **Icons** — open-source **Twemoji** SVG icons across the whole UI, with tasteful animations
-  (bounce / pulse / ring / wobble / spin); graceful native-emoji fallback offline.
-- **Browser automation (Playwright)** — headless Chromium: open a URL, fill forms, click
-  selectors, capture page text + screenshot. Available as `POST /api/browse`, an agent tool,
-  and a workflow/automation action.
-- **Screen Studio** — record the screen to MP4 (native mss + ffmpeg), read it (Windows OCR or
-  qwen2.5‑VL vision), understand it in natural language, play recordings back in the dashboard.
-  Wired to the **Agent** (`see_screen`/`read_screen`/`screenshot`), Automation, and the KB.
-- **AI Screen Vision (Live)** — a real‑time `#/live` page: live screen stream (throttled MJPEG),
-  live cursor overlay, focused‑window context, and on‑demand "describe what's on screen" (VLM) —
-  so the AI can see exactly what you see. **Privacy‑first:** every capture is opt‑in, local‑only,
-  non‑persistent, off by default. _(design: `PROJECT_PLAN.md` Phase 7)_
+# 🇬🇧 English
+
+## What it is
+Nova runs entirely on your machine. It talks to local LLMs (via **Ollama**), generates images/video
+(via **ComfyUI**), transcribes speech (**faster‑whisper**), speaks (**Piper**), sees and controls your
+screen (UI Automation), and learns from your usage (LoRA fine‑tuning → `nova-local`). The web dashboard
+is a dependency‑free SPA served by a FastAPI backend; everything persists to a local SQLite database.
+
+## ✨ Key features
+- **Unified "Nova" workspace** (`#/workspace`) — Chat and Agent on **one page** with professional toggle
+  buttons:
+  - **💬 Chat / 🤖 Agent** mode segmented control.
+  - **🧠 DeepThink** — step‑by‑step reasoning.
+  - **🌐 Web Search** — live DuckDuckGo results with citations (opt‑in).
+  - **🔓 Full Access** (agent mode) — run any command / control the PC.
+  - **📎 Attach** — images, PDFs, DOCX, code, any file (OCR + vision for images).
+  - **✨ Auto model** — picks the best installed model per task (coding → a code model, reasoning/
+    DeepThink → a reasoning/larger model, vision → a VLM, agent → a tool‑capable model), or pick manually.
+- **Autonomous Agent** — a ReAct loop that plans, uses tools, and acts: KB/web search, run commands,
+  read/write files, **read & understand** any file/image, browse, **see/record/monitor the screen**
+  (it decides when), **precise mouse/keyboard control**, generate media, schedule automations. Dry‑run
+  preview + Full‑Access mode.
+- **AI Screen Vision** (`#/live`) — real‑time screen stream, cursor overlay, focused‑window context, and
+  on‑demand "describe what's on screen" (qwen2.5‑VL). Privacy‑first: opt‑in, local, non‑persistent.
+- **Perception & Control** — window awareness (active window, all windows, size/position, DPI), UI
+  element detection, and **reliable text entry via UI Automation** + pixel‑accurate mouse.
 - **Knowledge Base (RAG)** — local embeddings (`nomic-embed-text`) → SQLite vector store → cosine
-  retrieval, drag‑drop indexing, folder auto‑index automation.
-- **Training Studio + Learning** — one‑click LoRA retrain of `nova-local`, live progress, dataset
-  upload, self‑improving RAG→training loop, recommendations.
-- **Automation + Workflows** — background scheduler (cron‑like) and sequential pipelines with
-  task dependencies; webhooks (Slack/Discord/ntfy).
-- **Creation** — local video (LTX 2B/13B via ComfyUI), capability‑tagged model library.
-- **Trust & ops** — token authentication, full **audit log**, one‑click **system self‑test**,
-  **backup & restore**, real‑time **system monitor** (GPU/CPU/RAM/VRAM/processes), and
-  **Search Everything** (Ctrl/⌘+K).
-- **Design** — premium **Apple‑style** UI (refined dark + clean light, single blue accent, SF/Inter
-  type, soft shadows + glass blur, rounded corners, calm micro‑animations), bilingual EN/AR + RTL,
-  auto theme, command palette, onboarding, keyboard shortcuts (`?`).
-- **iOS‑style notification center** — categorized + grouped (Today/Yesterday/This Week), click‑to‑action,
-  search/filter, mark‑all‑read, clear, mute, subtle chime, live via WebSocket.
-- **Proactive intelligence** — Co‑Pilot suggestions, predictive habits, insights, daily briefing,
-  achievements, usage analytics.
+  retrieval with citations.
+- **Training Studio** — one‑click LoRA retrain of `nova-local`, live progress, self‑improving
+  RAG→training loop.
+- **Media** — local image (SDXL/Flux) and video (LTX) generation via ComfyUI.
+- **Voice** — local STT (GPU Whisper, Arabic‑capable) with an explicit ⏹ Stop, and TTS (Piper, adjustable
+  speed, auto English/Arabic voice).
+- **Trust & ops** — token auth, full audit log, daily DB snapshots + media backup, self‑test, real‑time
+  system monitor, and a **⛔ panic kill‑switch** that instantly halts all PC control.
 
-## ⚠️ Known limitations & safety (read before unattended use)
-This is a capable but **not finished‑appliance** system. The honest state is in
-**[`docs/honest-state.md`](docs/honest-state.md)**. The two things you must know:
-- **Agent GUI control has no confirmation and no kill‑switch.** In Full‑Access mode the agent can run any
-  command and **click/type/delete anywhere on the PC** unsupervised. Use dry‑run, watch it, don't leave it
-  unattended. (Tracked as HON‑1.)
-- **No prompt‑injection defense.** With Web Search / browse on, the agent reads untrusted web text while
-  holding PC‑control tools — a malicious page could try to steer it. Treat web‑augmented agent runs as the
-  riskiest mode. (HON‑10.)
-- **Keep it on localhost.** The security model is "localhost is trusted." Exposing it on the LAN with
-  `allow_remote_exec` lets others control your PC.
-- Features marked ✅ are **verified once, not battle‑tested.** Re‑run the eval scripts and trust your own
-  experience. The full backlog of real gaps is **HON‑1…11** in `TASKS.md`.
-
-## 🚀 Quick start
+## 🚀 How to run
 ```powershell
 cd C:\AI\agent-workspace\control-center
-python -m pip install fastapi "uvicorn[standard]" psutil python-multipart pypdf python-docx reportlab numpy playwright
-python -m playwright install chromium      # one-time, for browser automation
-python server.py           # or double-click start.cmd
+# 1) install dependencies (reproducible lock recommended)
+python -m pip install -r requirements.lock        # or: -r requirements.txt
+python -m playwright install chromium             # one-time, for browser automation
+# 2) make sure Ollama is running with at least one chat model, e.g.:
+ollama pull qwen2.5:14b
+# 3) start
+python server.py                                  # or double-click start.cmd
 ```
-Open **http://localhost:8900**. (Bound to localhost only by default — see Security.)
+Open **http://localhost:8900**. Bound to localhost only by default.
 
-**Recommended local models** (RTX 5090, benchmarked on real command execution):
-`qwen2.5:14b` is the default — best speed/accuracy for the agent (5/5 @ ~1.3 s/step).
-`qwen2.5:32b` (19 GB, runs 100% on GPU) for maximum reasoning depth and Arabic. Both via `ollama pull`.
+**Recommended models** (RTX 5090): `qwen2.5:14b` (default, fast agent), `qwen2.5:32b` (max reasoning),
+`qwen3-coder:30b` (coding), `qwen2.5vl:7b` (vision), `nomic-embed-text` (RAG). ✨ Auto uses whatever you
+have installed.
 
-## 🧪 Testing
+## ⚠️ Safety — read before unattended use
+- **Keep it on localhost.** The security model is "localhost is trusted." Exposing it on the LAN with
+  `allow_remote_exec` lets others run commands and control your mouse/keyboard.
+- **Full‑Access agent can do anything** — run commands, write files, click/type anywhere. Use dry‑run,
+  watch it, and keep the **⛔ panic button** handy (top bar). You can also turn off agent GUI control
+  entirely (Settings → "agent_can_control").
+- **Web‑augmented agent = highest risk** (prompt injection from web pages). Web content is fenced as
+  untrusted data, but treat it cautiously.
+- The full, honest state of the project (what's solid, what's fragile) is in
+  [`docs/honest-state.md`](docs/honest-state.md).
+
+## 🧪 Testing & tools
 ```powershell
-python run_tests.py        # intensive end-to-end suite (endpoints, round-trips, live WS flows)
+python scripts/check.py        # quality gate: pyflakes + node --check + pytest (also runs on commit/push)
+python run_tests.py            # live end-to-end suite (needs server + Ollama) → 42/42
+python scripts/ci_local.py     # clean-venv CI (proves the lock installs)
+python scripts/agent_eval.py   # agent goal battery   ·   scripts/rag_eval.py  RAG quality
+python scripts/gen_eval.py     # image-gen check       ·   scripts/load_test.py concurrency
 ```
-Or in‑app: **Diagnostics → Run self‑test** (13 subsystem checks), or `GET /api/selftest`.
-
-## 🔒 Security
-- **Localhost‑only by default** — the dashboard can run commands and an autonomous agent, so it
-  is never exposed to the network unless you opt in.
-- **Optional token auth** (Settings → Access & Security) protects every API + WebSocket; only then
-  can LAN access be enabled.
-- **Agent guardrails** — destructive shell commands are blocked; file writes are confined to
-  `agent-output/`; reads deny credential stores (`.ssh`, `.env`, credentials…).
-- **Audit log** records every command, agent action, automation, auth attempt, and config change.
+CI also runs on GitHub Actions (`.github/workflows/ci.yml`).
 
 ## 🗂️ Architecture
 ```
 control-center/
-├── server.py          FastAPI app + agent loop + coupled routes (composition root)
-├── nova/              extracted package: core/ (db,events,process,http),
-│                      services/ (audit,notifications,jobs,metrics,screen,chat,
-│                      ollama,owui,files,kb), api/ (10 routers)
+├── server.py            FastAPI composition root (lifespan, loops, middleware, router includes)
+├── config.py            paths + endpoints
+├── nova/
+│   ├── core/            db · events · process · http · safety · errors · secretbox
+│   ├── services/        chat · agent · control · screen · screen_vision · understand · web_search ·
+│   │                    automodel · kb · training · jobs · stt · tts · backup · …
+│   └── api/             one router per area (chat, agent, control, exec, stt, files_api, toolkit, …)
 ├── static/
-│   ├── index.html     SPA shell (sidebar, top bar, overlays)
-│   ├── css/app.css    design system (dark/light, RTL)
-│   └── js/            core.js (router+i18n+bus) · pages.js (pages) · shell.js (ws+notifs+boot)
-├── run_tests.py       one-command intensive test suite
-├── start.cmd          launcher (installs deps + runs)
-├── ROADMAP.md         milestones M1–M15 + Ideas Backlog
-└── BUILD_LOG.md       chronological decisions, fixes, tests
+│   ├── index.html
+│   ├── css/             app.css → app-components.css → app-visuals.css → app-extras.css (cascade order)
+│   └── js/              core.js → pages*.js (dashboard/create/agent/data/system/workspace) → shell.js
+├── scripts/             check.py · ci_local.py · eval & benchmark tools
+├── docs/                architecture, security, honest-state, feature specs, baselines
+└── tests/               hermetic pytest + live frontend gate
 ```
-- **Backend:** FastAPI; background loops for metrics, service status, and the automation scheduler;
-  a thread‑based process manager; everything persists to `C:\AI\agent-workspace\data\control.db`.
-- **Frontend:** dependency‑free SPA (no build step) with a WebSocket event bus for live updates.
-- **Integrations:** Ollama (11434), ComfyUI (8188), Open WebUI (3000), nvidia‑smi, psutil, the
-  local toolkit (`*.ps1`), Piper TTS, and the LoRA training pipeline.
+Layered dependency DAG: `config ← core ← services ← api ← server` (nothing imports `server.py`).
+Six source‑of‑truth files (`STATUS.md`, `ROADMAP.md`, `TASKS.md`, `PROJECT_PLAN.md`, `WORKFLOW.md`,
+`BUILD_LOG.md`) are kept current every session.
 
-## 📡 Key API (all under `/api`)
-`services · metrics · selftest · search?q= · insights · briefing` · `models · models/{load|stop}` ·
-`chat-send · conversations… · upload · kb/{status,docs,search,ingest}` · `agent · browse · learn/{harvest,retrain}` ·
-`training/{status,history,upload-dataset} · learning/stats` · `schedules… · workflows… · abtest` ·
-`audit · auth/{status,login,logout} · backup · restore · tts`.
+---
 
-## 📄 License & privacy
-Personal/local use. No data leaves the machine unless you set a cloud key or an outbound webhook.
+<div dir="rtl">
+
+# 🇸🇦 العربية
+
+## ما هو
+**نوفا** مركز قيادة للذكاء الاصطناعي يعمل **محلياً 100%** على جهازك (Windows + كرت NVIDIA). يتحدث إلى نماذج
+لغوية محلية (عبر **Ollama**)، ويولّد الصور والفيديو (عبر **ComfyUI**)، ويحوّل الكلام إلى نص
+(**faster‑whisper**)، وينطق (**Piper**)، ويرى شاشتك ويتحكم بها (UI Automation)، ويتعلّم من استخدامك
+(تدريب LoRA → النموذج `nova-local`). الواجهة لوحة تحكم ويب بدون أي اعتماد خارجي، يخدمها خادم FastAPI، وكل
+شيء يُحفظ في قاعدة بيانات SQLite محلية. **خاص، بدون سحابة، وبدون إنترنت إلا عند طلبك (بحث الويب).**
+
+## ✨ أهم الميزات
+- **مساحة عمل "نوفا" الموحّدة** (`#/workspace`) — المحادثة والوكيل في **صفحة واحدة** مع أزرار تبديل احترافية:
+  - مفتاح **💬 محادثة / 🤖 وكيل**.
+  - **🧠 تفكير عميق** — استدلال خطوة بخطوة.
+  - **🌐 بحث الويب** — نتائج مباشرة من DuckDuckGo مع مصادر (اختياري).
+  - **🔓 صلاحية كاملة** (وضع الوكيل) — تشغيل أي أمر والتحكم بالحاسوب.
+  - **📎 إرفاق** — صور ومستندات PDF/DOCX وأكواد وأي ملف (OCR ورؤية للصور).
+  - **✨ نموذج تلقائي** — يختار أفضل نموذج مثبّت لكل مهمة (برمجة → نموذج أكواد، استدلال/تفكير عميق → نموذج
+    استدلال أو أكبر، رؤية → نموذج رؤية، وكيل → نموذج يدعم الأدوات)، أو اختر يدوياً.
+- **وكيل ذاتي** — حلقة ReAct تخطّط وتستخدم الأدوات وتنفّذ: بحث في المعرفة والويب، تشغيل أوامر، قراءة/كتابة
+  ملفات، **قراءة وفهم** أي ملف أو صورة، تصفّح، **رؤية/تسجيل/مراقبة الشاشة** (يقرر هو متى)، **تحكم دقيق
+  بالفأرة ولوحة المفاتيح**، توليد وسائط، جدولة مهام. مع معاينة تجريبية ووضع صلاحية كاملة.
+- **رؤية الشاشة بالذكاء** (`#/live`) — بث مباشر للشاشة، مؤشر الفأرة، سياق النافذة النشطة، ووصف فوري لما على
+  الشاشة (qwen2.5‑VL). الخصوصية أولاً: اختياري ومحلي ولا يُحفظ.
+- **الإدراك والتحكم** — معرفة النوافذ (النشطة وكلها، الحجم والموضع، DPI)، واكتشاف عناصر الواجهة، و**إدخال
+  نص موثوق عبر UI Automation** وفأرة بدقة البكسل.
+- **قاعدة المعرفة (RAG)** — تضمينات محلية (`nomic-embed-text`) ومتجر متجهات في SQLite واسترجاع بالتشابه مع
+  ذكر المصادر.
+- **استوديو التدريب** — إعادة تدريب `nova-local` بنقرة، تقدّم مباشر، وحلقة تعلّم ذاتية (المعرفة → التدريب).
+- **الوسائط** — توليد صور (SDXL/Flux) وفيديو (LTX) محلياً عبر ComfyUI.
+- **الصوت** — تحويل كلام إلى نص محلي (Whisper على كرت الشاشة، يدعم العربية) مع زر **⏹ إيقاف** واضح، ونطق
+  (Piper، سرعة قابلة للتعديل، صوت عربي/إنجليزي تلقائي).
+- **الثقة والتشغيل** — مصادقة برمز، سجل تدقيق كامل، نسخ احتياطي يومي لقاعدة البيانات والوسائط، فحص ذاتي،
+  مراقبة نظام لحظية، و**زر إيقاف طوارئ ⛔** يوقف كل تحكم بالحاسوب فوراً.
+
+## 🚀 كيفية التشغيل
+```powershell
+cd C:\AI\agent-workspace\control-center
+# 1) تثبيت الاعتماديات (يُفضّل ملف القفل القابل للتكرار)
+python -m pip install -r requirements.lock
+python -m playwright install chromium
+# 2) تأكد أن Ollama يعمل مع نموذج محادثة واحد على الأقل:
+ollama pull qwen2.5:14b
+# 3) التشغيل
+python server.py
+```
+افتح **http://localhost:8900** (مرتبط بـ localhost فقط افتراضياً). للعربية: زر اللغة (ع) في الأعلى.
+
+## ⚠️ السلامة — اقرأ قبل التشغيل دون إشراف
+- **أبقِه على localhost.** نموذج الأمان مبني على "الثقة بـ localhost". تعريضه على الشبكة مع
+  `allow_remote_exec` يتيح لآخرين تشغيل أوامر والتحكم بفأرتك ولوحة مفاتيحك.
+- **الوكيل بصلاحية كاملة يمكنه فعل أي شيء** — تشغيل أوامر، كتابة ملفات، النقر/الكتابة في أي مكان. استخدم
+  المعاينة التجريبية، وراقبه، وأبقِ **زر الطوارئ ⛔** جاهزاً (الشريط العلوي). يمكنك أيضاً إيقاف تحكم الوكيل
+  بالواجهة تماماً (الإعدادات → `agent_can_control`).
+- **الوكيل مع بحث الويب = الأعلى خطورة** (حقن التعليمات من صفحات الويب). محتوى الويب يُعامَل كبيانات غير
+  موثوقة، لكن توخَّ الحذر.
+- الحالة الصادقة الكاملة للمشروع في [`docs/honest-state.md`](docs/honest-state.md).
+
+## 🗂️ البنية
+نفس الشجرة الموضّحة في القسم الإنجليزي: خادم FastAPI (`server.py`) كجذر تركيب، حزمة `nova/`
+(core/services/api)، وواجهة SPA في `static/`. سلسلة الاعتماد: `config ← core ← services ← api ← server`.
+ستة ملفات مرجعية (STATUS · ROADMAP · TASKS · PROJECT_PLAN · WORKFLOW · BUILD_LOG) تُحدَّث كل جلسة.
+
+</div>
+
+---
+_License: MIT. A personal, single‑user system — no multi‑user/RBAC, no cloud, no telemetry._

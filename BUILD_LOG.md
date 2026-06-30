@@ -1185,3 +1185,11 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Verified:** gate green; render-verified end-to-end — mode switch, Full Access shown only in agent
   mode, DeepThink/Web toggles, Auto default + hint, a real chat turn streamed (with web citations),
   zero console errors; live suite 42/42. Frontend tests updated for the merged nav.
+
+## M98 — bilingual README (EN+AR) + UWS docs (2026-06-30)  [Docs]
+
+- Rewrote README.md as a full **bilingual** doc: English section + Arabic (RTL `<div dir=rtl>`) section
+  — project specs, how-to-run, the unified Nova workspace + all features, safety, testing/tools,
+  architecture. License/posture note at the end.
+- Documented the Unified Workspace + Auto-model feature group (UWS-1…7) in TASKS/STATUS/ROADMAP.
+- **Verified:** gate green.

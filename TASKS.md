@@ -102,6 +102,20 @@ tools**, **chat commands** ("read this", "where am I?", "move mouse to 500,300")
 Mutating control is gated by `exec_allowed()` (localhost ok; LAN needs opt‑in) and audited. Full spec:
 `docs/perception-control.md`.
 
+## P1 — Unified Workspace + Auto model (UWS · owner request)
+
+One page merging Chat + Agent with professional toggle buttons, requested 2026‑06‑30.
+
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| UWS‑1 | **Merge Chat + Agent into one page** with pro toggle buttons | ✅ | M97. `static/js/pages-workspace.js` → `#/workspace` ("Nova"). Segmented 💬 Chat / 🤖 Agent + pill toggles 🧠 DeepThink · 🌐 Web Search · 🔓 Full Access (agent‑only) · 📎 Attach. `#/chat`+`#/agent` redirect here; single nav entry. Renders chat token streams + agent step cards; mic; Stop. Render‑verified, zero console errors. |
+| UWS‑2 | **Attach any file** (images/docs/any format) | ✅ | M97. Drag‑drop or 📎; `/api/upload` handles all formats (OCR + VLM for images); chips; content → chat context. |
+| UWS‑3 | **✨ Auto model (intelligent) + manual** | ✅ | M97. `nova/services/automodel.py` + `/api/model/auto`; chat+agent resolve `model:"auto"` per task (coding→qwen3‑coder:30b verified, reasoning/DeepThink→reasoning/larger, vision→VLM, agent→control‑model). UI shows the pick + reason live. Manual select still available. |
+| UWS‑4 | **Agent decides screen capture/record/monitor** | ✅ | M97. Agent gets its full toolset (see_screen/read_screen/screenshot/screen_awareness/control + record via automation); the ReAct loop chooses when — no manual wiring. |
+| UWS‑5 | DeepThink + Full Access as professional toggles (both surfaces) | ✅ | M97 (workspace) + M62/M72 (chat/agent). Pill buttons, not checkboxes. |
+| UWS‑6 | "Select a file and work on it" (Claude‑Desktop‑style) | 🟧 | Covered today via **attach** (file content in context, ask for edits) + **agent file tools** (`understand`/`read_file`/`write_file` edit existing files by path). A dedicated side‑by‑side file‑editor panel with inline diffs is future polish (UWS‑6b). |
+| UWS‑7 | Bilingual README (EN + AR) | ✅ | M98. Full English + Arabic (RTL) README: specs, how‑to‑run, features, safety, architecture. |
+
 ## P1 — AI Screen Vision (Phase 7 · NEW core feature)
 
 Real‑time perception + control: the AI sees exactly what the user sees and can act on it. Builds on

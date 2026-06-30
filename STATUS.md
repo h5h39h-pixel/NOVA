@@ -90,6 +90,13 @@ image uploads); **window/screen awareness** (DPI‑aware — true 4K), **element
 **precise mouse/keyboard control** (`/api/control/*`, agent `control`, chat commands like "where am i" /
 "move mouse to X,Y" / "read this"). Live‑verified. Full spec: `docs/perception-control.md`.
 
+## 🆕 Unified Workspace + Auto model (UWS, P1) — ✅ shipped M97/M98
+Chat + Agent merged into one **"Nova"** page (`#/workspace`) with professional toggle buttons (mode
+seg‑control · 🧠 DeepThink · 🌐 Web Search · 🔓 Full Access · 📎 Attach‑any‑file) and **✨ Auto model**
+(intelligent per‑task pick via `automodel.py`, or manual). Agent keeps its full toolset so it decides
+when to capture/record/monitor the screen. `#/chat`+`#/agent` redirect to it; single nav entry.
+Render‑verified end‑to‑end. **Bilingual README (EN+AR)** shipped. Tracked as UWS‑1…7.
+
 ## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62
 DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckGo via `ddgs`, cited;
 opt‑in/online), and an explicit microphone **⏹ Stop** control. Render‑verified; live suite 42/42.
