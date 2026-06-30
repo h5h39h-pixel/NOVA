@@ -869,3 +869,20 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Verified:** render-verified (skip link, nav role, aria-live present; zero console errors); gate green.
 - **Honest scope:** not a full WCAG audit (personal single-user tool) — closes the core keyboard +
   screen-reader gaps.
+
+## M72 — Agent parity: DeepThink + Web Search + all PC tools in the agent (2026-06-30)  [P1]
+
+- **Owner request:** DeepThink + Web Search must be in BOTH chat and agent; and OCR/describe/mouse/
+  keyboard/window awareness available to the agent + API.
+- **Found + fixed a real bug:** the Agent UI's enabled-tools grid was a hardcoded list that did NOT
+  include the Phase 8 tools (understand/control/screen_awareness/find_element/web_search). Because the
+  grid drives the agent's `tools` allow-list, the agent could not use those tools from the UI. Added
+  them to `TOOLS`+`TN` and bumped the localStorage key (`agent_set`→`agent_set2`) so they default ON.
+  Grid now has 19 tools (verified: all 5 new tools present, zero console errors).
+- **Agent DeepThink (CHAT-1):** `agent_run(deepthink=…)` + `#adeep` toggle → reasoning directive in the
+  system prompt. **Agent Web Search (CHAT-2):** `web_search` agent tool + `#aweb` toggle.
+- **Already present (confirmed):** OCR/describe via agent `understand` (M68) + `/api/understand`;
+  precise mouse/keyboard/window via agent `control`/`screen_awareness`/`find_element` (M69) +
+  `/api/control/*`; chat commands ("where am i", "move mouse to X,Y", "read this"); chat DeepThink/Web.
+- **Verified:** 2 new tests (agent web_search + deepthink prompt); full gate green; restarted; live
+  suite 42/42; Agent page render-verified (DeepThink+Web toggles + all 19 tools in the grid).

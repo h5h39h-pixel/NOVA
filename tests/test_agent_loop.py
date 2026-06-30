@@ -105,6 +105,31 @@ def test_loop_ask(agent_env):
     assert ask and ask[0]["text"] == "which file?"
 
 
+def test_agent_web_search_tool(tmpdb, monkeypatch):
+    """Agent web_search tool returns formatted live results (DDGS mocked)."""
+    import nova.services.agent as A
+    monkeypatch.setattr("nova.services.web_search.web_search",
+                        lambda q, k=5: [{"title": "T", "url": "http://x", "snippet": "snip"}])
+    out = A.agent_tool("web_search", {"query": "hello"})
+    assert "T" in out and "http://x" in out
+
+
+def test_agent_deepthink_in_prompt(monkeypatch):
+    """DeepThink adds a reasoning directive to the agent system prompt."""
+    import nova.services.agent as A
+    seen = {}
+    monkeypatch.setattr(A, "push", lambda e: None)
+    monkeypatch.setattr(A, "add_notification", lambda *a, **k: None)
+    monkeypatch.setattr(A, "audit", lambda *a, **k: None)
+
+    def fake(model, msgs, temperature=0.2):
+        seen["sys"] = msgs[0]["content"]
+        return '{"thought":"x","final":"done"}'
+    monkeypatch.setattr(A, "ollama_chat_once", fake)
+    A.agent_run("g", "m", max_steps=1, deepthink=True)
+    assert "DEEPTHINK" in seen.get("sys", "")
+
+
 def test_agent_tool_blocks_destructive(tmpdb):
     from nova.services.agent import agent_tool
     out = agent_tool("run_command", {"command": "Remove-Item -Recurse -Force C:\\data"})

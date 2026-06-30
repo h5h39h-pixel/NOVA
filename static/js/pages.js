@@ -736,8 +736,9 @@ function Agent(){
     s_stopped:AR?'متوقف':'Stopped', s_stopped_body:AR?'لقد أوقفت الوكيل.':'You stopped the agent.', s_error:AR?'خطأ':'Error',
     prog:AR?'الخطوة':'Step', open_first:AR?' → افتح الأول':' → open first',
     ex_nothing:AR?'لا شيء للتصدير':'Nothing to export', ex_runfirst:AR?'شغّل هدفاً أولاً':'Run a goal first', ex_done:AR?'تم تصدير السجل':'Log exported'};
-  const TN={kb_search:AR?'بحث المعرفة':'KB search',run_command:AR?'أمر':'command',browse:AR?'تصفّح':'browse',
-    open_url:AR?'فتح رابط':'open URL',see_screen:AR?'رؤية الشاشة':'see screen',read_screen:AR?'قراءة الشاشة':'read screen',screenshot:AR?'لقطة شاشة':'screenshot',act_on_screen:AR?'التحكم بالشاشة':'act on screen',
+  const TN={kb_search:AR?'بحث المعرفة':'KB search',web_search:AR?'بحث الويب':'web search',run_command:AR?'أمر':'command',browse:AR?'تصفّح':'browse',
+    open_url:AR?'فتح رابط':'open URL',understand:AR?'اقرأ وافهم':'understand',see_screen:AR?'رؤية الشاشة':'see screen',read_screen:AR?'قراءة الشاشة':'read screen',screenshot:AR?'لقطة شاشة':'screenshot',act_on_screen:AR?'التحكم بالشاشة':'act on screen',
+    screen_awareness:AR?'وعي النوافذ':'window awareness',find_element:AR?'إيجاد عنصر':'find element',control:AR?'تحكّم دقيق':'precise control',
     generate_video:AR?'فيديو':'video',notify:AR?'تنبيه':'notify',speak:AR?'نطق':'speak',
     read_file:AR?'قراءة ملف':'read file',write_file:AR?'كتابة ملف':'write file',schedule:AR?'جدولة':'schedule',ask:AR?'سؤال':'ask'};
   const tn=k=>TN[k]||k;
@@ -779,11 +780,13 @@ function Agent(){
     if(action==='notify'||action==='speak')return a.text||'';
     if(action==='schedule')return (a.name||'')+' · '+(a.action||'');
     return JSON.stringify(a).slice(0,200);}
-  const TOOLS=[['kb_search','📚'],['run_command','⌨️'],['browse','🌐'],['open_url','🪟'],
-    ['see_screen','👁'],['read_screen','🔤'],['screenshot','📸'],['act_on_screen','🖱️'],
+  const TOOLS=[['kb_search','📚'],['web_search','🌐'],['run_command','⌨️'],['browse','🧭'],['open_url','🪟'],
+    ['understand','🔎'],['see_screen','👁'],['read_screen','🔤'],['screenshot','📸'],['act_on_screen','🖱️'],
+    ['screen_awareness','🪟'],['find_element','🎯'],['control','🎮'],
     ['generate_video','🎥'],['notify','🔔'],['speak','🔊'],['read_file','📄'],['write_file','💾'],['schedule','⏰']];
-  const SET=Object.assign({temp:0.2,max:8,tools:TOOLS.map(t=>t[0])},JSON.parse(localStorage.getItem('agent_set')||'{}'));
-  const saveSet=()=>localStorage.setItem('agent_set',JSON.stringify(SET));
+  // key bumped to v2 so the new Phase 8 tools (understand/control/web_search/…) default to enabled.
+  const SET=Object.assign({temp:0.2,max:8,tools:TOOLS.map(t=>t[0])},JSON.parse(localStorage.getItem('agent_set2')||'{}'));
+  const saveSet=()=>localStorage.setItem('agent_set2',JSON.stringify(SET));
   let maxSteps=8,lastGoal='',collapsedAll=false,transcript=[];
   const html=`<div class="agentpage" dir="ltr">
     <div class="agentmain">
@@ -822,6 +825,8 @@ function Agent(){
           <select class="t" id="amodel" data-tip="${A.tip_model}"></select>
           <label class="atog" data-tip="${A.tip_full}"><input type="checkbox" id="afull" checked> ${A.full_lbl}</label>
           <label class="atog" data-tip="${A.tip_dry}"><input type="checkbox" id="adry"> ${A.dry_lbl}</label>
+          <label class="atog" data-tip="${AR?'تفكير عميق — خطوة بخطوة':'DeepThink — reason step by step'}"><input type="checkbox" id="adeep"> 🧠 ${AR?'تفكير عميق':'DeepThink'}</label>
+          <label class="atog" data-tip="${AR?'بحث ويب مباشر':'Live web search'}"><input type="checkbox" id="aweb"> 🌐 ${AR?'بحث':'Web'}</label>
           <span class="spacer"></span>
           <button class="btn" id="amic" data-tip="${AR?'إدخال صوتي (محلي)':'Voice input (local Whisper)'}">🎤</button>
           <button class="btn p" id="arun" data-tip="${A.tip_send}"><span class="ic">📨</span> ${A.send}</button>
@@ -859,8 +864,10 @@ function Agent(){
   function run(){const t=$('#agoal');const g=(t.value||'').trim();if(!g)return;
     lastGoal=g;const rr=$('#arerun');if(rr)rr.disabled=false;collapsedAll=false;transcript=[];
     $('#alog').innerHTML='';setBusy(true);setStatus('run',A.st_starting,A.ln_work);showThinking(true);
+    let tools=SET.tools;
+    if($('#aweb')&&$('#aweb').checked&&Array.isArray(tools)&&!tools.includes('web_search'))tools=[...tools,'web_search'];
     post('/agent',{goal:g,model:$('#amodel').value,dry_run:$('#adry').checked,unrestricted:$('#afull').checked,
-      temperature:SET.temp,max_steps:SET.max,tools:SET.tools});usage('agent');}
+      temperature:SET.temp,max_steps:SET.max,tools,deepthink:($('#adeep')&&$('#adeep').checked)});usage('agent');}
   function mount(){
     const pg=$('#main')&&$('#main').querySelector('.page');if(pg)pg.setAttribute('dir','ltr');
     $('#aex').innerHTML=GROUPS.map(g=>`<div class="exgroup"><div class="exh">${g.cat}</div>`+

@@ -20,7 +20,8 @@ async def api_agent(req: Request):
     model = b.get("model") or get_settings().get("default_local_model", "llama3.1:8b")
     tools = b.get("tools") if isinstance(b.get("tools"), list) else None
     threading.Thread(target=agent_run, args=(goal, model, bool(b.get("dry_run")), bool(b.get("unrestricted")),
-                     b.get("temperature", 0.2), b.get("max_steps", 8), tools), daemon=True).start()
+                     b.get("temperature", 0.2), b.get("max_steps", 8), tools),
+                     kwargs={"deepthink": bool(b.get("deepthink"))}, daemon=True).start()
     return {"ok": True, "model": model}
 
 @router.post("/api/agent/stop")

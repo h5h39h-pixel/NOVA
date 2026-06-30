@@ -44,6 +44,8 @@ AGENT_HEADER = (
 )
 AGENT_TOOL_DEFS = {
     "kb_search": "- kb_search {query}: search the user's knowledge base of documents (use this for questions about their files).\n",
+    "web_search": ("- web_search {query}: search the LIVE web (DuckDuckGo) and get the top results with titles, "
+                   "snippets, and source URLs. Use for current events / external facts not in the KB.\n"),
     "run_command": "- run_command {command}: run a PowerShell command and read its output.\n",
     "open_url": ("- open_url {url}: open a URL in the user's DEFAULT browser (Chrome/Edge) as a real, visible window. "
                  "Use this when the user says 'open <site>' (e.g. open Google, open my dashboard) or to play a known video link.\n"),
@@ -148,6 +150,12 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
         if name == "kb_search":
             hits = kb_search(a.get("query", ""), 4)
             return "\n".join(f"[{h['doc']}] {h['text'][:400]}" for h in hits) or "no results in knowledge base"
+        if name == "web_search":
+            from nova.services.web_search import web_search as _ws
+            hits = _ws(a.get("query", ""), 5)
+            if not hits: return "no web results (or offline)"
+            audit("agent", "web_search", a.get("query", "")[:60])
+            return "\n".join(f"[{i+1}] {h['title']}\n{h['snippet']}\n{h['url']}" for i, h in enumerate(hits))
         if name == "read_file":
             p = resolve_read_path(a.get("path", ""))
             if not p: return "BLOCKED: that path is not readable (credential store)."
@@ -290,7 +298,8 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
 
 AGENT_STOP = threading.Event()
 
-def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, max_steps=8, tools=None):
+def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, max_steps=8, tools=None,
+              deepthink=False):
     AGENT_STOP.clear()
     try: max_steps = max(1, min(int(max_steps or 8), 25))
     except Exception: max_steps = 8
@@ -307,6 +316,10 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
                        "Only avoid actions the user did not request.")
     if dry_run:
         sys_prompt += "\nNOTE: DRY-RUN mode — describe what you would do; side-effecting tools are simulated."
+    if deepthink:
+        sys_prompt += ("\nDEEPTHINK mode: in each step's 'thought', reason carefully and thoroughly before "
+                       "choosing an action — consider alternatives, edge cases, and whether the previous "
+                       "observation actually achieved the sub-goal. Prefer correctness over speed.")
     msgs = [{"role": "system", "content": sys_prompt}, {"role": "user", "content": "GOAL: " + goal}]
     final = None
     for step in range(max_steps):
