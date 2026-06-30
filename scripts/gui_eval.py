@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-
-"""HON-2 — real GUI integration test for the Perception & Control stack.
+"""HON-2 / HON-2b — real, SAFE GUI integration test for the Perception & Control stack.
 
-⚠️ DANGER / KNOWN-UNSAFE ON WIN11: this drives a live GUI app. Win11's UWP Notepad is a SINGLE shared
-window with multi-tab session restore, so launching `notepad.exe` opens a tab inside ANY Notepad you
-already have open, and there is no safe automated way to close only our tab. An earlier version of this
-script force-killed Notepad and risked the user's other open tabs — DO NOT do that.
+Instead of driving a shared app like Notepad (multi-tab, session-restore, unsafe to close), this
+launches an ISOLATED disposable Tkinter window in its own process, types into it via the control stack
+(clipboard paste), and verifies the text actually landed by reading what the app received (the app
+writes its input to a result file). Fully self-contained: own process (terminated by us, never
+taskkill), temp files only, no user data touched.
 
-Current behavior is NON-DESTRUCTIVE: it requires Notepad to be CLOSED first (refuses to run otherwise),
-types into a fresh instance, reads it back via UIA, and then LEAVES Notepad open for the user to close
-manually. It does NOT taskkill. On-demand only; needs the real desktop; not in CI.
-
-Conclusion from running it (2026-06-30): the type+readback is FLAKY on UWP Notepad (session-restore /
-focus / multi-tab) — this confirms the click-to-act fragility caveat. A reliable GUI integration test
-needs an ISOLATED, disposable target app (future work). Run:  python scripts/gui_eval.py
+On-demand only (needs a desktop session; briefly takes focus). Run:  python scripts/gui_eval.py
 """
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -25,93 +21,65 @@ if str(ROOT) not in sys.path:
 
 from nova.services import control as C  # noqa: E402
 
-MARKER = "NOVA-GUI-TEST-7731"
+MARKER = "nova-gui-7731"   # lowercase: avoids shift-key mangling if the keystroke path is used
 
-
-def _read_notepad_text():
-    """Read the Notepad edit area's text via UI Automation (handles classic + UWP Notepad)."""
-    try:
-        import uiautomation as auto
-    except Exception as e:
-        return None, f"uiautomation unavailable: {e}"
-    try:
-        np = None
-        for w, _ in auto.WalkControl(auto.GetRootControl(), includeTop=True, maxDepth=2):
-            try:
-                if w.ControlTypeName == "WindowControl" and "Notepad" in (w.Name or ""):
-                    np = w; break
-            except Exception:
-                continue
-        if not np:
-            return None, "Notepad window not found"
-        for c, _ in auto.WalkControl(np, includeTop=True, maxDepth=12):
-            try:
-                if c.ControlTypeName in ("EditControl", "DocumentControl"):
-                    try:
-                        return c.GetValuePattern().Value, None
-                    except Exception:
-                        try:
-                            return c.GetTextPattern().DocumentRange.GetText(-1), None
-                        except Exception:
-                            continue
-            except Exception:
-                continue
-        return None, "edit area not found"
-    except Exception as e:
-        return None, str(e)[:160]
-
-
-def _notepad_running():
-    try:
-        out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq notepad.exe"],
-                             capture_output=True, text=True).stdout.lower()
-        return "notepad.exe" in out
-    except Exception:
-        return False
+TARGET_APP = '''
+import tkinter as tk, sys, pathlib
+out = pathlib.Path(sys.argv[1])
+root = tk.Tk(); root.title("NOVA-GUI-TARGET")
+root.geometry("460x150+240+240")
+e = tk.Entry(root, width=44); e.pack(pady=40)
+e.focus_force(); root.lift(); root.attributes("-topmost", True)
+def _paste(ev=None):
+    try: e.insert("insert", root.clipboard_get())
+    except Exception: pass
+    return "break"
+e.bind("<Control-v>", _paste); e.bind("<Control-V>", _paste)   # accept synthetic Ctrl+V (atomic paste)
+def poll():
+    v = e.get()
+    if v:
+        try: out.write_text(v, encoding="utf-8")
+        except Exception: pass
+    root.after(250, poll)
+poll()
+root.after(12000, root.destroy)   # self-close after 12s no matter what
+root.mainloop()
+'''
 
 
 def main():
-    # SAFETY: refuse to run if Notepad is already open — we must not touch the user's existing tabs,
-    # and we will not force-kill Notepad.
-    if _notepad_running():
-        print("REFUSING: Notepad is already open. Close all Notepad windows first (this test will not "
-              "touch your existing tabs). HON-2 stays unverified — see the module docstring.")
-        return 2
-    C.resume_control()  # ensure not paused
-    print("Launching Notepad…")
-    subprocess.Popen(["notepad.exe"])
-    time.sleep(2.0)
+    C.resume_control()
+    tmp = Path(tempfile.mkdtemp(prefix="nova-gui-"))
+    app_py = tmp / "target.py"; result = tmp / "result.txt"
+    app_py.write_text(TARGET_APP, encoding="utf-8")
+    print("Launching isolated Tkinter target app…")
+    proc = subprocess.Popen([sys.executable, str(app_py), str(result)])
     ok = False
     detail = ""
     try:
+        time.sleep(2.2)
         aw = C.active_window()
         print(f"active window: {aw.get('title')!r} ({aw.get('process')})")
-        # Notepad focuses its edit area on launch; click lower-center (text area, below any ribbon)
-        # to be safe, then type via clipboard paste.
+        # The Entry has focus_force on launch; click directly on it (near top-center where it sits)
+        # to satisfy Win11 focus rules WITHOUT defocusing onto the empty window body.
         r = aw.get("rect") or {}
         if r:
-            C.click(r["x"] + r["w"] // 2, r["y"] + int(r["h"] * 0.6))
-            time.sleep(0.4)
-        import pyperclip
-        pyperclip.copy(MARKER)
-        print("clipboard has marker:", pyperclip.paste() == MARKER)
-        C.press_keys("ctrl+v")          # paste directly
-        time.sleep(1.0)
-        text, err = _read_notepad_text()
-        if not (text and MARKER in text):   # one retry via type_text path
-            C.type_text(MARKER); time.sleep(1.0); text, err = _read_notepad_text()
-        if err:
-            detail = f"readback error: {err}"
-        else:
-            ok = MARKER in (text or "")
-            detail = f"read back {len(text or '')} chars; marker present: {ok}"
-        print(detail)
+            C.click(r["x"] + r["w"] // 2, r["y"] + 55)   # the Entry row (pady=40)
+            time.sleep(1.2)            # let focus SETTLE — early keystrokes are dropped otherwise
+        C.type_text(MARKER)            # control stack: clipboard paste (atomic — the reliable path)
+        for _ in range(20):
+            time.sleep(0.3)
+            if result.exists() and MARKER in result.read_text(encoding="utf-8", errors="replace"):
+                ok = True; break
+        detail = f"app received: {result.read_text(encoding='utf-8', errors='replace')[:60]!r}" if result.exists() else "app wrote nothing"
+        print("input method: clipboard paste |", detail)
     finally:
-        # NON-DESTRUCTIVE: leave Notepad open for the user to close. We do NOT taskkill (that would
-        # risk other tabs). The test typed into a fresh, empty instance only.
-        print("(left Notepad open — close it manually; this test never force-kills Notepad)")
-    print("\n=== HON-2:", "PASS — typed text verified in a live app via UIA ===" if ok
-          else f"FAIL/FLAKY — {detail} (expected on UWP Notepad; see docstring) ===")
+        try: proc.terminate()          # terminate OUR app only (safe)
+        except Exception: pass
+        try: app_py.unlink(); result.unlink(missing_ok=True); tmp.rmdir()
+        except Exception: pass
+    print("\n=== HON-2:", "PASS — typed text landed in a live GUI app via the control stack ==="
+          if ok else f"FAIL/FLAKY — {detail} ===")
     return 0 if ok else 1
 
 

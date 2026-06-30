@@ -1078,3 +1078,18 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   → confirms WAL holds under write contention; chat single-flight returns cleanly without wedging.
   Self-cleans its throwaway conversations.
 - **Verified:** ran against the live server — PASS; gate green.
+
+## M90 — HON-2b: safe isolated GUI test + conclusive control-typing finding (2026-06-30)  [P1 finding]
+
+- Rebuilt `gui_eval.py` to use an ISOLATED disposable Tkinter app (own process, terminates only itself,
+  temp files only — never touches user apps).
+- **Conclusive, important finding:** window awareness + mouse click reliably reach a live app, but
+  **keyboard control is unreliable on this machine** — pyautogui per-character typing drops most
+  characters (only the tail lands, e.g. `nova-gui-7731` → `--7731`) and synthetic Ctrl+V often fails to
+  trigger paste (tkinter + Notepad both). This definitively confirms the click-to-act fragility caveat.
+- **Root cause + real fix (new HON-2c):** the control service types via pyautogui; CLAUDE.md already
+  documented that pyautogui char-typing mangles on this box and the known-good path is keysender
+  (hardware SendInput) + real Ctrl+V (as mcp-control uses). Switching the input backend is the actual
+  fix for reliable GUI typing — filed as HON-2c (P1).
+- HON-2/2b → 🟧 (awareness/mouse verified; typing unreliable, root cause identified). Not thrashing
+  further — the finding is the deliverable. Gate green.
