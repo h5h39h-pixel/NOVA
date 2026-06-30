@@ -1035,3 +1035,13 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   requirements.in` — full transitive closure, 1426 hashes, reproducible (`pip install -r
   requirements.lock`). `requirements.txt` stays the readable direct pins; `pip-tools` added to dev deps.
 - **Verified:** gate green; restarted; live suite 42/42.
+
+## M86 — HON-6: verified live stream + Web-Search chat turn end-to-end (2026-06-30)  [P1 Verification]
+
+- **Live stream:** with screen vision enabled, `/api/vision/frame` returned a valid JPEG and the MJPEG
+  `/api/vision/stream` produced multiple `--frame` boundaries (each a JPEG SOI). Disabled again after;
+  frame content not viewed (privacy).
+- **Web Search chat turn:** toggled Web Search on in the UI, asked a current-info question → the model
+  answered "Python 3.13.1" explicitly citing "the provided context" (the HON-10-fenced web results),
+  579 chars, zero console errors — confirming search → context injection → answer works live.
+- Verification only (no code change).
