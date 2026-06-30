@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **TST‑1** Replace smoke tests with real per‑service assertions. (P0)
-2. **TST‑2** Hermetic test mode (mock Ollama/ComfyUI so tests don't need them). (P0)
-3. **TST‑3** Agent‑loop integration tests with a mocked model. (P0)
+1. **TST‑2** Hermetic test mode (mock Ollama/ComfyUI so tests don't need them). (P0)
+2. **TST‑3** Agent‑loop integration tests with a mocked model. (P0)
+3. **TST‑5** Make CI actually run; **TST‑4** clean‑venv install. (P0)
 
-_**P0 Security phase COMPLETE** ✅ (SEC‑1…6, M43–M48). Next phase: P0 Tests._
+_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests in progress:** TST‑1 ✅ deep service tests (M49)._
 
 ---
 

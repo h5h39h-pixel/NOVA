@@ -529,3 +529,15 @@ Made the six project files the **mandatory, permanent** source of truth and the 
 ### ✅ P0 Security phase COMPLETE (M43–M48)
 SEC-1 confirm-guard · SEC-2 centralized denylist · SEC-3 strict CSP/headers · SEC-4 at-rest key
 encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next phase: P0 Tests (TST-1).**
+
+## M49 — TST-1: deeper per-service unit tests (2026-06-30)  [P0 Tests]
+
+- **What:** `tests/test_services_deep.py` (10 tests with real assertions, externals mocked, isolated
+  temp DB): audit write; notifications + category inference; metrics history round-trip; chat
+  conv_touch/chat_count; run_schedule updates last_status; run_action webhook + kb_search branches
+  (mocked); backup↔restore conversation round-trip + bad-bundle rejection; ollama_models with mocked
+  HTTP; learning_stats with mocked deps; files.extract_text (txt + unsupported).
+- **Why:** existing tests were mostly smoke/"returns 200"; this adds genuine behavioral assertions to
+  the service layer (the units that were isolated by the M34–M35 refactor specifically to enable this).
+- **Verified:** `pytest tests/test_services_deep.py` → 10 passed; full gate green; live suite 42/42.
+- **Next:** TST-2 (hermetic test mode — mock Ollama/ComfyUI so the live suite isn't required).
