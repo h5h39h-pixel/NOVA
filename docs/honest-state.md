@@ -177,6 +177,15 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## M105d (2026‑06‑30) — IDEA‑2 screen memory + IDEA‑3/5 (honest)
+- **IDEA‑5 Folder Q&A, IDEA‑3 save‑agent‑run, IDEA‑2 screen memory** shipped & live‑verified (each with
+  a real roundtrip, then test artifacts cleaned up). All local‑only; no protections disabled.
+- **NEW honest gap — screen‑memory has no retention cap.** IDEA‑2 persists OCR'd screen text into the KB.
+  It is **OFF by default** and opt‑in, but once on (especially scheduled) it will grow the KB unbounded
+  and store whatever is on screen. *Mitigation present:* opt‑in gate + a min‑chars filter + it never
+  leaves the machine. *Still missing:* an auto‑expire / max‑docs retention policy and a one‑click "purge
+  screen memories." → tracked as **IDEA‑2b** in TASKS. Don't schedule frequent capture until that lands.
+
 **Operational note (discovery):** the running server must be **restarted** to serve a newly added route
 — the watchdog's restart interval is >40s, so after killing the stale process I started `server.py`
 manually and confirmed `/api/memory → 200` before the frontend console‑error gate could pass. Lesson:

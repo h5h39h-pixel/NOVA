@@ -55,6 +55,18 @@ def api_vision_context():
     return {"window": sv.active_window()}
 
 
+@router.post("/api/vision/remember-screen")
+def api_vision_remember_screen():
+    """IDEA-2: snapshot the screen → OCR → index into the KB (opt-in `screen_memory_enabled`)."""
+    if not sv.screen_memory_enabled():
+        return JSONResponse({"error": "Screen memory is off. Enable it in Settings (privacy: opt-in)."},
+                            status_code=403)
+    r = sv.remember_screen()
+    if r.get("stored"):
+        audit("vision", "screen_memory", r.get("doc", ""))
+    return r
+
+
 @router.post("/api/vision/describe")
 async def api_vision_describe(req: Request):
     g = _gate()

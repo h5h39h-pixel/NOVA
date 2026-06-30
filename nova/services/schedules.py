@@ -83,6 +83,13 @@ def run_action(action, params, name="task"):
                 if kb_ingest_file(f) > 0: added += 1
         add_notification("success", "KB indexed", f"{added} new files from {folder.name}")
         return f"indexed {added} new files from {folder}"
+    if action == "screen_memory":
+        # IDEA-2: periodic local screen memory (opt-in). Schedule e.g. every 300s to build a searchable
+        # log of what was on screen. Gated by screen_memory_enabled; nothing happens if it's off.
+        from nova.services.screen_vision import remember_screen
+        r = remember_screen()
+        if not r.get("ok"): return f"screen_memory: {r.get('error','blocked')}"
+        return f"screen_memory: {'stored ' + str(r.get('chunks',0)) + ' chunks' if r.get('stored') else r.get('reason','nothing stored')}"
     if action == "agent":
         # IDEA-3: re-run a saved agent task (a successful agent run saved as a workflow step).
         from nova.services.agent import agent_run

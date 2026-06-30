@@ -32,6 +32,30 @@ def vision_enabled():
     return bool(get_settings().get("screen_vision_enabled"))
 
 
+def screen_memory_enabled():
+    return bool(get_settings().get("screen_memory_enabled"))
+
+
+def remember_screen(min_chars=12):
+    """IDEA-2 local screen memory (opt-in): OCR the current screen and index the text into the KB as a
+    timestamped 'screen memory' doc, so the user can later ask "what did I see earlier?". Returns a
+    summary dict. STRICTLY opt-in (`screen_memory_enabled`) and 100% local — nothing leaves the PC."""
+    if not screen_memory_enabled():
+        return {"ok": False, "error": "Screen memory is off. Enable it in Settings (privacy: opt-in)."}
+    import time
+    from nova.services.kb import kb_ingest_text
+    try:
+        r = screen_svc.read_screen(vision=False)        # Windows OCR (local, no model cost)
+    except Exception as e:
+        return {"ok": False, "error": f"screen read failed: {e}"}
+    text = (r.get("text") or "").strip()
+    if len(text) < min_chars:
+        return {"ok": True, "stored": False, "reason": "no meaningful text on screen", "chars": len(text)}
+    name = "screen-memory " + time.strftime("%Y-%m-%d %H:%M:%S")
+    chunks = kb_ingest_text(name, text)
+    return {"ok": True, "stored": chunks > 0, "doc": name, "chars": len(text), "chunks": chunks}
+
+
 def _clamp(v, lo, hi):
     try: return max(lo, min(int(v), hi))
     except Exception: return lo

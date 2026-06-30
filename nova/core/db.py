@@ -34,6 +34,7 @@ DEFAULT_SETTINGS = {
     "vision_quality": 70,            # JPEG quality 30–95
     "track_mouse": False,            # expose live cursor position (opt-in)
     "track_keyboard": False,         # capture active-window/keyboard context (most sensitive; opt-in)
+    "screen_memory_enabled": False,  # IDEA-2: opt-in — OCR snapshots of the screen into the KB ("what did I see earlier?")
     "agent_can_control": True,       # HON-1b: allow the AUTONOMOUS agent to drive mouse/keyboard (control/act_on_screen). Turn OFF to keep the agent from GUI control while still allowing manual control + the kill-switch.
 }
 

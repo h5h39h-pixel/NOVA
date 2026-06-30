@@ -61,6 +61,22 @@ def kb_ingest_file(path):
     return n
 
 
+def kb_ingest_text(name, text):
+    """Index a raw text string into the KB under a given doc name; returns chunk count.
+    Used by IDEA-2 screen memory (OCR'd screen text) and any non-file source."""
+    chunks = chunk_text(text)
+    if not chunks: return 0
+    c = db(); did = c.execute("INSERT INTO kb_docs(name,chunks,created) VALUES(?,?,?)",
+                              (name[:120], 0, time.time())).lastrowid; c.commit()
+    n = 0
+    for i, ch in enumerate(chunks):
+        v = embed(ch)
+        if not v: continue
+        c.execute("INSERT INTO kb_chunks(doc_id,ord,text,emb) VALUES(?,?,?,?)", (did, i, ch, json.dumps(v))); n += 1
+    c.execute("UPDATE kb_docs SET chunks=? WHERE id=?", (n, did)); c.commit(); c.close()
+    return n
+
+
 def kb_ingest_folder(folder, recursive=True, max_files=200):
     """IDEA-5 Folder Q&A — index every supported file in a directory into the KB so you can chat
     over the folder with citations. Skips credential stores and unsupported types. Returns a

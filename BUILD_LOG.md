@@ -1326,3 +1326,20 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
   - Test: `test_agent_save_workflow` (asserts the persisted step is `action:agent` with the goal/flags).
     Live roundtrip verified (saved → step correct → cleaned up).
   - Gate ✅.
+
+### M105d — IDEA-2 local screen memory (opt-in)
+- **IDEA-2:** OCR snapshots of the screen indexed into the KB, so "what did I see earlier?" works.
+  - `nova/services/kb.py`: new `kb_ingest_text(name, text)` (index a raw string; reused by screen memory).
+  - `nova/services/screen_vision.py`: `remember_screen()` — OCRs the screen (local Windows OCR, no model
+    cost) and indexes it as a timestamped "screen-memory" doc. **Gated on `screen_memory_enabled`**
+    (new setting, default **OFF**) — strictly opt-in, 100% local.
+  - `nova/api/screen_vision.py`: `POST /api/vision/remember-screen` (403 when off).
+  - `nova/services/schedules.py`: `screen_memory` action so the user can schedule periodic capture.
+  - Settings: "🧠 Screen memory (opt-in)" toggle.
+  - Tests: `test_kb_ingest_text`, `test_screen_memory_gate` (off→refused; on→OCR text indexed +
+    searchable). Live roundtrip verified (off→403; on→4284 chars/6 chunks indexed; doc deleted +
+    setting restored to OFF afterward).
+  - Gate ✅ · live 42/42 ✅.
+- **Privacy note (honest):** this is the one feature that *persists* screen content (into the local KB).
+  It is OFF by default, requires explicit opt-in, never leaves the machine, and there is no retention
+  cap yet — a future enhancement (auto-expire old screen-memory docs) is worth adding before heavy use.

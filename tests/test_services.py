@@ -101,6 +101,33 @@ def test_kb_ingest_folder(tmp_path, monkeypatch, tmpdb):
     assert bad["ok"] is False
 
 
+def test_kb_ingest_text(monkeypatch, tmpdb):
+    import nova.services.kb as KB
+    monkeypatch.setattr(KB, "embed", lambda t: [0.1, 0.2])
+    n = KB.kb_ingest_text("note 1", "the quick brown fox jumps")
+    assert n >= 1
+    assert any("fox" in h["text"] for h in KB.kb_search("fox"))
+    assert KB.kb_ingest_text("empty", "") == 0
+
+
+def test_screen_memory_gate(monkeypatch, tmpdb):
+    """IDEA-2: screen memory is strictly opt-in; when on it OCRs and indexes into the KB."""
+    import nova.services.screen_vision as SV
+    import nova.services.kb as KB
+    from nova.core.db import set_settings
+    monkeypatch.setattr(KB, "embed", lambda t: [0.3, 0.4])
+    # OFF by default → refused
+    r = SV.remember_screen()
+    assert r["ok"] is False and "off" in r["error"].lower()
+    # ON → OCR (mocked) text is indexed
+    set_settings({"screen_memory_enabled": True})
+    monkeypatch.setattr(SV.screen_svc, "read_screen",
+                        lambda **k: {"ok": True, "text": "Visual Studio Code - main.py open", "mode": "ocr"})
+    r = SV.remember_screen()
+    assert r["ok"] and r["stored"] and r["chunks"] >= 1
+    assert any("main.py" in h["text"] for h in KB.kb_search("which file was open"))
+
+
 def test_backup_snapshot(tmp_path, monkeypatch, tmpdb):
     import os
     import nova.services.backup as B

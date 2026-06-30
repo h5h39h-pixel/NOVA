@@ -119,8 +119,9 @@ and the full spec in **`docs/chat-deepthink-websearch.md`**.
 Original ideas that extend Nova's vision without breaking the core principle. Tracked as IDEA‑* in
 `TASKS.md`. Each is local‑only, opt‑in where it touches the screen/privacy.
 1. **Visual macro recorder** — record a sequence of UIA/mouse actions and replay as a named local macro.
-2. **Local screen memory (opt‑in)** — periodically OCR+embed the screen into the KB so you can later ask
-   "what was that error I saw earlier?" — local, opt‑in, with a retention cap and a clear indicator.
+2. ✅ **Local screen memory (opt‑in)** (M105) — OCR snapshots of the screen into the KB so you can later
+   ask "what was that error I saw earlier?" Strictly opt‑in (default OFF), local‑only; `screen_memory`
+   schedule action for periodic capture.
 3. ✅ **Save a successful agent run as a reusable Workflow/Automation** (M105) — a "💾 Save as workflow"
    button on the agent's final answer; the `agent` action replays the goal on re-run.
 4. **Hands‑free voice conversation** — speak → STT → answer → TTS loop (building blocks already exist).
