@@ -83,6 +83,22 @@ def run_action(action, params, name="task"):
                 if kb_ingest_file(f) > 0: added += 1
         add_notification("success", "KB indexed", f"{added} new files from {folder.name}")
         return f"indexed {added} new files from {folder}"
+    if action == "screen_if":
+        # Conditional screen trigger: if `match` text appears on screen, run `then_action`.
+        # Use as a schedule (e.g., every 60s) for "if X on screen → do Y".
+        want = (p.get("match") or "").strip().lower()
+        if not want: return "screen_if: no 'match' text configured"
+        try:
+            r = screen_svc.read_screen(bool(p.get("vision")))
+            text = (r.get("text") or "").lower()
+        except Exception as e:
+            return f"screen_if: read failed ({e})"
+        if want in text:
+            ta = p.get("then_action", "notify")
+            tp = p.get("then_params") or {"text": f"Screen matched: {p.get('match')}"}
+            st = run_action(ta, tp, name)
+            return f"matched '{p.get('match')}' → {ta}: {st}"
+        return f"no match for '{p.get('match')}'"
     return "unknown action"
 
 

@@ -46,14 +46,20 @@ from nova.core.process import init_job_object, ps_args, _q
 # ----------------------------------------------------------------------------- local speech-to-text (faster-whisper)
 _WHISPER = None
 _WHISPER_LOCK = threading.Lock()
+_WHISPER_SIZE = None
 def get_whisper():
-    global _WHISPER
-    if _WHISPER is None:
+    """Lazily load the local Whisper STT model. Size is configurable via the `stt_model`
+    setting (tiny/base/small/medium) — larger = more accurate (esp. Arabic/noisy), slower."""
+    global _WHISPER, _WHISPER_SIZE
+    size = (get_settings().get("stt_model") or "base").strip()
+    if _WHISPER is None or size != _WHISPER_SIZE:
         with _WHISPER_LOCK:
-            if _WHISPER is None:
+            if _WHISPER is None or size != _WHISPER_SIZE:
                 from faster_whisper import WhisperModel
-                _WHISPER = WhisperModel("base", device="cpu", compute_type="int8")
-                log.info("Whisper STT model loaded (base / cpu / int8) — fully local")
+                if size not in ("tiny", "base", "small", "medium", "large-v3"): size = "base"
+                _WHISPER = WhisperModel(size, device="cpu", compute_type="int8")
+                _WHISPER_SIZE = size
+                log.info(f"Whisper STT model loaded ({size} / cpu / int8) — fully local")
     return _WHISPER
 
 # ----------------------------------------------------------------------------- db

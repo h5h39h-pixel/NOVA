@@ -24,6 +24,7 @@ DEFAULT_SETTINGS = {
     "lan_access": False,          # bind 0.0.0.0 instead of localhost (ONLY meaningful with auth on)
     "allow_remote_exec": False,   # permit /api/exec + agent run_command when exposed on LAN (off by default)
     "lite_visuals": False,        # reduce background animations (particles/aurora/tilt) for low-end GPUs
+    "stt_model": "base",          # local Whisper size: tiny | base | small | medium | large-v3
 }
 
 def db():

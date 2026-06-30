@@ -210,15 +210,27 @@ def _hms(s):
     return p[0]*60 + p[1] if len(p) == 2 else p[0]*3600 + p[1]*60 + p[2]
 
 
+_PROG_JSON_RE = re.compile(r"\[PROGRESS\]\s+(\{.*?\})")
 _PROG_RE = re.compile(r"\[PROGRESS\]\s+step=(\d+)\s+total=(\d+)(?:\s+epoch=([\d.]+))?(?:\s+loss=([\d.]+|nan|None))?(?:\s+elapsed=(\d+))?(?:\s+eta=(\d+))?")
 _TQDM_RE = re.compile(r"(\d+)/(\d+)\s*\[(\d+:\d+(?::\d+)?)<(\d+:\d+(?::\d+)?)")
 
 
 def _parse_train_sub(text):
-    """Sub-progress inside the LoRA training step. Prefer our explicit [PROGRESS] callback
-    (emitted only during trainer.train()); fall back to tqdm but ignore the dataset-map and
-    checkpoint-shard bars so we never show their counts as 'training steps'."""
+    """Sub-progress inside the LoRA training step. Preference order: structured
+    `[PROGRESS] {json}` → `[PROGRESS] step=… total=…` → tqdm fallback (ignoring the
+    dataset-map and checkpoint-shard bars so their counts never read as training steps)."""
     sub = None
+    # 1) preferred: structured JSON, e.g. [PROGRESS] {"step":40,"total":120,"loss":1.2}
+    for m in _PROG_JSON_RE.finditer(text):
+        try:
+            j = json.loads(m.group(1))
+            if isinstance(j, dict) and "step" in j and "total" in j:
+                sub = {"step": int(j["step"]), "total": int(j["total"]),
+                       "epoch": j.get("epoch"), "loss": j.get("loss"),
+                       "elapsed": j.get("elapsed"), "eta": j.get("eta")}
+        except Exception:
+            pass
+    # 2) key=value form
     for m in _PROG_RE.finditer(text):
         loss = m.group(4)
         sub = {"step": int(m.group(1)), "total": int(m.group(2)),

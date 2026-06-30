@@ -79,3 +79,18 @@ def test_run_action(tmpdb):
     from nova.services.schedules import run_action
     assert run_action("notify", {"text": "hi"}, "t") == "notified"
     assert run_action("bogus", {}) == "unknown action"
+
+
+def test_screen_if_trigger(tmpdb, monkeypatch):
+    import nova.services.schedules as S
+    monkeypatch.setattr(S.screen_svc, "read_screen", lambda vision=False: {"text": "Build SUCCEEDED on main"})
+    assert "no match" in S.run_action("screen_if", {"match": "FAILED"})
+    out = S.run_action("screen_if", {"match": "succeeded", "then_action": "notify", "then_params": {"text": "ok"}})
+    assert out.startswith("matched") and "notify" in out
+    assert "no 'match'" in S.run_action("screen_if", {})
+
+
+def test_training_progress_json():
+    from nova.services.training import _parse_train_sub
+    sub = _parse_train_sub('... [PROGRESS] {"step": 40, "total": 120, "loss": 1.5} ...')
+    assert sub and sub["step"] == 40 and sub["total"] == 120 and sub["percent"] == 33

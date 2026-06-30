@@ -52,11 +52,11 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 
 | ID | Task | Pri | Effort | Deps | Status |
 |---|---|---|---|---|---|
-| T-024 | Curated API docs: FastAPI tags/summaries per router; polish `/docs`; export `openapi.json` | P2 | 4h | — | ⬜ |
-| T-025 | `DATA_MODEL.md`: tables, columns, relationships (ERD-style) | P2 | 3h | — | ⬜ |
-| T-026 | Metrics history retention: ring-buffer/table + trend API (CPU/GPU/VRAM over time) | P2 | 5h | T-014 | ⬜ |
-| T-027 | Error aggregation: count + last-seen per error signature from logs; surface in Diagnostics | P2 | 5h | — | ⬜ |
-| T-028 | Server self-health panel: uptime, background-loop liveness, job queue depth | P3 | 3h | T-026 | ⬜ |
+| T-024 | API docs: router `tags` group `/docs` by domain; `scripts/export_openapi.py` → `docs/openapi.json` (99 paths) | P2 | 4h | — | ✅ |
+| T-025 | `DATA_MODEL.md`: all tables, columns, relationships | P2 | 3h | — | ✅ |
+| T-026 | Metrics history: `metrics_history` table + `record_history` (~30s, last ~2880) + `/api/metrics/history` | P2 | 5h | T-014 | ✅ |
+| T-027 | Error aggregation: `nova/core/errors.py` (bounded/deduped) hooked into middleware; `/api/errors` + Diagnostics panel | P2 | 5h | — | ✅ |
+| T-028 | Server health: `/api/health` (uptime, loop liveness, jobs, ws clients, errors) + Diagnostics panel | P3 | 3h | T-026 | ✅ |
 
 ## Phase 4 — Feature Completion & Quality (P2–P3)
 
