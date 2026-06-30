@@ -666,3 +666,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Restart note:** the running server keeps its current journal mode until `server.py` restarts
   (WAL is then set on the live `control.db`). Activates alongside M54 + M56.
 - **Next:** OUT-5 (RAG retrieval quality) / STB-2 (jobs survive restart).
+
+## M58 — OUT-5: RAG retrieval quality baseline (2026-06-30)  [P1 Outcome]
+
+- **What:** `scripts/rag_eval.py` seeds an isolated temp KB with 5 single-topic documents, then runs
+  5 paraphrased queries (no lexical overlap with the docs) and measures precision@1 + MRR. Writes
+  `docs/rag-baseline.md`.
+- **Result:** **precision@1 = 5/5 (100%), MRR = 1.0** with nomic-embed-text — every query retrieved its
+  answering document as the top hit (scores 0.55-0.77). Retrieval quality confirmed good.
+- **Also restarted the server** (authorized): live DB is now WAL; M54 + M56 + M57 active; live suite
+  `run_tests.py` = 42/42; health endpoint clean (metrics_loop_alive, 0 errors).
+- **Next:** STB-4 (media backup), STB-2 (jobs survive restart), then P2 docs/features.

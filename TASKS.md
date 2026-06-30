@@ -40,7 +40,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | OUT‑2 | Verify **training** produces a usable nova‑local end‑to‑end | 🟧 | External scripts in `C:\AI\training`; only log‑parsing verified. |
 | OUT‑3 | Verify **image/video generation** actually succeeds (not just job‑starts) | 🟧 | Plumbing only. |
 | OUT‑4 | `screen_if` real‑screen matching test (OCR/vision against live content) | 🟧 | Unit‑tested with a **mocked** screen only. |
-| OUT‑5 | RAG retrieval quality check (relevance of citations) | ⬜ | |
+| OUT‑5 | RAG retrieval quality check (relevance of citations) | ✅ | M58. `scripts/rag_eval.py` seeds an isolated KB with single‑topic docs and checks each paraphrased query retrieves the right one. Baseline `docs/rag-baseline.md`: **precision@1 = 5/5 (100%), MRR = 1.0** (nomic‑embed‑text). |
 
 ## P1 — Stability (watchdog · error recovery · graceful shutdown)
 
