@@ -40,6 +40,7 @@ if not log.handlers:
 
 # process ownership (Windows Job Object) — nova.core.process
 from nova.core.process import init_job_object, ps_args, _q
+from nova.core.safety import danger_reason  # shared destructive-command denylist
 
 # _hash + the auth gate now live in nova/services/settings.py
 
@@ -296,14 +297,14 @@ async def api_exec(req: Request):
                                       "Enable 'allow_remote_exec' in Settings to permit it."}, status_code=403)
     b = await req.json(); cmd = (b.get("command") or "").strip()
     if not cmd: return JSONResponse({"error": "empty"}, status_code=400)
-    # SEC-1: clearly-destructive commands require an explicit confirm (the Terminal asks first).
-    if is_dangerous(cmd) and not b.get("confirm"):
+    # SEC-1/SEC-2: clearly-destructive commands require an explicit confirm (the Terminal asks first).
+    why = danger_reason(cmd)
+    if why and not b.get("confirm"):
         audit("terminal", "run_command", cmd, "needs_confirm")
         return JSONResponse({"needs_confirm": True,
-                             "reason": "This looks destructive (e.g. format / rm -rf / shutdown / registry). "
-                                       "Run it anyway?"}, status_code=409)
+                             "reason": f"This looks destructive — {why}. Run it anyway?"}, status_code=409)
     job = PM.start(cmd, ps_args(cmd), kind="command", source="terminal")
-    audit("terminal", "run_command", cmd, "forced" if (is_dangerous(cmd) and b.get("confirm")) else "ok")
+    audit("terminal", "run_command", cmd, "forced" if why else "ok")
     return {"ok": True, "job": job.id}
 
 # ---- toolkit quick actions
@@ -514,7 +515,7 @@ def api_chat_pdf(cid: str):
 # Browser automation lives in nova/services/browser.py (used by schedules/agent services).
 
 # ---- Agent Mode + browser routes extracted to nova/services/agent.py + nova/api/agent.py.
-from nova.services.agent import set_run_action, safe_read_path, safe_write_path, is_dangerous  # safe_*/is_dangerous used by /api/selftest + exec guard
+from nova.services.agent import set_run_action, safe_read_path, safe_write_path  # safe_* used by /api/selftest
 from nova.services.schedules import run_action, run_schedule
 set_run_action(run_action)   # inject the ProcMgr-backed dispatcher into the agent service
 

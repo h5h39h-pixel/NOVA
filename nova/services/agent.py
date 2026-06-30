@@ -77,12 +77,8 @@ def build_agent_sys(tools=None, max_steps=8):
     if not names: names = list(AGENT_TOOL_DEFS)  # never leave the agent toolless
     return AGENT_HEADER + "".join(AGENT_TOOL_DEFS[k] for k in names) + AGENT_FOOTER_TMPL.format(max_steps=max_steps)
 AGENT_SYS = build_agent_sys()
-DANGER = ("format ", "format-", "shutdown", "stop-computer", "restart-computer", "diskpart",
-          "mkfs", "rm -rf", "del /s", "del /q", "rd /s", "cipher /w", "reg delete",
-          "-recurse -force", "remove-item -recurse")
-def is_dangerous(cmd):
-    c = (cmd or "").lower()
-    return any(d in c for d in DANGER)
+# Destructive-command denylist is centralized in nova/core/safety.py (shared with the Terminal).
+from nova.core.safety import danger_reason
 
 def parse_action(text):
     s = text.find("{");
@@ -137,9 +133,10 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             if not exec_allowed():
                 audit("agent", "run_command", cmd, "blocked")
                 return "BLOCKED: command execution is disabled while the server is exposed on the LAN (enable 'allow_remote_exec' in Settings)."
-            if not unrestricted and is_dangerous(cmd):
+            _why = None if unrestricted else danger_reason(cmd)
+            if _why:
                 audit("agent", "run_command", cmd, "blocked")
-                return "BLOCKED: that command looks destructive. Enable Full Access to run it."
+                return f"BLOCKED: that command looks destructive ({_why}). Enable Full Access to run it."
             if dry_run: return f"[dry-run] would run command: {cmd}"
             audit("agent", "run_command", cmd, "ok" if not unrestricted else "full-access")
             out = subprocess.run(ps_args(cmd), capture_output=True, text=True, timeout=120, encoding="utf-8", errors="replace")

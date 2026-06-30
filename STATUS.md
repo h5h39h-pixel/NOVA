@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **SEC‑2** Centralize + strengthen the destructive‑command denylist (shared by agent + terminal). (P0)
-2. **SEC‑3** Tighten HTTP security headers (CSP `default-src 'self'`, `frame-ancestors 'self'`). (P0)
+1. **SEC‑3** Tighten HTTP security headers (CSP `default-src 'self'`, `frame-ancestors 'self'`). (P0)
+2. **SEC‑4** Encrypt `cloud_api_key` at rest. (P0)
 3. **TST‑1** Replace smoke tests with real per‑service assertions. (P0)
 
-_Done this session: **SEC‑1** — Terminal destructive‑command confirm‑guard (M43)._
+_Done this session: **SEC‑1** confirm‑guard (M43) · **SEC‑2** centralized/strengthened denylist `nova/core/safety.py` (M44)._
 
 ---
 
@@ -46,7 +46,7 @@ _Done this session: **SEC‑1** — Terminal destructive‑command confirm‑gua
 ## Fragile — works but needs improvement 🟧
 | Item | The issue |
 |---|---|
-| **Command‑exec surface** | Terminal `/api/exec` now **confirm‑guards destructive commands** (SEC‑1 ✅) + LAN gate. Still open: the denylist is shallow/substring‑based (SEC‑2), and the agent's `run_command` uses the same shallow guard. No global kill‑switch yet. |
+| **Command‑exec surface** | Terminal `/api/exec` confirm‑guards destructive commands (SEC‑1) using a centralized, regex/boundary‑aware denylist `nova/core/safety.py` shared with the agent (SEC‑2). Still open: SEC‑3 CSP/headers, SEC‑4 key encryption, SEC‑6 full call‑site audit; no global exec kill‑switch. |
 | **Agent reliability** | Loop mechanics tested; real multi‑step success rate with 14B is **unmeasured** and inconsistent. |
 | **Tests are shallow** | Mostly "returns 200 / CRUD works." Whole services have ~0 real assertions. Live suite needs Ollama/ComfyUI running (not hermetic). |
 | **`screen_if` (conditional screen actions)** | Implemented + unit‑tested **with a mocked screen**; never run against a real screen / real vision matching. |

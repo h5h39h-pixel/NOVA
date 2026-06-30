@@ -458,3 +458,20 @@ Made the six project files the **mandatory, permanent** source of truth and the 
 - **Verified:** unit test (`test_exec_destructive_confirm_guard`, PM.start mocked so nothing runs) +
   live check (`format c:` → 409). Gate green (pyflakes + node + pytest 25); live suite 42/42.
 - **Next:** SEC-2 (centralize + strengthen the denylist, shared by agent + terminal).
+
+## M44 — SEC-2: centralized + strengthened destructive-command denylist (2026-06-30)  [P0 Security]
+
+- **What:** new `nova/core/safety.py` — the single denylist shared by the Terminal (`/api/exec`)
+  and the agent's `run_command`. Replaced the old shallow substring tuple in `agent.py` with
+  regex + command-boundary matching: destructive *verbs* match only at a real boundary (start, or
+  after `; & | newline backtick`), so `echo "format my report"` and `format-table` are NOT flagged,
+  while piped deletes (`Get-ChildItem | Remove-Item -Force`), aliases (rm/ri/rd/rmdir/del/erase),
+  and flag variants (`-rf`,`-fo`,`/s`,`/q`,`-recurse -force`) ARE. Covers disk/format, recursive/
+  forced delete, shutdown, registry delete, shadow-copy/backup delete, secure wipe, boot config,
+  scheduled-task teardown. `danger_reason()` returns the category (used in the Terminal 409 message
+  and the agent's BLOCKED message).
+- **Why:** the previous guard was easily bypassed and prone to false positives; this is meaningfully
+  harder to slip past and friendlier in normal use.
+- **Verified:** `tests/test_safety.py` — 24 cases (15 dangerous incl. piped/alias/format, 9 safe incl.
+  echo-with-words / single-file delete / format-table). Gate green; live suite 42/42.
+- **Next:** SEC-3 (tighten CSP/security headers).
