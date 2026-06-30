@@ -26,6 +26,7 @@ DEFAULT_SETTINGS = {
     "lite_visuals": False,        # reduce background animations (particles/aurora/tilt) for low-end GPUs
     "stt_model": "small",         # local Whisper size: tiny | base | small | medium | large-v3 (small = good Arabic, GPU-fast)
     "confirm_exit": True,         # warn before closing the tab/window ("Nova is still running")
+    "tts_rate": 1.0,              # speech rate for Piper TTS (1.0 normal, >1 faster, <1 slower)
     # ---- AI Screen Vision (Phase 7) — ALL opt-in, local-only, non-persistent by default ----
     "screen_vision_enabled": False,  # master switch for the live screen stream + vision loop
     "vision_fps": 4,                 # live stream frames/sec (throttled; 1–15)

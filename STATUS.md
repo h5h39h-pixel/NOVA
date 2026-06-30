@@ -13,10 +13,13 @@ _Last updated: 2026-06-30_
 ---
 
 ## Where we are right now
-The system is **feature‑complete and architecturally clean**, but its **test depth, security
-hardening, and real‑world outcome verification lag behind its ambition**. The foundation
-(git, pinned deps, vendored assets, CI scaffolding, observability, modular backend) is in place.
-The next campaign is hardening, by priority below.
+The hardening campaign is **complete**: security locked down, a real + hermetic test suite, outcome
+verification (agent/RAG/generation/training all measured), and resilience (watchdog, WAL, backups, job
+persistence). On top of that, two new feature phases shipped — **Screen Vision** (live page) and
+**Perception & Control** (read‑&‑understand, window awareness, UI element detection, precise mouse/
+keyboard) — plus chat+agent DeepThink/Web Search and GPU STT. The system is feature‑complete,
+architecturally clean, verified, and documented. Remaining work is optional real‑hardware testing and
+the permanent doc‑upkeep rule.
 
 ## 🚫 Explicitly excluded (do not build)
 - **Multi‑user / accounts / roles / RBAC** — this is a personal single‑user system.
@@ -24,13 +27,14 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **FEA‑4** Expose `screen_if` (conditional screen actions) in the Automation UI. (P2)
-2. **POL‑1 / POL‑3 / POL‑4** Perf budget (auto‑lite), mobile testing, 32B re‑bench. (P3)
-3. **OUT‑2 / OUT‑4** External: training fine‑tune quality (owner‑run); `screen_if` on a real screen.
+1. _(backlog clear)_ — optional: real‑hardware mobile testing (POL‑3), more agent goal‑battery breadth (OUT‑1).
+2. Keep the six files current each session (DOC‑1, permanent).
+3. Re‑run the eval tools after model/dep updates (`agent_eval`, `rag_eval`, `gen_eval`, `nova_eval`, `bench_model`).
 
-_All P0 (Security, Tests) ✅. P1 Outcome: OUT‑1/3/5 ✅ (OUT‑2/4 external). P1 Stability: STB‑1/3/4/5 ✅,
-STB‑2 🟧. Phases 7 (Screen Vision) + 8 (Perception & Control) shipped. Chat+Agent DeepThink/Web Search,
-Read&Understand, precise mouse/keyboard/window — all done. FEA‑1/2 ✅, POL‑2 🟧._
+_**All roadmap tasks complete.** P0 Security + Tests ✅. P1 Outcome (OUT‑1…5) ✅. P1 Stability (STB‑1…5) ✅.
+P2 Docs (DOC‑1…3) ✅. P2 Features (FEA‑1…4) ✅. P3 Polish (POL‑1…4) ✅ (POL‑3 = automated mobile‑viewport;
+real‑hardware optional). Phases 7 (Screen Vision) + 8 (Perception & Control) shipped. Chat+Agent
+DeepThink/Web Search, Read&Understand, precise mouse/keyboard/window — all done & verified._
 
 _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent baseline 5/5 after a real path bugfix, M54) · STB‑1 ✅ (watchdog python‑stub fix, M55) · STB‑3 ✅ (loops surface errors, M56) · STB‑5 ✅ (SQLite WAL, M57). **⚠ Restart `server.py`** to activate M54 + M56 + M57 on the live instance._
 

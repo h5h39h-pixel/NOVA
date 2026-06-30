@@ -920,3 +920,15 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   restarts; verified live showing a job from a prior run). Auto-resume of a killed process remains
   infeasible by design — done to the limit; nothing is silently lost.
 - **Verified:** gate green; server restarted; live suite 42/42; `/api/jobs/history` live.
+
+## M76 — FEA-3: TTS speech-rate control + roadmap close-out (2026-06-30)  [P2 Features]
+
+- **FEA-3 (voice UX):** added a speech-rate control. `toolkit/piper_tts.py` accepts an optional
+  length_scale (best-effort via Piper SynthesisConfig, graceful fallback preserving all version paths);
+  `toolkit/speak.ps1` passes `-Length`; `tts.speak` reads the new `tts_rate` setting (length_scale=1/rate);
+  Settings has a 0.7–1.6× slider. Verified: length_scale=0.7 produced shorter/faster audio (37KB vs 54KB).
+  (Input UX — GPU Whisper + ⏹ Stop — and auto language-aware voice were already done.)
+- **Roadmap close-out:** with FEA-3 done, ALL planned tasks are complete — P0 (Security, Tests), P1
+  (Outcome OUT-1…5, Stability STB-1…5), P2 (Docs DOC-1…3, Features FEA-1…4), P3 (Polish POL-1…4), plus
+  Phases 7 (Screen Vision) & 8 (Perception & Control). STATUS/PROJECT_PLAN updated to reflect completion.
+- **Verified:** gate green; server restarted; live suite 42/42; Settings TTS slider render-verified.

@@ -121,7 +121,7 @@ Core chat UX, requested 2026‑06‑30. Toggle buttons styled like the existing 
 |---|---|---|---|
 | FEA‑1 | Click‑to‑act reliability (UI Automation / pywinauto + focus) | ✅ | M70. `act_on_screen` now tries **precise UI‑Automation element detection first** (exact pixel center via `control.find_element`, reduced from natural instructions by `_core_term`) and only falls back to vision grounding when there's no UIA name. Returns `via:"uia"|"vision"`. Much more reliable on real apps. |
 | FEA‑2 | STT Arabic/noisy accuracy (larger Whisper default / tuning) | ✅ | M73. `get_whisper` now loads on **CUDA/float16 (RTX 5090)** with CPU/int8 fallback — far faster, so larger models are practical; default bumped `base`→`small` (much better Arabic). GPU path verified (tiny loaded on cuda). Users can pick up to `large-v3` in Settings. |
-| FEA‑3 | Voice improvements (input UX, TTS voices) | ⬜ | |
+| FEA‑3 | Voice improvements (input UX, TTS voices) | ✅ | M76. **Input:** GPU Whisper + explicit ⏹ Stop (FEA‑2/M62). **Output:** auto language‑aware Piper voice (ar→kareem, en→lessac) + a new **speech‑rate control** — `tts_rate` setting (Settings slider 0.7–1.6×) → Piper `length_scale=1/rate` (verified: 0.7 produced shorter/faster audio). Graceful fallback on older Piper. |
 | FEA‑4 | Conditional screen actions UX in Automation page (expose `screen_if`) | ✅ | M74. Automation page now offers "👁 If screen shows… then act": match text/regex + then‑action (notify/speak/command) + with‑text + a "use vision model" toggle → `{match,then_action,then_params,vision}`. Render‑verified. |
 | FEA‑E | `screen_if` action · bespoke pages · Nova Brain 2.0 · OWUI 0.10.1 | ✅ | M37/M39/M41. |
 
