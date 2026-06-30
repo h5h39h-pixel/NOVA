@@ -31,9 +31,20 @@ gated (check.py ✅ · 42/42 ✅) + live‑verified + documented + pushed, all s
 - **IDEA‑9 img2img refine** — "✨ Refine / edit" on generated images (verified base→refined PNG).
 - **IDEA‑4 hands‑free voice** (🟧 live‑loop) — 🎙️ listen→STT→chat→Piper‑TTS→listen; components verified.
 - **AVL‑2 closed** — the ReAct perceive→act→observe loop *is* the helper.
-- **IDEA‑1 visual macro recorder** (🟧) — *replay* shipped (workflow `control` step = a replayable
-  mouse/keyboard macro); passive *recording* deferred (needs a new dep + this env suppresses synthetic
-  keyboard). The whole innovation backlog is now either ✅ or 🟧 with a documented reason — none untouched.
+- **IDEA‑1 visual macro recorder** (✅ M105.2) — record (pynput) + replay (workflow `control` steps),
+  live‑verified. **The entire IDEA‑* innovation backlog is now ✅.**
+
+**M105.2/.3 — finished the yellows + two adversarial audits.** Closed the owner‑named yellows: IDEA‑1
+recording, IDEA‑4 (hands‑free), **coverage 49%→56%**, and **vendored the img2img `generate.ps1` into the
+repo** (`config.toolkit_script()` resolver). Split **Nova Brain → `pages-brain.js`** (pages‑system.js
+364→177). Hardened **HON‑10** (browse + understand outputs now fenced as untrusted). The audits found &
+fixed real bugs: a **pre‑existing auth‑enable lockout** (UI read the redacted token, not the one‑time
+`new_token`), a **hands‑free freeze** on spoken media/`!` commands, **macro‑recorder thread‑safety**, a
+**/api/quality 500**, and a **screen_if recursion** hole; removed dead settings (`lite_visuals`/`accent`).
+Remaining 🟧 are all honest design‑limits *with documented reasons* (not broken): HON‑10 (mitigation, not
+a guarantee), HON‑7 (50+‑goal battery / Arabic‑WER unmeasured), AVL‑1 (autonomous game‑play — synthetic
+keyboard suppressed), SV‑2 (continuous VLM loop — cost‑deferred), SV‑4 (full keystroke capture — privacy‑
+deferred), POL‑2 (no full WCAG audit), POL‑3 (no physical phone — also out of scope by the core principle).
 
 ## Where we are right now (honest)
 The original roadmap (P0→P3 + Phases 7/8) is **built and smoke‑verified**, and the architecture / security
