@@ -1007,3 +1007,12 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   steer the model; `browse`/`understand` page text isn't fenced yet and there's no output-side filter.
   The HON-1 kill-switch remains the hard backstop.
 - **Verified:** test asserts the fencing; full gate green; restarted; live suite 42/42.
+
+## M83 — HON-12: fix OWUI iframe blocked by our own CSP (2026-06-30)  [P2 Bugfix]
+
+- **Bug (found during the M78 render sweep):** the `#/owui` page iframes the local Open WebUI (:3000),
+  but the tightened CSP (SEC-3 `default-src 'self'`) blocked framing it.
+- **Fix:** added `frame-src 'self' http://localhost:3000 http://127.0.0.1:3000` to the CSP (local trusted
+  service only — does not loosen anything else).
+- **Verified:** `#/owui` renders with no CSP/frame errors (the cross-origin localStorage error cleared
+  too); gate green; restarted.

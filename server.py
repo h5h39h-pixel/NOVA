@@ -213,6 +213,8 @@ _CSP = ("default-src 'self'; "
         "font-src 'self'; "
         "connect-src 'self' ws: wss:; "
         "media-src 'self' blob:; "
+        # HON-12: allow embedding the local Open WebUI (the OWUI page iframes :3000) — local trusted service only
+        "frame-src 'self' http://localhost:3000 http://127.0.0.1:3000; "
         "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'")
 SECURITY_HEADERS = {
     "Content-Security-Policy": _CSP,
