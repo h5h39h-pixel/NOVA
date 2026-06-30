@@ -59,10 +59,12 @@ def test_events_push_without_loop():
     assert isinstance(events.clients, set)
 
 
-def test_supervise_restarts_crashed_loop(tmpdb, monkeypatch):
+def test_supervise_restarts_crashed_loop(tmpdb, monkeypatch, tmp_path):
     """IDEA-10: a background loop that crashes hard is auto-restarted by _supervise; a clean
     CancelledError (shutdown) stops it without a restart."""
     import asyncio, pytest, server
+    import nova.core.errors as E
+    monkeypatch.setattr(E, "_FILE", tmp_path / "errors.json")   # isolate: don't pollute the real error log
     calls = {"n": 0}
 
     async def flaky():

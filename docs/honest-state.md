@@ -188,6 +188,12 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   **UPDATE (same session): IDEA‑2b shipped** — `screen_memory_keep` cap (default 50, auto‑pruned after
   each snapshot) + `DELETE /api/vision/screen-memory` purge + a Settings purge button. Gap closed.
 
+**Discovery (M105) — tests can pollute the persistent error log.** The error store persists to disk
+(HON-4), so any test that calls `record_error` (e.g. the IDEA-10 `_supervise` test, which deliberately
+crashes a fake loop) writes into the **real** `/api/errors` log that the live server then loads — showing
+a phantom "1 runtime error." Fix/rule: tests that record errors MUST `monkeypatch nova.core.errors._FILE`
+to a tmp path (as `test_errors_persist` already does). Applied to the supervise test; live log re-verified 0.
+
 **Operational note (discovery):** the running server must be **restarted** to serve a newly added route
 — the watchdog's restart interval is >40s, so after killing the stale process I started `server.py`
 manually and confirmed `/api/memory → 200` before the frontend console‑error gate could pass. Lesson:
