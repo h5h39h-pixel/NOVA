@@ -1409,5 +1409,11 @@ This session cleared the innovation backlog autonomously, each item gated + (whe
 IDEA-10 (self-healing loops), IDEA-8 (persistent memory), IDEA-5 (folder Q&A), IDEA-3 (save agent run as
 workflow), IDEA-2 + IDEA-2b (screen memory + retention), IDEA-7 (region watch → act), IDEA-6 (quality
 dashboard), IDEA-9 (img2img refine), IDEA-4 (hands-free voice, 🟧 live-loop), and AVL-2 (perceive→act→
-observe loop, closed). Remaining: IDEA-1 (visual macro recorder) — deferred (passive global input
-capture needs a new dep + is constrained by this env's synthetic-keyboard suppression; documented).
+observe loop, closed). IDEA-1 (visual macro recorder) is 🟧: the **replay** half shipped (a workflow `control` step replays
+mouse/keyboard actions as a macro, gated + panic-aware, tested), but passive **recording** of live input
+is deferred (needs a new dep + is constrained by this env's synthetic-keyboard suppression; documented).
+
+### M105j — IDEA-1 macro replay (control step in the workflow runner)
+- `nova/services/schedules.py`: new `control` action in `run_action` — dispatches move/click/drag/scroll/
+  type/keys/click_element/set_text to the control service, `exec_allowed`-gated + audited + panic-aware.
+  A workflow of control steps is now a replayable macro. Test `test_control_macro_action` ✅. Gate ✅.

@@ -128,6 +128,22 @@ def test_screen_memory_gate(monkeypatch, tmpdb):
     assert any("main.py" in h["text"] for h in KB.kb_search("which file was open"))
 
 
+def test_control_macro_action(monkeypatch, tmpdb):
+    """IDEA-1 (replay): a workflow `control` step dispatches to the control service (macro replay)."""
+    import nova.services.schedules as SCH
+    import nova.services.control as C
+    import nova.services.settings as SET
+    monkeypatch.setattr(SET, "exec_allowed", lambda: True)
+    calls = []
+    monkeypatch.setattr(C, "click", lambda x=None, y=None, button="left", double=False: calls.append(("click", x, y)) or "ok")
+    monkeypatch.setattr(C, "set_element_text", lambda name, text: calls.append(("set_text", name, text)) or "ok")
+    r1 = SCH.run_action("control", {"action": "click", "x": 100, "y": 200})
+    r2 = SCH.run_action("control", {"action": "set_text", "name": "Search", "text": "hi"})
+    assert "control click" in r1 and "control set_text" in r2
+    assert ("click", 100, 200) in calls and ("set_text", "Search", "hi") in calls
+    assert "unknown action" in SCH.run_action("control", {"action": "fly"})
+
+
 def test_quality_record_and_summary(tmpdb):
     """IDEA-6: scored runs persist; summary reports latest + delta vs the previous run."""
     from nova.services import quality as Q

@@ -31,8 +31,9 @@ gated (check.py ✅ · 42/42 ✅) + live‑verified + documented + pushed, all s
 - **IDEA‑9 img2img refine** — "✨ Refine / edit" on generated images (verified base→refined PNG).
 - **IDEA‑4 hands‑free voice** (🟧 live‑loop) — 🎙️ listen→STT→chat→Piper‑TTS→listen; components verified.
 - **AVL‑2 closed** — the ReAct perceive→act→observe loop *is* the helper.
-Remaining backlog: **IDEA‑1** (visual macro recorder) — deferred (needs passive global input capture +
-constrained by this env's synthetic‑keyboard suppression; documented in TASKS/honest‑state).
+- **IDEA‑1 visual macro recorder** (🟧) — *replay* shipped (workflow `control` step = a replayable
+  mouse/keyboard macro); passive *recording* deferred (needs a new dep + this env suppresses synthetic
+  keyboard). The whole innovation backlog is now either ✅ or 🟧 with a documented reason — none untouched.
 
 ## Where we are right now (honest)
 The original roadmap (P0→P3 + Phases 7/8) is **built and smoke‑verified**, and the architecture / security

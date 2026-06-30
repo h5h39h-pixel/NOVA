@@ -83,6 +83,29 @@ def run_action(action, params, name="task"):
                 if kb_ingest_file(f) > 0: added += 1
         add_notification("success", "KB indexed", f"{added} new files from {folder.name}")
         return f"indexed {added} new files from {folder}"
+    if action == "control":
+        # IDEA-1 (replay half): a macro step — drive mouse/keyboard via the control service so a
+        # workflow of control steps acts as a replayable macro. Gated by exec_allowed (localhost) +
+        # honors the panic stop. (Passive RECORDING of live input is deferred — see IDEA-1 in TASKS.)
+        from nova.services.settings import exec_allowed
+        if not exec_allowed():
+            return "control: disabled while exposed on the LAN (enable allow_remote_exec)"
+        from nova.services import control as C
+        act = p.get("action", "")
+        try:
+            if act == "move": r = C.move_mouse(p.get("x", 0), p.get("y", 0))
+            elif act == "click": r = C.click(p.get("x"), p.get("y"), p.get("button", "left"), bool(p.get("double")))
+            elif act == "drag": r = C.drag(p.get("x1", 0), p.get("y1", 0), p.get("x2", 0), p.get("y2", 0))
+            elif act == "scroll": r = C.scroll(p.get("amount", 0))
+            elif act == "type": r = C.type_text(p.get("text", ""))
+            elif act == "keys": r = C.press_keys(p.get("keys", ""))
+            elif act == "click_element": r = C.click_element(p.get("name", ""))
+            elif act == "set_text": r = C.set_element_text(p.get("name", ""), p.get("text", ""))
+            else: return f"control: unknown action '{act}'"
+        except Exception as e:
+            return f"control: error ({e})"
+        audit("automation", "control", f"{act}")
+        return f"control {act}: {r}"
     if action == "quality_check":
         # IDEA-6: record a lightweight health/quality snapshot (schedule e.g. hourly to chart a trend).
         from nova.services.quality import health_snapshot

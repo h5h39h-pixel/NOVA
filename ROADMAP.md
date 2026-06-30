@@ -118,7 +118,9 @@ and the full spec in **`docs/chat-deepthink-websearch.md`**.
 ## 💡 Innovation backlog (creative, in‑scope — single‑user · local‑only)
 Original ideas that extend Nova's vision without breaking the core principle. Tracked as IDEA‑* in
 `TASKS.md`. Each is local‑only, opt‑in where it touches the screen/privacy.
-1. **Visual macro recorder** — record a sequence of UIA/mouse actions and replay as a named local macro.
+1. 🟧 **Visual macro recorder** (M105) — *replay* shipped (a workflow `control` step replays mouse/keyboard
+   actions as a macro); *recording* (passive global input capture) deferred — needs a new dep + is limited
+   by this env's synthetic‑keyboard suppression.
 2. ✅ **Local screen memory (opt‑in)** (M105) — OCR snapshots of the screen into the KB so you can later
    ask "what was that error I saw earlier?" Strictly opt‑in (default OFF), local‑only; `screen_memory`
    schedule action for periodic capture.
