@@ -27,12 +27,13 @@ is **HON‑1…11** in `TASKS.md`.
 - **RTL mirroring** — Arabic stays text‑only on the fixed LTR layout.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
-## Next actions — only 2 items remain, both blocked/deferred for real reasons
-1. **HON‑2c** Reliable GUI keyboard control — root cause is **Win11 foreground‑focus lock** (M91);
-   needs an activate→verify‑foreground→input routine or the mcp‑control path. Deferred (substantial +
-   environment‑bound + risks desktop disruption); awareness + mouse already work.
-2. **HON‑9** CI on a real remote — **blocked:** needs a GitHub remote/account the owner must create
-   (`scripts/ci_local.py` already runs the workflow locally).
+## Next actions — only HON‑9 remains (and it's owner‑gated)
+1. **HON‑9** CI on a *hosted* remote — needs a GitHub remote/account the owner must create. Mitigated:
+   `scripts/ci_local.py` runs the full workflow locally; next I'll auto‑run it via a git pre‑push hook
+   so CI fires on every push without a remote.
+
+_HON‑2/2b/2c **solved** (M93): GUI text control now works via UIA SetValue after finding synthetic
+keyboard input is suppressed here. The honest backlog is essentially done._
 
 _**Honest backlog HON‑1…12 essentially complete** (M81–M92): HON‑1 kill‑switch ✅, HON‑1b agent‑control
 toggle ✅, HON‑3 coverage ✅, HON‑4 persistent errors ✅, HON‑5 load/concurrency ✅, HON‑6 stream+web verify
@@ -70,7 +71,7 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 | **`screen_if` (conditional screen actions)** | Verified on the **real** screen (OUT‑4, M75: OCR'd 5024 chars, matched a real word → fired) + exposed in the Automation UI (FEA‑4). Vision‑mode matching (VLM instead of OCR) still lightly tested. |
 | **Image/video generation** | **Image verified (OUT‑3, M67):** SDXL produced a correct 1024×1024 image in 9.1s via the live API+ComfyUI (visually confirmed; `scripts/gen_eval.py`). Video (LTX) uses the same path but is not yet auto‑verified (slower). |
 | **Training pipeline** | The fine‑tune scripts live **outside the repo** in `C:\AI\training` (`learn.ps1`, `train_lora.py`, `harvest_chats.py`). We only orchestrate + parse logs — never verified they produce a good model. |
-| **Click‑to‑act / GUI typing** | **Targeting improved (FEA‑1):** `act_on_screen` uses UIA element detection first. **But keyboard control is UNRELIABLE on this box (HON‑2, M90):** pyautogui per‑char typing drops most characters and synthetic Ctrl+V often doesn't paste — confirmed with an isolated test. **Real fix = HON‑2c** (switch the input backend to keysender/SendInput + clipboard, as CLAUDE.md already advised). Awareness + mouse are fine; typing into apps is not dependable yet. |
+| **Click‑to‑act / GUI typing** | **Fixed (HON‑2/2c, M93).** Synthetic keyboard input is suppressed in this environment (even a focused native control gets nothing) — so the control stack now sets text via **UIA `ValuePattern.SetValue`** (`control.type_text` + `set_element_text` + `/api/control/set-text` + agent `set_text`), verified end‑to‑end on a real native control. Targeting via UIA (FEA‑1) + mouse positioning already worked. Residual: global hotkey *key‑combos* still limited by the same input suppression. |
 | **STT (Arabic/noisy)** | **Improved (FEA‑2, M73):** runs on **GPU (CUDA/float16)** with CPU fallback; default `small` (good Arabic), up to `large-v3` in Settings. GPU path verified. |
 | **CI** | The CI *commands* now **actually run** locally via `scripts/ci_local.py` (clean‑venv install → gate → PASS, M52). GitHub‑hosted execution still needs a Git remote the owner must create (`act` can't emulate `windows-latest`). |
 | **Pinned deps** | **Proven to clean‑install** from a fresh venv (M52, all wheels, no conflicts). Caveat: only *direct* deps are pinned — transitive deps resolve to latest‑compatible at install time (not a full lockfile). |

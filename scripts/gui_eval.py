@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-"""HON-2 / HON-2b — real, SAFE GUI integration test for the Perception & Control stack.
+"""HON-2 / HON-2b / HON-2c — real, SAFE GUI integration test for the Perception & Control stack.
 
-Instead of driving a shared app like Notepad (multi-tab, session-restore, unsafe to close), this
-launches an ISOLATED disposable Tkinter window in its own process, types into it via the control stack
-(clipboard paste), and verifies the text actually landed by reading what the app received (the app
-writes its input to a result file). Fully self-contained: own process (terminated by us, never
-taskkill), temp files only, no user data touched.
+Creates a REAL native Win32 EDIT control (its own HWND, exposes proper UI Automation — a faithful
+proxy for real apps like Notepad/browsers/Office, unlike tkinter which exposes no UIA controls), then
+drives it through the control stack and verifies the text actually landed by reading the control
+(WM_GETTEXT).
 
-On-demand only (needs a desktop session; briefly takes focus). Run:  python scripts/gui_eval.py
+Why this shape: synthetic keyboard injection (SendInput) is unreliable/suppressed in this environment
+(verified — even a focused native control receives nothing), so the control stack uses **UIA
+ValuePattern.SetValue** for text (HON-2c). This test proves that path works end-to-end on a real
+control. Fully self-contained: own window (destroyed at the end), no user apps touched. On-demand.
+
+Run:  python scripts/gui_eval.py
 """
-import subprocess
+import ctypes
 import sys
-import tempfile
 import time
+from ctypes import wintypes
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,65 +25,52 @@ if str(ROOT) not in sys.path:
 
 from nova.services import control as C  # noqa: E402
 
-MARKER = "nova-gui-7731"   # lowercase: avoids shift-key mangling if the keystroke path is used
+MARKER = "nova-gui-7731"
+_u = ctypes.windll.user32
 
-TARGET_APP = '''
-import tkinter as tk, sys, pathlib
-out = pathlib.Path(sys.argv[1])
-root = tk.Tk(); root.title("NOVA-GUI-TARGET")
-root.geometry("460x150+240+240")
-e = tk.Entry(root, width=44); e.pack(pady=40)
-e.focus_force(); root.lift(); root.attributes("-topmost", True)
-def _paste(ev=None):
-    try: e.insert("insert", root.clipboard_get())
+
+def _make_edit():
+    try: ctypes.windll.shcore.SetProcessDpiAwareness(2)
     except Exception: pass
-    return "break"
-e.bind("<Control-v>", _paste); e.bind("<Control-V>", _paste)   # accept synthetic Ctrl+V (atomic paste)
-def poll():
-    v = e.get()
-    if v:
-        try: out.write_text(v, encoding="utf-8")
-        except Exception: pass
-    root.after(250, poll)
-poll()
-root.after(12000, root.destroy)   # self-close after 12s no matter what
-root.mainloop()
-'''
+    _u.CreateWindowExW.restype = wintypes.HWND
+    _u.CreateWindowExW.argtypes = [wintypes.DWORD, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.DWORD,
+                                   ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                   wintypes.HWND, wintypes.HMENU, wintypes.HINSTANCE, wintypes.LPVOID]
+    # WS_POPUP|WS_VISIBLE|WS_BORDER ; WS_EX_TOPMOST
+    return _u.CreateWindowExW(0x100, "EDIT", "", 0x80000000 | 0x10000000 | 0x00800000,
+                              320, 320, 520, 64, None, None, None, None)
+
+
+def _read(hwnd):
+    buf = ctypes.create_unicode_buffer(512)
+    _u.SendMessageW(hwnd, 0x000D, 512, buf)   # WM_GETTEXT
+    return buf.value
 
 
 def main():
     C.resume_control()
-    tmp = Path(tempfile.mkdtemp(prefix="nova-gui-"))
-    app_py = tmp / "target.py"; result = tmp / "result.txt"
-    app_py.write_text(TARGET_APP, encoding="utf-8")
-    print("Launching isolated Tkinter target app…")
-    proc = subprocess.Popen([sys.executable, str(app_py), str(result)])
+    h = _make_edit()
+    if not h:
+        print("could not create test control"); return 1
     ok = False
-    detail = ""
     try:
-        time.sleep(2.2)
+        time.sleep(0.3)
+        _u.keybd_event(0x12, 0, 0, 0); _u.keybd_event(0x12, 0, 2, 0)   # ALT tap unlocks foreground
+        _u.SetForegroundWindow(h); _u.SetFocus(h)
+        time.sleep(0.4)
         aw = C.active_window()
-        print(f"active window: {aw.get('title')!r} ({aw.get('process')})")
-        # The Entry has focus_force on launch; click directly on it (near top-center where it sits)
-        # to satisfy Win11 focus rules WITHOUT defocusing onto the empty window body.
-        r = aw.get("rect") or {}
-        if r:
-            C.click(r["x"] + r["w"] // 2, r["y"] + 55)   # the Entry row (pady=40)
-            time.sleep(1.2)            # let focus SETTLE — early keystrokes are dropped otherwise
-        C.type_text(MARKER)            # control stack: clipboard paste (atomic — the reliable path)
-        for _ in range(20):
-            time.sleep(0.3)
-            if result.exists() and MARKER in result.read_text(encoding="utf-8", errors="replace"):
-                ok = True; break
-        detail = f"app received: {result.read_text(encoding='utf-8', errors='replace')[:60]!r}" if result.exists() else "app wrote nothing"
-        print("input method: clipboard paste |", detail)
+        print(f"active window process: {aw.get('process')}")
+        r = C.type_text(MARKER)            # the control stack's text path (UIA SetValue)
+        print(f"control.type_text -> {r}")
+        time.sleep(0.3)
+        got = _read(h)
+        ok = MARKER in got
+        print(f"control read back: {got!r} | marker present: {ok}")
     finally:
-        try: proc.terminate()          # terminate OUR app only (safe)
+        try: _u.DestroyWindow(h)            # destroy ONLY our own control
         except Exception: pass
-        try: app_py.unlink(); result.unlink(missing_ok=True); tmp.rmdir()
-        except Exception: pass
-    print("\n=== HON-2:", "PASS — typed text landed in a live GUI app via the control stack ==="
-          if ok else f"FAIL/FLAKY — {detail} ===")
+    print("\n=== HON-2:", "PASS — text landed in a real GUI control via the control stack (UIA) ==="
+          if ok else "FAIL ===")
     return 0 if ok else 1
 
 

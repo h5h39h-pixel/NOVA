@@ -96,3 +96,13 @@ async def api_click_element(req: Request):
     b = await req.json()
     audit("control", "click-element", str(b.get("name"))[:40])
     return C.click_element(b.get("name", ""), partial=b.get("partial", True), double=bool(b.get("double")))
+
+
+@router.post("/api/control/set-text")
+async def api_set_text(req: Request):
+    """Fill a named UIA field directly (reliable; no focus/typing needed) — HON-2c."""
+    g = _gate()
+    if g: return g
+    b = await req.json()
+    audit("control", "set-text", str(b.get("name"))[:40])
+    return C.set_element_text(b.get("name", ""), b.get("text", ""), partial=b.get("partial", True))

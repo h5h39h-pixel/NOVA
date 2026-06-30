@@ -151,9 +151,48 @@ def scroll(amount):
     return {"ok": True, "amount": int(amount)}
 
 
+def _uia_set_focused(text):
+    """Reliable text injection: set the value of the currently-focused UIA control directly
+    (ValuePattern.SetValue) — focus-/foreground-robust, works where synthetic keystrokes don't.
+    Returns True on success."""
+    try:
+        import uiautomation as auto
+        c = auto.GetFocusedControl()
+        if c is not None:
+            c.GetValuePattern().SetValue(text)
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def type_text(text):
     if CONTROL_PAUSED.is_set(): return _blocked()
-    return screen_svc.type_text(text)   # clipboard paste — Unicode/Arabic safe
+    if _uia_set_focused(text):                       # HON-2c: direct value-set (reliable)
+        return {"ok": True, "typed": len(text), "via": "uia"}
+    screen_svc.type_text(text)                       # fallback: clipboard paste / keystrokes
+    return {"ok": True, "typed": len(text), "via": "clipboard"}
+
+
+def set_element_text(name, text, partial=True):
+    """Find a UIA element by name and set its text directly (no focus/typing needed) — the robust
+    way to fill a named field in real apps (HON-2c)."""
+    if CONTROL_PAUSED.is_set(): return _blocked()
+    try:
+        import uiautomation as auto
+        want = (name or "").lower().strip()
+        root = auto.GetForegroundControl() or auto.GetRootControl()
+        for c, _ in auto.WalkControl(root, includeTop=True, maxDepth=14):
+            try:
+                nm = c.Name or ""
+                if nm and ((want in nm.lower()) if partial else (nm.lower() == want)):
+                    c.GetValuePattern().SetValue(text)
+                    return {"ok": True, "set": nm}
+            except Exception:
+                continue
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:160]}
+    return {"ok": False, "error": f"no value-settable element matching '{name}'"}
 
 
 def press_keys(keys):

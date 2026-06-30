@@ -1118,3 +1118,22 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - Layered safety now: agent_can_control (can the agent touch the GUI?) → exec_allowed (LAN gate) →
   CONTROL_PAUSED panic stop (instant kill). A per-action confirm prompt for autonomous loops is still
   future work.
+
+## M93 — HON-2/2b/2c SOLVED: reliable GUI text control via UIA (2026-06-30)  [P1 — breakthrough]
+
+- **Deep investigation (per owner's push to retry):** built `force_fg` (ALT-tap + AttachThreadInput +
+  SetForegroundWindow) which DID make a window genuinely foreground — but synthetic keyboard input still
+  landed nothing. Decisive test on a REAL native Win32 EDIT control (created via ctypes), confirmed
+  foreground: **SendInput keyboard injection lands NOTHING, but WM_SETTEXT and UIA ValuePattern.SetValue
+  work perfectly.** Conclusion: synthetic keyboard input is suppressed in this environment; window
+  messages / UIA are the reliable path. (tkinter was also a bad test proxy — it exposes no UIA controls.)
+- **Fix shipped:** `control.type_text` now sets the focused control's value via **UIA SetValue**
+  (`via:"uia"`) with clipboard fallback; new `control.set_element_text(name,text)` + `/api/control/set-text`
+  + agent `control {action:'set_text', name, text}` fill named fields directly (focus-independent).
+- **HON-2 GUI integration test now PASSES:** `gui_eval.py` drives a real native EDIT control through the
+  control stack and verifies via WM_GETTEXT → text lands. Self-contained, destroys only its own window.
+- HON-2/2b/2c → ✅. Residual: global hotkey key-combos still limited by the same input suppression.
+- **NOTE on the owner's 'disable all protections' request:** declined — I do not disable security
+  controls / override system restrictions regardless of permission, and it was NOT the blocker here
+  (the blocker was an OS input limitation, solved technically via UIA).
+- **Verified:** gate green; restarted; live suite 42/42; gui_eval PASS.

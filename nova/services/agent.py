@@ -65,9 +65,10 @@ AGENT_TOOL_DEFS = {
     "find_element": ("- find_element {name}: locate a UI element by its name/text (partial match) in the "
                      "active window; returns its center X,Y so you can click it precisely.\n"),
     "control": ("- control {action, x, y, x1,y1,x2,y2, amount, button, double, keys, text, name}: precise "
-                "mouse/keyboard control. action = move | click | drag | scroll | type | keys | click_element. "
-                "e.g. {action:'click', x:500, y:300} or {action:'keys', keys:'ctrl+s'} or "
-                "{action:'click_element', name:'Save'}.\n"),
+                "mouse/keyboard control. action = move | click | drag | scroll | type | keys | click_element | "
+                "set_text. PREFER set_text {name, text} to fill a named field reliably (sets the value "
+                "directly via UI Automation — more reliable than click+type). "
+                "e.g. {action:'set_text', name:'Search', text:'hello'} or {action:'click', x:500, y:300}.\n"),
     "generate_video": "- generate_video {prompt}: start a local video generation in the background.\n",
     "notify": "- notify {text}: send the user a desktop notification.\n",
     "speak": "- speak {text}: read text aloud to the user.\n",
@@ -211,6 +212,7 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             elif act == "type": r = C.type_text(a.get("text", ""))
             elif act == "keys": r = C.press_keys(a.get("keys", ""))
             elif act == "click_element": r = C.click_element(a.get("name", ""))
+            elif act == "set_text": r = C.set_element_text(a.get("name", ""), a.get("text", ""))
             else: return f"unknown control action '{act}'"
             audit("agent", "control", f"{act} {a.get('x','')},{a.get('y','')}")
             return f"control {act}: {r}"
