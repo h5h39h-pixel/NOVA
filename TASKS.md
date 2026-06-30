@@ -62,12 +62,12 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 
 | ID | Task | Pri | Effort | Deps | Status |
 |---|---|---|---|---|---|
-| T-029 | Conditional screen-triggered actions ("if X on screen → do Y"): periodic capture + vision/OCR match → action | P2 | 1–2d | — | ⬜ |
-| T-030 | Training progress robustness: emit structured `[PROGRESS] {json}` from training scripts; parse JSON instead of fragile regex | P2 | 6h | — | ⬜ |
-| T-031 | STT accuracy: optional larger Whisper model + language hint; expose in Settings | P3 | 4h | T-005 | ⬜ |
-| T-032 | Click-to-act reliability spike: evaluate `pywinauto`/UI Automation + AttachThreadInput, or a stronger grounding model; decide fix-or-park | P3 | 1–2d | T-006 | ⬜ |
-| T-033 | Per-page UI passes: bespoke layouts for Chat, Training, Screen (beyond the global theme) | P3 | 2–3d | — | ⬜ |
-| T-034 | Track 32b throughput: monitor Ollama/llama.cpp Blackwell updates; re-benchmark on upgrade (**upstream-gated, no code**) | P3 | ongoing | — | ⬜ |
+| T-029 | Conditional screen actions: `screen_if` automation action (match text on screen → run `then_action`); unit-tested | P2 | 1–2d | — | ✅ |
+| T-030 | Training progress: parser prefers structured `[PROGRESS] {json}` → key=value → tqdm; unit-tested | P2 | 6h | — | ✅ |
+| T-031 | STT accuracy: `stt_model` setting (tiny…large-v3), hot-swap in `get_whisper`, lang hint | P3 | 4h | T-005 | ✅ |
+| T-032 | Click-to-act spike: `docs/click-to-act.md` evaluates UIA(pywinauto) vs grounding → **decision: park best-effort, hybrid plan documented** | P3 | 1–2d | T-006 | ✅ |
+| T-033 | Per-page bespoke UI layouts (Chat, Training, Screen) | P3 | 2–3d | — | 🟡 deferred — global theme (M36) already applies premium styling to every page; bespoke layouts are optional gold-plating, not started to avoid a rushed redesign |
+| T-034 | Track 32b throughput on Ollama/llama.cpp Blackwell updates (**upstream-gated, no code**) | P3 | ongoing | — | 🟡 ongoing |
 
 ## Out of scope (by decision)
 | Item | Reason |
@@ -79,6 +79,7 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 ---
 
 ### Rollup
-- **Total tasks:** 34 (P0: 6 · P1: 13 · P2: 10 · P3: 5) · **Done:** 0
-- **Estimated effort:** ~**18–22 focused days** (≈ 110–130 h), excluding upstream-gated T-034.
-- **Critical path:** T-001 → T-004 → (everything). Tests (T-017) unlock T-018/019/020/023.
+- **Total tasks:** 34 · **Done: 32 ✅** · **Deferred/ongoing: 2 🟡** (T-033 optional UI gold-plating, T-034 upstream-gated).
+- **Phases 0–4 (M-A…M-E) all delivered.** Each phase committed to git; quality gate green throughout.
+- **Excluded by decision:** multi-user/RBAC, RTL mirroring.
+- **Verification:** `python scripts/check.py` → pyflakes + node --check + **pytest 24** ; live suite **42/42** ; self-test **13/13**.

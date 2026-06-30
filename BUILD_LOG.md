@@ -338,3 +338,28 @@ in **dependency-free vanilla canvas** (no Three.js/CDN; fully local; trivially s
 - **Verified** by headless render (Playwright, route-mocked 24-node graph + the real 2-node KB):
   no console errors, multi-color communities, controls + legend + HUD all correct. Backend untouched
   (`/api/brain` unchanged); suite 42/42, JS clean, zero NULs. Cache version bumped to v=37.
+
+## M38 — Engineering-maturity hardening (Phases 0–5 of PLAN.md)
+
+Executed the formal hardening plan end-to-end (PLAN.md / TASKS.md / PROJECT_PLAN.md), one phase
+per commit, quality gate green throughout. 32/34 tasks done; 2 deferred by judgment.
+
+- **M-A Safety Net:** `git init` (+ .gitignore, MIT LICENSE, initial commit of 77 files);
+  pinned deps (requirements.txt `==` + requirements.in); added pyautogui/pyperclip; vendored
+  Font Awesome + fonts (Inter/JetBrains/Orbitron) locally — verified 0 external requests
+  (truly offline); `preflight.py` first-run check (26 checks).
+- **M-B Hardening:** exec surface gated (`allow_remote_exec` on LAN; `exec_allowed()`); auto
+  cache-busting (server stamps `?v=<mtime>`); daily SQLite snapshots (rotated 14) + endpoints;
+  DB migration framework (`schema_version` + `run_migrations`); "Lite visuals" perf mode +
+  pause loops on hidden tab; `SECURITY.md`.
+- **M-C Tests & CI:** `tests/` pytest suite (core/services/api/frontend) = 24 tests;
+  `scripts/check.py` gate; `.githooks/pre-commit` (active) + `.github/workflows/ci.yml`;
+  `requirements-dev.txt`.
+- **M-D Docs & Observability:** `/docs` tags + `docs/openapi.json` (99 paths); `DATA_MODEL.md`;
+  metrics history table + `/api/metrics/history`; error aggregation (`nova/core/errors.py`) +
+  `/api/errors`; `/api/health`; Diagnostics page Server-Health + Recent-Errors panels.
+- **M-E Features:** `screen_if` conditional automation; structured `[PROGRESS] {json}` training
+  parse; configurable `stt_model`; `docs/click-to-act.md` decision (park best-effort, hybrid plan).
+- **Deferred:** T-033 per-page bespoke UI (optional; global theme already applied), T-034 32b
+  throughput (upstream-gated). **Excluded by decision:** multi-user, RTL mirroring.
+- _Verified_: pyflakes clean · node --check clean · pytest 24 · live suite 42/42 · self-test 13/13.
