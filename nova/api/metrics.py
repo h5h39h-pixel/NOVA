@@ -47,6 +47,12 @@ def api_service_action(svc: str, action: str):
 @router.get("/api/processes")
 def api_processes(): return [j.info() for j in PM.jobs.values()][-50:]
 
+@router.get("/api/jobs/history")
+def api_jobs_history():
+    """Persisted job history (STB-2) — survives restarts; includes 'interrupted' jobs."""
+    from nova.services.jobs import job_history
+    return {"jobs": job_history()}
+
 @router.post("/api/processes/{jid}/{action}")
 def api_proc_action(jid: str, action: str):
     if action == "stop":    return {"ok": PM.stop(jid)}

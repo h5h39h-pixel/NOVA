@@ -166,6 +166,9 @@ def test_reconcile_interrupted_jobs(tmpdb):
     s2 = c.execute("SELECT status FROM jobs WHERE jid='job2'").fetchone()[0]
     c.close()
     assert s1 == "interrupted" and s2 == "done"
+    from nova.services.jobs import job_history
+    hist = job_history()
+    assert any(x["jid"] == "job1" for x in hist) and any(x["jid"] == "job2" for x in hist)
 
 
 def test_understand_image(monkeypatch, tmp_path):

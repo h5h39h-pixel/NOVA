@@ -906,3 +906,17 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **POL-3:** automated mobile-viewport test (390×844, is_mobile) — dashboard renders, hamburger menu
   present, zero horizontal overflow, zero console errors; screenshot shows a clean stacked layout.
 - **Verified:** quality gate green; render checks all pass.
+
+## M75 — OUT-2 + OUT-4 + POL-4 + STB-2 close-out (2026-06-30)  [P1/P3]
+
+- **OUT-2 (training usable):** `scripts/nova_eval.py` → `nova-local` **4/4** usability checks (identity,
+  RTX 5090 knowledge, domain, Arabic bilingual). `docs/nova-local-eval.md`. Output model verified usable;
+  fine-tune process stays owner-run.
+- **OUT-4 (screen_if real screen):** `scripts/screen_if_eval.py` OCRs the real screen (5024 chars),
+  matches a real on-screen word → fires the action, rejects nonsense. Live-verified (not mocked).
+- **POL-4 (32B bench):** `scripts/bench_model.py` → qwen2.5:32b **11.1 tok/s gen, ~488 tok/s prompt,
+  13.4s load** on the RTX 5090. `docs/32b-throughput.md`.
+- **STB-2 (job persistence):** added `job_history()` + `GET /api/jobs/history` (persisted jobs survive
+  restarts; verified live showing a job from a prior run). Auto-resume of a killed process remains
+  infeasible by design — done to the limit; nothing is silently lost.
+- **Verified:** gate green; server restarted; live suite 42/42; `/api/jobs/history` live.

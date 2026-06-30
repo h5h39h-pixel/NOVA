@@ -39,6 +39,19 @@ def _job_finish(job):
         pass
 
 
+def job_history(limit=50):
+    """Recent persisted jobs (survives restarts) — includes 'interrupted' ones from prior runs."""
+    try:
+        c = db()
+        rows = [dict(r) for r in c.execute(
+            "SELECT jid,name,kind,status,started,ended,exit_code,source FROM jobs ORDER BY id DESC LIMIT ?",
+            (int(limit),)).fetchall()]
+        c.close()
+        return rows
+    except Exception:
+        return []
+
+
 def reconcile_interrupted():
     """On startup, any job row still 'running'/'starting'/'paused' was killed by the previous
     shutdown (the Job Object terminates children). Mark them 'interrupted' and report them so the
