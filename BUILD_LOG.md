@@ -1193,3 +1193,13 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   architecture. License/posture note at the end.
 - Documented the Unified Workspace + Auto-model feature group (UWS-1…7) in TASKS/STATUS/ROADMAP.
 - **Verified:** gate green.
+
+## M99 — UWS-6: open-a-file & work on it (Claude-Desktop style) (2026-06-30)  [Feature]
+
+- **Backend:** `GET /api/file/read?path=` (open a text file; credential-denylist gated) + `POST
+  /api/file/write` (save edits; `exec_allowed()`-gated + audited). In `nova/api/files_api.py`.
+- **Workspace UI:** 📂 Open file → prompt path → file card with preview; the content is injected into
+  the chat context ("reply with the FULL new file in one code block"); after the AI replies, a
+  💾 Save to <file> button extracts the first code block (or full reply) and writes it back.
+- **Verified:** read+write API edits a real file on disk; the frontend Open flow shows the card
+  (zero console errors). UWS-6 ✅. Gate green; restarted.

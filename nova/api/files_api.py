@@ -38,6 +38,47 @@ async def api_upload(req: Request):
             "text": text[:8000], "truncated": len(text) > 8000, "url": f"/files/{f.filename}"}
 
 
+@router.get("/api/file/read")
+def api_file_read(path: str = ""):
+    """Open an existing text file to work on it (Claude-Desktop style). Credential stores are denied."""
+    from nova.services.agent import safe_read_path
+    from pathlib import Path
+    p = safe_read_path(path)
+    if p is None:
+        return JSONResponse({"ok": False, "error": "that path is not readable (credential store)"}, status_code=403)
+    p = Path(path)
+    if not p.exists() or not p.is_file():
+        return JSONResponse({"ok": False, "error": "file not found"}, status_code=404)
+    try:
+        return {"ok": True, "path": str(p), "name": p.name,
+                "content": p.read_text(encoding="utf-8", errors="replace")[:200000]}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)[:160]}, status_code=500)
+
+
+@router.post("/api/file/write")
+async def api_file_write(req: Request):
+    """Save edits back to a file. Gated by exec_allowed() (localhost ok; LAN needs opt-in) + audited."""
+    from nova.services.settings import exec_allowed
+    from nova.services.audit import audit
+    from nova.services.agent import safe_read_path
+    from pathlib import Path
+    if not exec_allowed():
+        return JSONResponse({"ok": False, "error": "file write disabled on LAN (enable allow_remote_exec)"}, status_code=403)
+    b = await req.json()
+    path = (b.get("path") or "").strip()
+    if not path or safe_read_path(path) is None:
+        return JSONResponse({"ok": False, "error": "bad/forbidden path"}, status_code=400)
+    try:
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(b.get("content", ""), encoding="utf-8")
+        audit("workspace", "file_write", f"{p} ({len(b.get('content',''))} chars)")
+        return {"ok": True, "path": str(p), "bytes": p.stat().st_size}
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)[:160]}, status_code=500)
+
+
 @router.get("/files/{name}")
 def api_file(name: str):
     p = (UPLOAD_DIR / name)

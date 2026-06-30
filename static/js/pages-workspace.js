@@ -43,6 +43,7 @@ function Workspace(){
         <button class="tgl" id="tg-web" data-tip="${AR?'نتائج ويب مباشرة':'Live web results'}">🌐 ${L.web}</button>
         <button class="tgl agentonly" id="tg-full" data-tip="${AR?'يسمح للوكيل بتشغيل أي أمر/تحكم':'Let the agent run any command / control the PC'}">🔓 ${L.full}</button>
         <button class="tgl" id="tg-attach" data-tip="${AR?'أرفق صوراً/مستندات/أي ملف':'Attach images, documents, any file'}">📎 ${L.attach}</button>
+        <button class="tgl" id="tg-open" data-tip="${AR?'افتح ملفاً على القرص واعمل عليه':'Open a file on disk and work on it'}">📂 ${AR?'فتح ملف':'Open file'}</button>
         <span class="spacer"></span>
         <button class="btn" id="wsmic" data-tip="${AR?'إدخال صوتي':'Voice input'}">🎤</button>
         <button class="btn p" id="wssend">${L.send}</button>
@@ -56,7 +57,7 @@ function Workspace(){
   function mount(){
     const thread = $('#wsthread');
     let mode = localStorage.getItem('ws_mode') || 'chat';
-    let attached = [], curAI = null, lastUser = '', busy = false, maxSteps = 8;
+    let attached = [], curAI = null, lastUser = '', busy = false, maxSteps = 8, workingFile = null;
     const tg = { deep: localStorage.getItem('ws_deep')==='1', web: localStorage.getItem('ws_web')==='1', full: false };
 
     // ---- helpers ----
@@ -128,6 +129,31 @@ function Workspace(){
         if(r.ok){ attached.push(r); renderAtts(); toast('success','Attached', `${r.filename} · ${r.chars} chars`); }
         else toast('error','Upload failed', r.error||''); }).catch(()=>{card.remove();toast('error','Upload failed','');});
     }
+    // ---- open a file on disk and work on it (Claude-Desktop style) ----
+    $('#tg-open').onclick = async () => {
+      const path = prompt(AR?'افتح ملفاً (المسار الكامل):':'Open file (full path):');
+      if(!path) return;
+      let r; try { r = await api('/file/read?path=' + encodeURIComponent(path)); } catch(e){ r={ok:false,error:String(e)}; }
+      if(r && r.ok){ workingFile = {path:r.path, name:r.name, content:r.content};
+        clearEmpty();
+        const d=document.createElement('div'); d.className='wsfilecard';
+        d.innerHTML=`<div class="wsfh">📄 <b>${esc(r.name)}</b> <span class="muted">${(r.content.length/1024).toFixed(0)} KB</span> <span class="x" id="wsfclose">✕</span></div><pre class="code">${esc(r.content.slice(0,2000))}${r.content.length>2000?'\n…':''}</pre>`;
+        $('#wsthread').appendChild(d); $('#wsthread').scrollTop=$('#wsthread').scrollHeight;
+        $('#wsfclose').onclick=()=>{workingFile=null;d.remove();toast('info','Closed file','');};
+        $('#wsinput').placeholder = (AR?'اطلب تعديلاً على ':'Ask to edit ')+r.name+'…';
+        toast('success', (AR?'فُتح الملف':'Opened'), r.name+' — '+(AR?'اطلب تعديلاً وسأحفظه':'ask for an edit and save it back'));
+      } else toast('error', (AR?'تعذّر الفتح':'Cannot open'), (r&&r.error)||'');
+    };
+    function saveBtn(aiEl){
+      if(!workingFile) return;
+      const b=document.createElement('button'); b.className='btn sm p wssave'; b.textContent='💾 '+(AR?'احفظ إلى ':'Save to ')+workingFile.name;
+      b.onclick=async ()=>{ const raw=aiEl.span.dataset.raw||aiEl.span.textContent||'';
+        const m=raw.match(/```[a-zA-Z0-9]*\n([\s\S]*?)```/); const content=m?m[1]:raw;
+        const r=await post('/file/write',{path:workingFile.path, content});
+        if(r&&r.ok){ workingFile.content=content; toast('success',(AR?'حُفظ':'Saved'), workingFile.name); b.textContent='✓ '+(AR?'حُفظ':'Saved'); }
+        else toast('error',(AR?'تعذّر الحفظ':'Save failed'), (r&&r.error)||''); };
+      aiEl.d.appendChild(b);
+    }
     $('#tg-attach').onclick = () => $('#wsfile').click();
     $('#wsfile').onchange = e => { [...e.target.files].forEach(uploadFile); e.target.value=''; };
     thread.addEventListener('dragover', e=>{e.preventDefault();thread.classList.add('over');});
@@ -151,6 +177,7 @@ function Workspace(){
       let context='', markers='';
       if(attached.length){ context=attached.map(a=>`### File: ${a.filename}\n${a.text}`).join('\n\n');
         markers=attached.map(a=>`⟦file:${a.filename}|${a.size}⟧`).join('')+'\n'; }
+      if(workingFile){ context=(context?context+'\n\n':'')+`### Working file: ${workingFile.name}\nWhen asked to edit it, reply with the FULL new file content in ONE code block.\n\`\`\`\n${workingFile.content.slice(0,12000)}\n\`\`\``; }
       lastUser=v; addMsg('user', markers+v); $('#wsinput').value=''; $('#wsinput').style.height='auto';
       setBusy(true);
       if(mode==='agent'){
@@ -185,7 +212,8 @@ function Workspace(){
       else if(m.ev==='token' && curAI){ curAI.span.dataset.raw += (m.text||''); curAI.span.innerHTML = mdRender(curAI.span.dataset.raw); scroll(); }
       else if(m.ev==='end'){ if(curAI){ if(curAI.span.dataset.raw) curAI.span.innerHTML=mdRender(curAI.span.dataset.raw);
           if(m.sources && m.sources.length){ const s=document.createElement('div'); s.className='wssrc';
-            s.innerHTML='📎 '+m.sources.map(x=>x.url?`<a href="${esc(x.url)}" target="_blank">${esc(x.doc)}</a>`:esc(x.doc)).join(' · '); curAI.d.appendChild(s);} }
+            s.innerHTML='📎 '+m.sources.map(x=>x.url?`<a href="${esc(x.url)}" target="_blank">${esc(x.doc)}</a>`:esc(x.doc)).join(' · '); curAI.d.appendChild(s);}
+          if(workingFile) saveBtn(curAI); }
           if(m.tokens!=null) $('#wstok').textContent=m.tokens+' tok'; curAI=null; setBusy(false); }
       else if(m.ev==='error'){ addMsg('ai','⚠️ '+(m.text||'error')); curAI=null; setBusy(false); }
     }));
