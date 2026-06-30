@@ -115,6 +115,10 @@ and the full spec in **`docs/chat-deepthink-websearch.md`**.
 - `screen_if`, click‑to‑act — best‑effort / mocked‑only.
 - ~~No watchdog; loops swallow errors; secrets plaintext; deps not clean‑installed~~ → **fixed**: watchdog (M55), loops surface errors (M56), secrets encrypted (M46), clean‑install proven (M52), WAL (M57), media backup (M59).
 
+## 🔒 CORE PRINCIPLE (permanent) — single‑user · local‑only
+See **`docs/PRINCIPLES.md`**. No cloud/telemetry/inbound‑remote/LAN‑control/phone‑control/external‑
+access/multi‑user — ever. Localhost‑only. Opt‑in outbound exceptions: Web Search + git source push.
+
 ## 🚫 Excluded (owner decision — never build)
 - Multi‑user / accounts / roles / RBAC.
 - RTL mirroring.

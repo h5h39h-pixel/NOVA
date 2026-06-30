@@ -102,3 +102,29 @@ in `TASKS.md` under **"Honest gaps (self‑audit)"** as **HON‑1…N**.
 _Bottom line: capable, clean, broad — but under‑guarded and verification‑shallow where it matters most
 (screen control + agent reliability). Harden and prove those before trusting it unattended. The GUI‑
 control path in particular is best‑effort and can disrupt the live desktop — keep the panic stop handy._
+
+## Re‑audit 2026‑06‑30 (session: unified workspace + media + vision)
+**Verified working this session** (all green): gate · live suite 42/42 · all 22 routes render zero
+console errors · **screen understanding** (capture + OCR 4051 chars + VLM correctly described the live
+desktop) · control awareness (active window, 12 windows, true 4K) · mouse move · UIA text injection ·
+unified Workspace chat turn (with web citations) · ✨Auto model pick (coding→qwen3‑coder) · open‑file
+edit+save to disk.
+
+**Still incomplete / fragile (now tracked + being fixed):**
+- **MED‑1 (building):** image capture / image‑gen / video‑gen were not callable from the unified chat —
+  only from older pages. Adding chat commands + a media menu now.
+- **AVL‑1 "Play Solitaire" is best‑effort, not guaranteed.** Building blocks exist (see_screen loop +
+  mouse move/click), but: synthetic **keyboard** input is suppressed here (only UIA SetValue works for
+  text); **drag‑and‑drop** for card games is unverified; a sustained perceive→strategize→act→self‑improve
+  loop is hard and unproven. "What's on my desktop?" ✅ works; full autonomous game‑play 🟧.
+- **WS‑GAP‑1:** the unified Workspace has no conversation history/sidebar (the old Chat did). Single
+  thread per session; `Clear` resets. Acceptable for v1, noted.
+- **SEC‑FW:** `/api/file/write` (open‑file feature) can overwrite ANY non‑credential file on localhost
+  (gated by `exec_allowed`, audited) — powerful by design (Claude‑Desktop‑style editing); documented risk.
+- **AGENT‑VIA‑WS:** an end‑to‑end agent *run through the unified page* (steps streaming) was structurally
+  built but not yet live‑exercised — verifying now.
+- Carried over (still true): coverage 49%; broader 50+‑goal agent battery + Arabic STT WER unmeasured;
+  hosted‑CI run result needs `gh auth login` to read.
+
+**Permanent rule (now enforced, see WORKFLOW.md):** every discovery/error/edge case is written here +
+into TASKS.md and then fixed or marked 🟧 with the reason.

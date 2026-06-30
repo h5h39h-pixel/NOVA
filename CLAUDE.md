@@ -1,6 +1,11 @@
 # Nova / AI Control Center — project rules (auto-loaded)
 
-**Personal, single-user system. No multi-user support, ever.**
+## 🔒 CORE PRINCIPLE (permanent, non-negotiable) — see `docs/PRINCIPLES.md`
+**Single-user · Local-only.** One operator; everything runs on this PC; **no cloud, no telemetry, no
+inbound remote access, no LAN control surface, no phone control, no external access, no multi-user —
+ever.** Server binds localhost only by default. The only opt-in OUTBOUND exceptions the owner chooses:
+Web Search (a DuckDuckGo query) and git push of *source code* (no secrets, not runtime access). Any
+feature needing inbound remote/phone/cloud/multi-user is rejected by this rule.
 
 ## PERMANENT RULE — the six source-of-truth files
 Before, during, and after EVERY coding session you MUST review and update these:

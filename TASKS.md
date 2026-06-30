@@ -102,6 +102,15 @@ tools**, **chat commands** ("read this", "where am I?", "move mouse to 500,300")
 Mutating control is gated by `exec_allowed()` (localhost ok; LAN needs opt‑in) and audited. Full spec:
 `docs/perception-control.md`.
 
+## P1 — Media-in-chat + Agent Vision (MED / AVL · owner request 2026‑06‑30)
+
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| MED‑1 | **Image capture / image‑gen / video‑gen from the unified chat** | 🟦 | Building: chat commands + a ＋ media menu → `/api/toolkit/{image,video}` + `/api/screen/shot`; results render inline (image/video/screenshot). |
+| AVL‑1 | **Agent vision tasks** — "what's on my desktop?" + autonomous game play | 🟧 | "What's on my desktop?" ✅ verified (see_screen → VLM described the live desktop). Full autonomous "Play Solitaire" (watch→strategize→drag→self‑improve) is **best‑effort**: mouse move/click work, but synthetic keyboard is suppressed (UIA SetValue only) and drag‑and‑drop + a sustained strategy loop are unverified. Building blocks shipped; full game‑play documented as aspirational. |
+| AVL‑2 | Agent screen‑driven control loop helper (perceive→act→observe) | ⬜ | A tool/loop so the agent can iterate see_screen → control → re‑observe for visual tasks. |
+| CORE‑P | **Enforce the single‑user/local‑only CORE PRINCIPLE everywhere** | ✅ | M100. `docs/PRINCIPLES.md` + referenced in CLAUDE/STATUS/ROADMAP/PROJECT_PLAN/WORKFLOW. Permanent discovery‑log rule added to WORKFLOW. |
+
 ## P1 — Unified Workspace + Auto model (UWS · owner request)
 
 One page merging Chat + Agent with professional toggle buttons, requested 2026‑06‑30.

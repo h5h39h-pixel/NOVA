@@ -1203,3 +1203,18 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   💾 Save to <file> button extracts the first code block (or full reply) and writes it back.
 - **Verified:** read+write API edits a real file on disk; the frontend Open flow shows the card
   (zero console errors). UWS-6 ✅. Gate green; restarted.
+
+## M100 — CORE PRINCIPLE + pre-flight verification + honest re-audit (2026-06-30)  [Governance/Verify]
+
+- **CORE PRINCIPLE (permanent):** `docs/PRINCIPLES.md` — single-user · local-only; no cloud/telemetry/
+  inbound-remote/LAN-control/phone-control/external-access/multi-user, ever; localhost-only; opt-in
+  outbound exceptions = Web Search + git source push. Referenced in CLAUDE/STATUS/ROADMAP/PROJECT_PLAN/
+  WORKFLOW. Added a permanent **discovery-log rule** to WORKFLOW (every error/gap → honest-state.md +
+  TASKS → fix or mark 🟧).
+- **Pre-flight verification (100%):** gate green; live 42/42; all 22 routes render zero console errors;
+  screen capture + OCR (4051 chars) + VLM described the live desktop correctly ("what's on my desktop"
+  works); control awareness (active window/12 windows/true 4K); mouse move; UIA text injection; unified
+  Workspace chat AND agent runs verified end-to-end (agent computed 19×21=399 streaming through the page).
+- **Honest re-audit** appended to docs/honest-state.md (incomplete/fragile: MED-1 media-in-chat building;
+  AVL-1 game-play best-effort; no conversation history in workspace; file-write breadth; coverage 49%).
+- Next: build MED-1 (media in chat), smarter Auto, agent vision loop, innovative goals.

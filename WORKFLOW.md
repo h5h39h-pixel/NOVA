@@ -5,7 +5,15 @@
 > `PROJECT_PLAN.md`, `STATUS.md` — are **mandatory and permanent**. They are reviewed before work,
 > updated during work, and reconciled after work. They are the only reliable record of the project.
 
-This is a **personal, single‑user** system. **No multi‑user support, ever.**
+## 🔒 CORE PRINCIPLE (permanent) — single‑user · local‑only
+See **`docs/PRINCIPLES.md`**. No cloud/telemetry/inbound‑remote/LAN‑control/phone‑control/external‑
+access/multi‑user — ever. Localhost‑only. Opt‑in outbound exceptions: Web Search + git source push.
+
+## 🔁 PERMANENT RULE — discovery log
+**Every error, missing piece, fragility, or edge case discovered MUST be (1) written into the project
+files — `docs/honest-state.md` (the running discovery log) + the relevant `TASKS.md` row — and (2) fixed
+or, if deferred, marked 🟧 with the exact reason.** No silent gaps. The honest report is re‑run and
+updated every substantial session.
 
 ---
 

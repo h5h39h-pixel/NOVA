@@ -22,10 +22,15 @@ confirmation and no kill‑switch** (HON‑1), and there's **no prompt‑injecti
 web‑augmented agent (HON‑10). Treat this as a **sharp tool, not a finished appliance.** The true backlog
 is **HON‑1…11** in `TASKS.md`.
 
+## 🔒 CORE PRINCIPLE (permanent) — single‑user · local‑only — see `docs/PRINCIPLES.md`
+**No** cloud, telemetry, inbound remote access, LAN control surface, phone control, external access, or
+multi‑user — **ever.** Localhost‑only by default. Opt‑in OUTBOUND exceptions the owner chooses: Web
+Search + git push of source code (no secrets, not runtime access).
+
 ## 🚫 Explicitly excluded (do not build)
-- **Multi‑user / accounts / roles / RBAC** — this is a personal single‑user system.
+- **Multi‑user / accounts / roles / RBAC** · **inbound remote / LAN control** · **phone control** ·
+  **cloud / external services for core function** · **telemetry** — all forbidden by the core principle.
 - **RTL mirroring** — Arabic stays text‑only on the fixed LTR layout.
-- **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next actions — backlog COMPLETE; project is on GitHub with CI
 Honest self‑audit HON‑1…12 **all closed** (M81–M96). Repo pushed to a private remote

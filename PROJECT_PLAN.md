@@ -108,4 +108,8 @@ Owner‑requested chat UX, 2026‑06‑30:
 - **Full spec:** `docs/chat-deepthink-websearch.md` (behavioral spec, implementation, dependencies,
   extension ideas).
 
-## 🚫 Out of scope (permanent): multi‑user/RBAC, RTL mirroring, cloud/scaling.
+## 🔒 CORE PRINCIPLE (permanent) — single‑user · local‑only — see `docs/PRINCIPLES.md`
+No cloud/telemetry/inbound‑remote/LAN‑control/phone‑control/external‑access/multi‑user, ever.
+Localhost‑only. Opt‑in outbound exceptions: Web Search + git source push (no secrets, not runtime access).
+
+## 🚫 Out of scope (permanent): multi‑user/RBAC · inbound remote/LAN/phone control · cloud/telemetry · RTL mirroring.
