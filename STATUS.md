@@ -5,8 +5,8 @@ Personal single‑user system (not a product). Update this file on **every** wor
 
 _Last updated: 2026-06-30_
 
-**Health gate (must stay green):** `python scripts/check.py` → pyflakes + node --check + pytest (72 hermetic + 4 live frontend = 76)
-· live suite `python run_tests.py` → 42/42 · self‑test 13/13 · local CI `python scripts/ci_local.py`.
+**Health gate (must stay green):** `python scripts/check.py` → pyflakes + node --check + pytest (~74 hermetic + 4 live frontend)
+· live suite `python run_tests.py` → 42/42 · self‑test 13/13 · local CI `python scripts/ci_local.py` · agent baseline `python scripts/agent_eval.py`.
 
 **Status legend:** ✅ DONE · 🟧 FRAGILE (works but has a known issue) · 🟦 IN PROGRESS · ⬜ TODO · 🚫 EXCLUDED (owner decision)
 
@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **STB‑5** SQLite WAL mode + concurrency review. (P1)
+1. **OUT‑5** RAG retrieval quality check (relevance of citations). (P1)
 2. **STB‑2** Persist/resume training & recording across server restart. (P1)
-3. **OUT‑5** RAG retrieval quality check (relevance of citations). (P1)
+3. **STB‑4** Back up generated media/uploads (only the DB is snapshotted today). (P1)
 
-_**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent baseline 5/5 after a real path bugfix, M54) · STB‑1 ✅ (watchdog python‑stub fix, M55) · STB‑3 ✅ (loops surface errors, M56). **⚠ Restart `server.py`** to activate M54 + M56 on the live instance._
+_**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent baseline 5/5 after a real path bugfix, M54) · STB‑1 ✅ (watchdog python‑stub fix, M55) · STB‑3 ✅ (loops surface errors, M56) · STB‑5 ✅ (SQLite WAL, M57). **⚠ Restart `server.py`** to activate M54 + M56 + M57 on the live instance._
 
 ---
 

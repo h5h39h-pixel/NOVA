@@ -50,7 +50,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | STB‑2 | Persist/resume training & recording across server restart | ⬜ | Job Object kills them on restart (by design today). |
 | STB‑3 | Error recovery + surfacing in background loops (no silent `except: pass`) | ✅ | M56. `metrics_loop`/`status_loop`/`scheduler_loop` now `record_error(...)` (deduped, bounded — won't flood) so failures appear in `/api/errors` + Diagnostics instead of vanishing; `backup_loop` also records; shutdown finalizers `log.warning` instead of `pass`. Loops still don't crash (recover next tick). |
 | STB‑4 | Back up generated media/uploads (only the DB is snapshotted today) | ⬜ | |
-| STB‑5 | SQLite WAL mode + concurrency review | ⬜ | Single‑writer contention under load is untested. |
+| STB‑5 | SQLite WAL mode + concurrency review | ✅ | M57. `db()` now opens with `timeout=5s` + `PRAGMA busy_timeout=5000` + `synchronous=NORMAL`; `init_db` sets persistent `journal_mode=WAL` (readers no longer block the writer; fewer "database is locked" under the concurrent loops). Backup uses the online `src.backup()` API → WAL‑safe. WAL sidecars git‑ignored. Test: `test_db_wal_and_busy_timeout`. |
 | STB‑E | Daily DB snapshots (rotate 14) + migration framework + `/api/health` + error aggregation | ✅ | M‑B/M‑D. |
 
 ## P2 — Documentation (keep the six files current)
@@ -89,8 +89,8 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** · P1 Outcome (OUT‑1 ✅; 4 open) · P1 Stability (STB‑1 ✅ STB‑3 ✅; 3 open).
-- **Next:** STB‑5 (SQLite WAL) → STB‑2 (jobs survive restart) → P1 Outcome (OUT‑5 RAG quality).
-- **Pending restart:** M54 (agent path fix) + M56 (loop error surfacing) activate on the next `server.py` restart.
+- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** · P1 Outcome (OUT‑1 ✅; 4 open) · P1 Stability (STB‑1 ✅ STB‑3 ✅ STB‑5 ✅; 2 open).
+- **Next:** OUT‑5 (RAG quality) → STB‑2 (jobs survive restart) → STB‑4 (media backup).
+- **Pending restart:** M54 (agent path fix) + M56 (loop error surfacing) + M57 (WAL) activate on the next `server.py` restart.
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).

@@ -56,3 +56,8 @@ Thumbs.db
 
 # watchdog runtime log
 watchdog.log
+
+# SQLite WAL sidecars (STB-5)
+*.db-wal
+*.db-shm
+*.db-journal

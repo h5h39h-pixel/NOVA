@@ -29,13 +29,19 @@ DEFAULT_SETTINGS = {
 }
 
 def db():
-    c = sqlite3.connect(DB_PATH)
+    # timeout/busy_timeout let a writer wait for a lock instead of failing with "database is locked"
+    # under the app's concurrent loops + request handlers (STB-5).
+    c = sqlite3.connect(DB_PATH, timeout=5.0)
     c.row_factory = sqlite3.Row
+    c.execute("PRAGMA busy_timeout=5000")
+    c.execute("PRAGMA synchronous=NORMAL")   # durable across app crash; safe + fast with WAL
     return c
 
 def init_db():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     c = db()
+    c.execute("PRAGMA journal_mode=WAL")      # persistent on the file: readers don't block the writer
+
     c.executescript("""
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
     CREATE TABLE IF NOT EXISTS history  (id INTEGER PRIMARY KEY AUTOINCREMENT,

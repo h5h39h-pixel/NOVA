@@ -651,3 +651,18 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Restart note:** this edits `server.py`; the running instance keeps the old loops until restarted.
   M54 (agent path fix) + M56 both activate on the next `server.py` restart.
 - **Next:** STB-5 (SQLite WAL) / STB-2 (jobs survive restart).
+
+## M57 — STB-5: SQLite WAL + busy timeout (2026-06-30)  [P1 Stability]
+
+- **What:** `nova/core/db.py` — `db()` opens with `timeout=5.0` + `PRAGMA busy_timeout=5000` +
+  `PRAGMA synchronous=NORMAL`; `init_db` sets persistent `PRAGMA journal_mode=WAL`. WAL lets readers
+  and the writer proceed concurrently (the app has 4 background loops + request handlers all touching
+  the DB), and the busy timeout makes a contended writer wait instead of failing with
+  "database is locked".
+- **Safety:** backup uses the sqlite online backup API (`src.backup()`) which is WAL-consistent;
+  `synchronous=NORMAL` is durable across app crashes (only a power-loss could drop the last txn, and
+  daily snapshots mitigate). WAL sidecars (`*.db-wal`/`*.db-shm`) git-ignored.
+- **Verified:** `test_db_wal_and_busy_timeout` (journal_mode=wal, busy_timeout>=5000); full gate green.
+- **Restart note:** the running server keeps its current journal mode until `server.py` restarts
+  (WAL is then set on the live `control.db`). Activates alongside M54 + M56.
+- **Next:** OUT-5 (RAG retrieval quality) / STB-2 (jobs survive restart).

@@ -16,6 +16,15 @@ def test_history(tmpdb):
     assert n == 1
 
 
+def test_db_wal_and_busy_timeout(tmpdb):
+    """STB-5: the DB runs in WAL with a busy timeout so concurrent loops don't hit 'database is locked'."""
+    from nova.core.db import db
+    c = db()
+    assert c.execute("PRAGMA journal_mode").fetchone()[0].lower() == "wal"
+    assert c.execute("PRAGMA busy_timeout").fetchone()[0] >= 5000
+    c.close()
+
+
 def test_schema_version(tmpdb):
     from nova.core.db import db, SCHEMA_VERSION
     c = db(); v = c.execute("SELECT version FROM schema_version").fetchone()[0]; c.close()
