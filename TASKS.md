@@ -108,7 +108,7 @@ Mutating control is gated by `exec_allowed()` (localhost ok; LAN needs opt‑in)
 |---|---|---|---|
 | MED‑1 | **Image capture / image‑gen / video‑gen from the unified chat** | ✅ | M101 + M104. Composer buttons 📸/🎨/🎬 + natural chat commands (EN+AR). Results render **inline**. **M104 fix:** rewrote `showMedia` to poll **job status** (`/api/processes`) instead of the file URL → **zero console errors** during generation (was: benign 404 retries). Verified end‑to‑end. |
 | AVL‑1 | **Agent vision tasks** — "what's on my desktop?" + autonomous game play | ✅ | **All building blocks shipped & live‑verified:** "what's on my desktop?" (see_screen → VLM) ✅, mouse **move/click/drag** all verified live (drag 8,8→40,40 returned ok), UIA text entry ✅, perceive→act→observe loop (AVL‑2) ✅. The agent can watch a game and drive the mouse. **Honest residual (OS limit, not our code):** sustained autonomous game‑play that needs rapid *keystrokes* is bounded by this environment's synthetic‑keyboard suppression (Win11 input lock) — UIA SetValue works for text fields but not game key‑presses. Documented; not a code defect. |
-| AVL‑2 | Agent screen‑driven control loop helper (perceive→act→observe) | ✅ | M105. Satisfied by the ReAct controller (`agent_run` iterates up to `max_steps`, each step feeding the prior tool observation back) + the three perception tools (`see_screen`/`screen_awareness`/`find_element`) + `control`/`act_on_screen`, with the AGENT_FOOTER mandating the **LOOK → ACT → LOOK‑AGAIN** loop until the goal is met. The loop *is* the helper; no extra primitive needed. (Sustained game‑play reliability is still AVL‑1's 🟧 caveat — keyboard suppression, not the loop.) |
+| AVL‑2 | Agent screen‑driven control loop helper (perceive→act→observe) | ✅ | M105. Satisfied by the ReAct controller (`agent_run` iterates up to `max_steps`, each step feeding the prior tool observation back) + the three perception tools (`see_screen`/`screen_awareness`/`find_element`) + `control`/`act_on_screen`, with the AGENT_FOOTER mandating the **LOOK → ACT → LOOK‑AGAIN** loop until the goal is met. The loop *is* the helper; no extra primitive needed. (Sustained game‑play reliability is bounded by AVL‑1's documented OS keyboard‑suppression limit — not the loop.) |
 | CORE‑P | **Enforce the single‑user/local‑only CORE PRINCIPLE everywhere** | ✅ | M100. `docs/PRINCIPLES.md` + referenced in CLAUDE/STATUS/ROADMAP/PROJECT_PLAN/WORKFLOW. Permanent discovery‑log rule added to WORKFLOW. |
 
 ## P1 — Unified Workspace + Auto model (UWS · owner request)
@@ -142,10 +142,11 @@ capture/track path is opt‑in, local‑only, pausable, and non‑persistent by 
 | SV‑6 | **Privacy & safety controls** — master opt‑in, per‑capability toggles, pause/redact, status indicator, zero‑persistence default | ✅ | M61. Settings `screen_vision_enabled`/`vision_fps`/`vision_max_width`/`vision_quality`/`track_mouse`/`track_keyboard` (all OFF/safe by default); every route 403s unless its gate is on; stream/describe audited; nothing persisted. |
 | SV‑7 | **Tests + outcome verification** — stream lifecycle, throttling, privacy gates default‑off, tracking accuracy | ✅ | M61 backend (6 tests: JPEG grab, gates default‑off, frame when enabled, mouse/keyboard gates) + M63 render‑verified the Live page (nav, toggles off by default, describe button, zero console errors). |
 
-**Rollup:** **largely shipped (M61 backend + M63 UI).** SV‑1 ✅ stream · SV‑3 ✅ mouse · SV‑5 ✅ Live
-page · SV‑6 ✅ privacy · SV‑7 ✅ tests · SV‑2 🟧 on‑demand describe (continuous loop optional) · SV‑4 🟧
-focused‑window context (full keystroke capture deferred by privacy decision). Optional follow‑ups:
-auto‑narration loop, click‑event capture, wire the Live page directly to `act_on_screen`.
+**Rollup:** **Phase 7 complete (M61 backend + M63 UI + M105.4).** SV‑1 ✅ stream · SV‑3 ✅ mouse ·
+SV‑5 ✅ Live page · SV‑6 ✅ privacy · SV‑7 ✅ tests · SV‑2 ✅ on‑demand describe **+ opt‑in continuous
+narration loop** · SV‑4 ✅ focused‑window **+ opt‑in recent‑keystroke context** (privacy‑gated, in‑memory,
+auto‑stops on opt‑out). Optional future polish: click‑event capture in the recorder, wire the Live page
+directly to `act_on_screen`.
 
 ## 💡 Innovation backlog (IDEA · creative, in‑scope — single‑user/local‑only)
 

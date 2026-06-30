@@ -29,7 +29,7 @@ gated (check.py ✅ · 42/42 ✅) + live‑verified + documented + pushed, all s
 - **IDEA‑7 region watch → act** — `screen_if` gained a pinned `region` + an `absent` (text‑vanished) trigger.
 - **IDEA‑6 quality dashboard** — `/api/quality` records eval/health scores; Diagnostics "📈 Quality Trend" card.
 - **IDEA‑9 img2img refine** — "✨ Refine / edit" on generated images (verified base→refined PNG).
-- **IDEA‑4 hands‑free voice** (🟧 live‑loop) — 🎙️ listen→STT→chat→Piper‑TTS→listen; components verified.
+- **IDEA‑4 hands‑free voice** (✅) — 🎙️ listen→STT→chat→Piper‑TTS→listen; all legs verified.
 - **AVL‑2 closed** — the ReAct perceive→act→observe loop *is* the helper.
 - **IDEA‑1 visual macro recorder** (✅ M105.2) — record (pynput) + replay (workflow `control` steps),
   live‑verified. **The entire IDEA‑* innovation backlog is now ✅.**
@@ -82,8 +82,9 @@ Arabic STT WER measurement. Re‑run the eval tools (`agent_eval`/`rag_eval`/`ge
 
 _**Honest backlog HON‑1…12 essentially complete** (M81–M92): HON‑1 kill‑switch ✅, HON‑1b agent‑control
 toggle ✅, HON‑3 coverage ✅, HON‑4 persistent errors ✅, HON‑5 load/concurrency ✅, HON‑6 stream+web verify
-✅, HON‑8 lockfile ✅, HON‑10 injection‑fence 🟧, HON‑11 refactor ✅, HON‑12 CSP ✅; HON‑2/2b/7 🟧 (built +
-honest findings). Remaining: HON‑2c (deep Win11 focus), HON‑9 (needs a remote)._
+✅, HON‑8 lockfile ✅, HON‑10 injection defense ✅ (fence + detection, M105.4), HON‑11 refactor ✅, HON‑12
+CSP ✅, HON‑7 eval batteries ✅ (incl. measured STT WER, M105.4), HON‑2/2b ✅. Remaining: HON‑2c (deep Win11
+focus), HON‑9 (needs a remote — owner‑gated `gh auth`)._
 
 _Original roadmap shipped & smoke‑verified (P0/P1/P2/P3 + Phases 7/8). **The honest backlog is HON‑1…11**
 (`TASKS.md` top + `docs/honest-state.md`). ✅ here means "built + verified once," not "battle‑tested."_
@@ -105,7 +106,12 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 - **Frontend refactored (HON‑11, M78/M79):** `pages.js` (1440)→4 modules · `app.css` (1039)→4 cascade files · `server.py` toolkit routes → `nova/api/toolkit.py`. Behavior‑preserving (byte‑identical), render‑verified. New map: `docs/frontend-structure.md`.
 
 ## Fragile — works but needs improvement 🟧
-| Item | The issue |
+> **⚠ Historical (M81–M82 snapshot).** Most rows below were CLOSED in M105.2–M105.5 — see the M105.x
+> summaries above and `TASKS.md` (now all ✅). Kept for provenance: HON‑10 injection is now fence +
+> output‑side detection (browse/understand fenced); HON‑3 coverage = **56%**; HON‑7 batteries are
+> measured (agent 9/9, RAG 11/12, **STT EN ~93% / AR ~74% WER**). Read top‑of‑file for the live state.
+
+| Item | The issue (historical) |
 |---|---|
 | 🟠 **Agent GUI control — kill‑switch added (HON‑1, M81)** | Now has a **global panic stop**: an always‑visible ⛔ topbar button pauses ALL mouse/keyboard control + stops the agent (red banner, audited, verified). Residual: no *per‑action* confirmation for autonomous runs yet (HON‑1b) — use the kill‑switch + dry‑run. |
 | 🟠 **Prompt‑injection — mitigated, not solved (HON‑10, M82)** | Web results are now **fenced as untrusted data** + the agent has a SECURITY rule that observations are data, not instructions. A determined injection can still try; `browse`/`understand` page text isn't fenced yet and there's no output filter. Plus the HON‑1 kill‑switch is the backstop. |

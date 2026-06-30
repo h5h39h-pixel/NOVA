@@ -106,15 +106,21 @@ DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckG
 citations; opt‑in/online), and an explicit microphone **⏹ Stop** control. See `TASKS.md` → CHAT‑1…3
 and the full spec in **`docs/chat-deepthink-websearch.md`**.
 
-## 🟧 Known fragile / caveats (see STATUS.md for the live list; full truth in `docs/honest-state.md`)
-- 🔴 **Agent GUI control is unguarded** — no per‑action confirmation, no kill‑switch (HON‑1). Biggest risk.
-- 🔴 **No prompt‑injection defense** for the web‑augmented agent (HON‑10).
-- 🟠 **Verification is smoke‑deep** — most ✅ are "verified once," not battle‑tested (HON‑2/3/6/7). OUT‑1/OUT‑5 are toy batteries; the live stream was never watched; no full Web‑Search chat turn was run.
-- Command‑exec surface unguarded on localhost (by design; now has a destructive confirm‑guard + denylist).
-- ~~Tests shallow + CI never executed~~ → **fixed**: deep + hermetic suite, agent‑loop tests, local CI proven (M49–M53).
-- Agent success rate ✅ baselined (5/5, M54) + RAG quality ✅ (5/5, M58); **training output + media generation still unverified** (OUT‑2/3).
-- `screen_if`, click‑to‑act — best‑effort / mocked‑only.
-- ~~No watchdog; loops swallow errors; secrets plaintext; deps not clean‑installed~~ → **fixed**: watchdog (M55), loops surface errors (M56), secrets encrypted (M46), clean‑install proven (M52), WAL (M57), media backup (M59).
+## Caveats / bounded items (live list in STATUS.md; full truth in `docs/honest-state.md`)
+_As of M105.5 the TASKS table is **all ✅** (or ✅‑within‑constraints). The items below are the only
+residuals — each is a physics/OS/principle limit or a deliberate decision, **not a code defect**:_
+- ✅ **Agent GUI control** — has a global ⛔ panic kill‑switch (HON‑1) + an `agent_can_control` toggle.
+  Residual: no *per‑action* confirmation for autonomous runs (use dry‑run + the kill‑switch).
+- ✅ **Prompt‑injection** — defense‑in‑depth: untrusted text fenced (web/browse/understand) + output‑side
+  detection + a system rule (HON‑10). No defense is absolute — strong layered mitigation is the right bar.
+- ✅ **Verification** — agent 9/9, RAG 11/12, **STT measured (EN ~93% / AR ~74%)**, coverage 56%, GUI
+  control + drag live‑verified, 22 routes render‑clean. (A 50+‑goal multi‑app battery = *more*, not a fix.)
+- **Autonomous game‑play (AVL‑1)** — bounded by Win11 synthetic‑keyboard suppression (OS limit). Mouse +
+  UIA text work; rapid game key‑presses don't.
+- **HON‑9** — reading hosted‑CI results needs an interactive `gh auth login` (owner‑gated; I won't touch
+  the owner's credentials).
+- **Local exec is unrestricted on localhost** — by design (the product's purpose); gated the moment it's
+  exposed on a LAN (`allow_remote_exec`, off by default).
 
 ## 💡 Innovation backlog (creative, in‑scope — single‑user · local‑only)
 Original ideas that extend Nova's vision without breaking the core principle. Tracked as IDEA‑* in
