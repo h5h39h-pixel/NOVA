@@ -271,14 +271,21 @@ async def scheduler_loop():
         await asyncio.sleep(15)
 
 async def backup_loop():
-    """Daily consistent snapshot of the SQLite DB (rotated, last 14 kept)."""
-    from nova.services.backup import snapshot_db
+    """Daily consistent snapshot of the SQLite DB (rotated, last 14 kept) + incremental
+    media mirror (generated images/video/screenshots/uploads)."""
+    from nova.services.backup import snapshot_db, backup_media
     while True:
         try:
             p = await asyncio.to_thread(snapshot_db)
             log.info(f"DB snapshot written: {p}")
         except Exception as e:
             log.warning(f"DB snapshot failed: {e}"); record_error("backup_loop", e)
+        try:
+            m = await asyncio.to_thread(backup_media)
+            if m["copied"]:
+                log.info(f"media backup: mirrored {m['copied']}/{m['total']} files ({m['bytes']//1024} KB)")
+        except Exception as e:
+            log.warning(f"media backup failed: {e}"); record_error("backup_loop", e)
         await asyncio.sleep(24 * 3600)
 
 # ---- websocket

@@ -87,6 +87,25 @@ def test_backup_restore_roundtrip(tmp_path, monkeypatch, tmpdb):
     assert B.restore_backup({"version": 99}) is None                   # unrecognized bundle
 
 
+def test_backup_media_mirror(tmp_path, monkeypatch):
+    """STB-4: media mirror copies new/changed files, is idempotent, and a file deleted from the
+    live folder still survives in the mirror."""
+    import nova.services.backup as B
+    src = tmp_path / "uploads"; (src / "sub").mkdir(parents=True)
+    (src / "a.png").write_bytes(b"x" * 10)
+    (src / "sub" / "b.txt").write_text("hi", encoding="utf-8")
+    mirror = tmp_path / "mirror"
+    monkeypatch.setattr(B, "UPLOAD_DIR", src)
+    monkeypatch.setattr(B, "MEDIA_MIRROR", mirror)
+    r = B.backup_media()
+    assert r["copied"] == 2 and r["total"] == 2
+    assert (mirror / "a.png").exists() and (mirror / "sub" / "b.txt").exists()
+    assert B.backup_media()["copied"] == 0                      # idempotent (nothing changed)
+    (src / "a.png").unlink()
+    B.backup_media()
+    assert (mirror / "a.png").exists()                          # deleted source survives in mirror
+
+
 def test_ollama_models_mocked(monkeypatch):
     import nova.services.ollama as O
     def fake(url, **k):

@@ -5,13 +5,40 @@ bundle back in (skips existing conversations, never restores auth). Depends on n
 nova.services (audit, training.rebuild_combined) + config (dataset paths)."""
 import json
 import time
+import shutil
 import sqlite3
-from config import DS_BASE, DS_LEARNED, DB_PATH
+from config import DS_BASE, DS_LEARNED, DB_PATH, UPLOAD_DIR
 from nova.core.db import db, get_settings, set_settings
 from nova.services.audit import audit
 from nova.services.training import rebuild_combined
 
 BACKUP_DIR = DB_PATH.parent / "backups"
+MEDIA_MIRROR = BACKUP_DIR / "media"
+
+
+def backup_media():
+    """STB-4: incremental mirror of generated media + uploads (UPLOAD_DIR) into
+    data/backups/media. Copies files that are new or changed in size; never deletes mirror
+    copies, so a file accidentally removed from the live folder still survives here. The DB
+    snapshots cover state; this covers the binary assets the DB only references by name."""
+    if not UPLOAD_DIR.exists():
+        return {"copied": 0, "total": 0, "bytes": 0}
+    MEDIA_MIRROR.mkdir(parents=True, exist_ok=True)
+    copied = total = nbytes = 0
+    for src in UPLOAD_DIR.rglob("*"):
+        if not src.is_file():
+            continue
+        total += 1
+        try:
+            dst = MEDIA_MIRROR / src.relative_to(UPLOAD_DIR)
+            if dst.exists() and dst.stat().st_size == src.stat().st_size:
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            copied += 1; nbytes += src.stat().st_size
+        except Exception:
+            pass
+    return {"copied": copied, "total": total, "bytes": nbytes}
 
 
 def snapshot_db(keep=14):

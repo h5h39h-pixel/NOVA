@@ -677,3 +677,17 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Also restarted the server** (authorized): live DB is now WAL; M54 + M56 + M57 active; live suite
   `run_tests.py` = 42/42; health endpoint clean (metrics_loop_alive, 0 errors).
 - **Next:** STB-4 (media backup), STB-2 (jobs survive restart), then P2 docs/features.
+
+## M59 — STB-4: media/upload backup (2026-06-30)  [P1 Stability]
+
+- **What:** `nova/services/backup.py` -> `backup_media()`: incremental mirror of `UPLOAD_DIR`
+  (generated images/video, screenshots, browse captures, uploads) into `data/backups/media`. Copies
+  new/changed files (by size); never deletes mirror copies, so a file removed from the live folder
+  still survives. Wired into the daily `backup_loop`; manual `POST /api/backup/snapshot` now returns
+  a `media` summary too.
+- **Why:** only the DB was snapshotted; the DB references media by name but the binary assets had no
+  backup. STB-4 closes that gap.
+- **Verified:** `test_backup_media_mirror` (copy / idempotent / survives source deletion); gate green;
+  this edits server.py + a service -> active after the next restart (loop), but the manual endpoint
+  uses the live service immediately on restart.
+- **Next:** STB-2 (jobs survive restart), then P2 docs/features.
