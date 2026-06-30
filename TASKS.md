@@ -25,7 +25,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | ID | Task | Status | Notes / issue |
 |---|---|---|---|
 | TST‑1 | Deepen **unit tests** per service (real assertions, not "returns 200") | ✅ | M49. `tests/test_services_deep.py` — 10 tests with real assertions: audit, notifications+category, metrics history, chat conv_touch/count, run_schedule DB update, run_action webhook/kb branches (mocked), backup↔restore round-trip, ollama_models (mocked), learning_stats (mocked), files.extract_text. |
-| TST‑2 | **Hermetic test mode** — mock Ollama/ComfyUI so tests don't need them running | ⬜ | Live suite is environment‑coupled today. |
+| TST‑2 | **Hermetic test mode** — mock Ollama/ComfyUI so tests don't need them running | ✅ | M50. `conftest.py` autouse `_no_network` fixture blocks real outbound HTTP at the one chokepoint (`urllib.request.urlopen`); `http_ok`→False, `http_json` raises so callers degrade; service‑level tests mock above it. Full pytest suite (63) passes with **network fully blocked** — no Ollama/ComfyUI required. (Live `run_tests.py` is still environment‑coupled by design — it tests the running stack.) |
 | TST‑3 | Agent‑loop integration tests with a mocked model (tool dispatch, JSON parse, stop) | ⬜ | |
 | TST‑4 | Clean‑venv install test — prove pinned `requirements.txt` installs together | 🟧 | Pinned to *installed* versions; never clean‑installed. |
 | TST‑5 | Make CI actually run (local `act` or a Git remote) | 🟧 | `.github/workflows/ci.yml` written, **never executed**. |
@@ -89,7 +89,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **P0 Security: COMPLETE ✅** · **P0 Tests: in progress** (TST‑1 ✅; 5 open) · P1 Outcome (5) · P1 Stability (5).
-- **Next:** TST‑2 (hermetic mode) → TST‑3 (agent‑loop tests) → TST‑5 (make CI run).
+- **P0 Security: COMPLETE ✅** · **P0 Tests: in progress** (TST‑1 ✅ TST‑2 ✅; 4 open) · P1 Outcome (5) · P1 Stability (5).
+- **Next:** TST‑3 (agent‑loop tests) → TST‑5 (make CI run) → TST‑4 (clean‑venv install).
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).

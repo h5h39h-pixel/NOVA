@@ -541,3 +541,17 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   the service layer (the units that were isolated by the M34–M35 refactor specifically to enable this).
 - **Verified:** `pytest tests/test_services_deep.py` → 10 passed; full gate green; live suite 42/42.
 - **Next:** TST-2 (hermetic test mode — mock Ollama/ComfyUI so the live suite isn't required).
+
+## M50 — TST-2: hermetic test mode (network-blocked pytest) (2026-06-30)  [P0 Tests]
+
+- **What:** `tests/conftest.py` gains an autouse `_no_network` fixture that monkeypatches
+  `urllib.request.urlopen` to raise `_BlockedNetwork`. That's the single chokepoint both `http_ok`
+  and `http_json` use, so ALL outbound HTTP (Ollama/ComfyUI/webhooks) is blocked in tests: `http_ok`
+  catches it -> False; `http_json` propagates it -> callers degrade gracefully. Tests needing a
+  service reply mock the service function (e.g. `O.http_json`) which sits above the block.
+- **Why:** the pytest suite must run in CI / a clean machine with nothing else started. This proves
+  it does and prevents tests from silently coupling to a live service.
+- **Verified:** full pytest suite = **63 passed with network fully blocked**; quality gate green.
+- **Note:** `run_tests.py` (live, 42) remains environment-coupled by design — it validates the
+  actually-running stack, which is a different (and still useful) guarantee.
+- **Next:** TST-3 (agent-loop integration tests with a mocked model).
