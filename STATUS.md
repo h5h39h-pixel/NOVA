@@ -12,29 +12,31 @@ _Last updated: 2026-06-30_
 
 ---
 
-## Where we are right now
-The hardening campaign is **complete**: security locked down, a real + hermetic test suite, outcome
-verification (agent/RAG/generation/training all measured), and resilience (watchdog, WAL, backups, job
-persistence). On top of that, two new feature phases shipped — **Screen Vision** (live page) and
-**Perception & Control** (read‑&‑understand, window awareness, UI element detection, precise mouse/
-keyboard) — plus chat+agent DeepThink/Web Search and GPU STT. The system is feature‑complete,
-architecturally clean, verified, and documented. Remaining work is optional real‑hardware testing and
-the permanent doc‑upkeep rule.
+## Where we are right now (honest)
+The original roadmap (P0→P3 + Phases 7/8) is **built and smoke‑verified**, and the architecture / security
+baseline / test scaffolding / feature breadth are genuinely strong. **But** a candid self‑audit
+(`docs/honest-state.md`) found the real weakness is **depth of real‑world verification** — the
+screen‑control and agent‑reliability features are powerful, **under‑guarded, and proven mostly at the
+unit/smoke level**, not in sustained real use. **Most important gap: agent GUI control has NO per‑action
+confirmation and no kill‑switch** (HON‑1), and there's **no prompt‑injection defense** for the
+web‑augmented agent (HON‑10). Treat this as a **sharp tool, not a finished appliance.** The true backlog
+is **HON‑1…11** in `TASKS.md`.
 
 ## 🚫 Explicitly excluded (do not build)
 - **Multi‑user / accounts / roles / RBAC** — this is a personal single‑user system.
 - **RTL mirroring** — Arabic stays text‑only on the fixed LTR layout.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
-## Next 3 actions (highest priority)
-1. _(backlog clear)_ — optional: real‑hardware mobile testing (POL‑3), more agent goal‑battery breadth (OUT‑1).
-2. Keep the six files current each session (DOC‑1, permanent).
-3. Re‑run the eval tools after model/dep updates (`agent_eval`, `rag_eval`, `gen_eval`, `nova_eval`, `bench_model`).
+## Next 3 actions (highest priority) — from the honest self‑audit
+1. **HON‑1** Confirmation/guard + global panic stop for agent GUI control (mouse/keyboard/`control`/
+   `act_on_screen` are unguarded on localhost). **Top safety priority.**
+2. **HON‑10** Prompt‑injection defense for the web‑augmented agent (it holds PC‑control tools while
+   reading untrusted web text).
+3. **HON‑2 / HON‑3 / HON‑7** Real GUI integration test · coverage measurement · honest larger eval
+   batteries (replace the toy OUT‑1/OUT‑5 smoke tests).
 
-_**All roadmap tasks complete.** P0 Security + Tests ✅. P1 Outcome (OUT‑1…5) ✅. P1 Stability (STB‑1…5) ✅.
-P2 Docs (DOC‑1…3) ✅. P2 Features (FEA‑1…4) ✅. P3 Polish (POL‑1…4) ✅ (POL‑3 = automated mobile‑viewport;
-real‑hardware optional). Phases 7 (Screen Vision) + 8 (Perception & Control) shipped. Chat+Agent
-DeepThink/Web Search, Read&Understand, precise mouse/keyboard/window — all done & verified._
+_Original roadmap shipped & smoke‑verified (P0/P1/P2/P3 + Phases 7/8). **The honest backlog is HON‑1…11**
+(`TASKS.md` top + `docs/honest-state.md`). ✅ here means "built + verified once," not "battle‑tested."_
 
 _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent baseline 5/5 after a real path bugfix, M54) · STB‑1 ✅ (watchdog python‑stub fix, M55) · STB‑3 ✅ (loops surface errors, M56) · STB‑5 ✅ (SQLite WAL, M57). **⚠ Restart `server.py`** to activate M54 + M56 + M57 on the live instance._
 
@@ -54,10 +56,13 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 ## Fragile — works but needs improvement 🟧
 | Item | The issue |
 |---|---|
-| **Command‑exec surface** | Hardened (P0 Security complete): confirm‑guard (SEC‑1) + centralized denylist (SEC‑2) + strict CSP/headers (SEC‑3) + at‑rest key encryption (SEC‑4) + HTTPS turnkey (SEC‑5) + call‑site audit incl. the `screen lang` injection fix (SEC‑6). Residual by design: localhost exec is unrestricted (the product's purpose) — gated on LAN. No global kill‑switch (optional). |
-| **Agent reliability** | Loop **mechanics integration‑tested** (TST‑3, M51) **and a real success baseline measured** (OUT‑1, M54: **5/5** with qwen2.5:14b after fixing a write/read path bug the battery caught). Baseline is a small safe‑tool battery — broader/destructive‑adjacent goals still unmeasured. Live server needs a restart to pick up the path fix. |
-| **Tests** | **P0 Tests complete** (M49–M53): deep per‑service assertions, **hermetic** pytest (network‑blocked), agent‑loop integration tests, clean‑venv install proof + local CI runner, and live frontend interaction tests. Suite = 72 hermetic + 4 live. Remaining test‑adjacent gap is **outcome verification** (does the agent/training/generation actually succeed?) — that's the P1 Outcome phase, not unit tests. |
-| **`screen_if` (conditional screen actions)** | Implemented + unit‑tested **with a mocked screen**; never run against a real screen / real vision matching. |
+| 🔴 **Agent GUI control is UNGUARDED** (HON‑1) | Mouse/keyboard/`control`/`act_on_screen` are gated only by `exec_allowed()` (always true on localhost) with **no per‑action confirmation and no kill‑switch**. A Full‑Access agent can click/type/delete anywhere on the PC unsupervised. **Highest‑priority risk.** |
+| 🔴 **No prompt‑injection defense** (HON‑10) | The agent reads untrusted web text (Web Search / browse) **while holding PC‑control tools**. A malicious page could try to steer it. No mitigation today. |
+| 🟠 **Verification is smoke‑deep** (HON‑2/3/6/7) | Most ✅ are "verified once," not battle‑tested: no real GUI‑drive integration test, no coverage number, the live stream was never watched streaming, no full Web‑Search chat turn run, OUT‑1/OUT‑5 are toy batteries. |
+| **Command‑exec surface** | Hardened (P0 Security complete): confirm‑guard (SEC‑1) + centralized denylist (SEC‑2) + strict CSP/headers (SEC‑3) + at‑rest key encryption (SEC‑4) + HTTPS turnkey (SEC‑5) + call‑site audit incl. the `screen lang` injection fix (SEC‑6). Residual by design: localhost exec is unrestricted (the product's purpose) — gated on LAN. No global kill‑switch (HON‑1). |
+| **Agent reliability** | Loop mechanics integration‑tested (TST‑3). OUT‑1 baseline is **5/5 on a tiny 5‑goal SAFE battery** — a smoke test, **not** a reliability measure. Real success on hard/ambiguous/multi‑app goals is **unknown** (HON‑7). |
+| **Tests** | **P0 Tests complete** (M49–M53): deep per‑service assertions, **hermetic** pytest (network‑blocked), agent‑loop integration tests, clean‑venv install proof + local CI runner, and live frontend interaction tests. Suite ≈ 88 hermetic + 4 live. **Gaps:** no coverage measurement (HON‑3), no real GUI‑drive integration test (HON‑2), no soak/concurrency test (HON‑5); eval batteries are toy‑sized (HON‑7). |
+| **`screen_if` (conditional screen actions)** | Verified on the **real** screen (OUT‑4, M75: OCR'd 5024 chars, matched a real word → fired) + exposed in the Automation UI (FEA‑4). Vision‑mode matching (VLM instead of OCR) still lightly tested. |
 | **Image/video generation** | **Image verified (OUT‑3, M67):** SDXL produced a correct 1024×1024 image in 9.1s via the live API+ComfyUI (visually confirmed; `scripts/gen_eval.py`). Video (LTX) uses the same path but is not yet auto‑verified (slower). |
 | **Training pipeline** | The fine‑tune scripts live **outside the repo** in `C:\AI\training` (`learn.ps1`, `train_lora.py`, `harvest_chats.py`). We only orchestrate + parse logs — never verified they produce a good model. |
 | **Click‑to‑act** | **Improved (FEA‑1, M70):** `act_on_screen` tries precise UI‑Automation element detection first (exact center) → vision only as fallback. Reliable where apps expose UIA names; vision fallback still imprecise at 4K for custom‑drawn UIs. |

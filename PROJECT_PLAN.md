@@ -8,9 +8,13 @@ _Last updated: 2026-06-30._ **Update on every session (permanent rule).**
 
 ---
 
-## 1. Where it stands
-Feature‑complete, cleanly architected, under git, fully local. The remaining work is **maturity**:
-security, real tests, outcome verification, and resilience — in that order.
+## 1. Where it stands (honest)
+Feature‑complete in breadth, cleanly architected, under git, fully local — and the original P0→P3 +
+Phases 7/8 roadmap is shipped & smoke‑verified. **The honest remaining work (Phase 9 / HON‑1…11,
+`docs/honest-state.md`) is the part that matters most: it is under‑guarded and verification‑shallow where
+it counts.** Specifically: agent GUI control has no confirmation/kill‑switch (HON‑1), there's no
+prompt‑injection defense (HON‑10), and most features are "verified once," not battle‑tested. **Sharp
+tool, not a finished appliance.**
 
 ## 2. The campaign (phases, by priority)
 Foundation is done (Safety Net, modular refactor, UI, OWUI 0.10.1 — BUILD_LOG M28–M41).
@@ -25,7 +29,8 @@ The active plan:
 | **P‑5 Docs** | P2 — upkeep | six files always current; README/SETUP refreshed; training pipeline documented | ✅ ongoing (DOC‑1…3) |
 | **P‑6 Features/Polish** | P2/P3 | click‑to‑act reliability, STT, voice; perf budget, a11y, mobile | ✅ done (FEA‑1…4, POL‑1…4) |
 | **P‑7 AI Screen Vision** | P1 — core feature | real‑time screen stream + mouse/keyboard tracking + continuous VLM loop, fused into a live "see‑what‑I‑see & act" session; privacy‑first (opt‑in, local, non‑persistent) | 🟦 largely shipped (SV‑1…7) |
-| **P‑8 Perception & Control** | P1 — core feature | read & understand (OCR+VLM, files/images/screen) · window‑layout awareness (active/all windows, measurements, DPI) · UI element detection · precise mouse/keyboard control — as agent tools, chat commands, APIs | 🟦 PC‑1 ✅ (PC‑2…6) |
+| **P‑8 Perception & Control** | P1 — core feature | read & understand (OCR+VLM, files/images/screen) · window‑layout awareness (active/all windows, measurements, DPI) · UI element detection · precise mouse/keyboard control — as agent tools, chat commands, APIs | ✅ shipped (PC‑1…6) |
+| **P‑9 Hardening v2 (honest gaps)** | P0/P1 — the real remaining work | guard + kill‑switch for agent GUI control (HON‑1); prompt‑injection defense (HON‑10); real GUI integration test; coverage; honest eval batteries; persistent observability; soak/concurrency; real lockfile + CI on a remote | ⬜ **NEW, top priority** (HON‑1…11) |
 
 Estimates are deliberately omitted — work proceeds **one task at a time, highest priority first,
 fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each phase.
@@ -57,9 +62,16 @@ fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each p
 
 ## 5. Definition of Done & risks
 - **DoD:** see `WORKFLOW.md` quality gate (lint + tests + live suite + render‑if‑visual + docs + commit).
-- **Top risks:** (1) command‑exec surface = effectively RCE if exposed → Phase 1; (2) shallow tests
-  hide real bugs → Phase 2; (3) unverified outcomes (agent/training/generation) → Phase 3;
-  (4) no watchdog → Phase 4. Each is the explicit goal of its phase.
+- **Top risks (current, honest):**
+  1. 🔴 **Agent GUI control is unguarded** — no confirmation, no kill‑switch; Full‑Access agent can
+     click/type/delete anywhere → **Phase 9 / HON‑1**.
+  2. 🔴 **Prompt injection** — web‑augmented agent reads untrusted text while holding control tools →
+     **HON‑10**.
+  3. 🟠 **Verification is smoke‑deep** — most ✅ are "once," not battle‑tested; toy eval batteries →
+     **HON‑2/3/7**.
+  4. Localhost‑trust security model — anything beyond localhost is dangerous.
+  5. Single‑flight chat (`chat_lock`) + in‑memory error log (lost on restart) → HON‑4/5.
+  (Historical, now addressed: exec surface hardened, tests scaffolded, outcomes smoke‑verified, watchdog.)
 
 ## 6. Phase 7 — AI Screen Vision (design)
 A core feature added 2026‑06‑30. Goal: the AI perceives the live screen + input in real time and can

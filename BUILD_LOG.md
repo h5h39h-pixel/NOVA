@@ -932,3 +932,23 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   (Outcome OUT-1…5, Stability STB-1…5), P2 (Docs DOC-1…3, Features FEA-1…4), P3 (Polish POL-1…4), plus
   Phases 7 (Screen Vision) & 8 (Perception & Control). STATUS/PROJECT_PLAN updated to reflect completion.
 - **Verified:** gate green; server restarted; live suite 42/42; Settings TTS slider render-verified.
+
+## M77 — Honest self-audit recorded into the project files (2026-06-30)  [Docs/truth]
+
+- **Why:** owner asked for the unpolished, truthful state to be reflected in the files (not just the
+  green version).
+- **Added `docs/honest-state.md`** — the full self-audit: not‑implemented, fragile/unstable, hardest
+  parts (incl. the earlier "claimed UI changes I hadn't rendered" failure), what's missing to be ideal,
+  and end‑user + future‑dev tips. No sugarcoating.
+- **TASKS.md:** new top section "⚠ Honest gaps (self‑audit)" with **HON‑1…11** (priorities): HON‑1 guard +
+  kill‑switch for agent GUI control (P0), HON‑10 prompt‑injection defense (P0/P1), HON‑2 real GUI
+  integration test, HON‑3 coverage, HON‑7 honest eval batteries, HON‑4/5/6 observability/soak/end‑to‑end,
+  HON‑8/9/11 lockfile/CI/refactor. Re‑graded overstated ✅ honestly; rollup now points at HON‑* first.
+- **STATUS.md:** "Where we are" rewritten truthfully; 3 critical fragile rows added (🔴 unguarded control,
+  🔴 no prompt‑injection defense, 🟠 smoke‑deep verification); Next‑3‑actions = HON‑1/HON‑10/HON‑2‑3‑7;
+  corrected screen_if (now real‑verified) + agent‑reliability (toy battery) rows.
+- **ROADMAP.md / PROJECT_PLAN.md:** added **Phase 9 — Hardening v2 (honest gaps)**; refreshed caveats +
+  top‑risks to the real ones (unguarded control, prompt injection, smoke‑deep verification).
+- **README.md:** "Known limitations & safety" section up top. **CLAUDE.md:** honest‑state pointer so every
+  future session sees HON‑1/HON‑10 + the "✅ = verified once" caveat.
+- **Verified:** gate green (docs‑only). The files now reflect the real state, not the polished one.

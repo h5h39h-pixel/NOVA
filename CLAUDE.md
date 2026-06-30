@@ -10,6 +10,15 @@ Before, during, and after EVERY coding session you MUST review and update these:
 orient → pick the highest-priority unblocked task (P0→P3) → implement in small steps → test after
 each → render any visual change → mark status → append a dated `BUILD_LOG.md` entry → commit.
 
+## ⚠ Honest state (read `docs/honest-state.md`)
+The original roadmap is shipped & **smoke‑verified**, NOT battle‑tested. **Real remaining work = HON‑1…11**
+in TASKS.md, top priority:
+- **HON‑1:** agent GUI control (mouse/keyboard/`control`/`act_on_screen`) has **no confirmation and no
+  kill‑switch** — add a guard before adding more capability.
+- **HON‑10:** no prompt‑injection defense for the web‑augmented agent.
+- Treat ✅ as "verified once." Re‑verify before relying on anything unattended. Eval scripts are the
+  regression guardrails — run them after model/dep/prompt changes.
+
 ## Priority order (P0 highest)
 P0 Security (command-exec surface, auth, HTTPS) · P0 Real tests · P1 Outcome verification ·
 P1 Stability · P2 Docs · P2 Features · P3 Polish.

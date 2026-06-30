@@ -27,7 +27,11 @@ continuous learning — private, offline‑capable, and owned end‑to‑end. Th
    continuous AI vision loop so the AI sees exactly what the user sees and can act on it. 🟦 largely shipped (SV‑1…7)
 8. **Phase 8 — Perception & Control** (P1): read & understand anything (OCR+VLM for files/images/screen),
    full window‑layout awareness (active window, all windows, measurements, DPI), UI element detection, and
-   precise mouse/keyboard control — as agent tools, chat commands, and APIs. 🟦 PC‑1 ✅ (PC‑2…6)
+   precise mouse/keyboard control — as agent tools, chat commands, and APIs. ✅ shipped (PC‑1…6)
+9. **Phase 9 — Hardening v2 (honest gaps)** (P0/P1): close the real gaps from the self‑audit — **guard +
+   kill‑switch for agent GUI control (HON‑1)**, **prompt‑injection defense (HON‑10)**, real GUI
+   integration test, coverage, honest eval batteries, persistent observability, soak/concurrency, real
+   lockfile + CI. ⬜ **NEW — top priority** (HON‑1…11). See `docs/honest-state.md`.
 
 Foundation phases **0 (Safety Net)**, **modular refactor**, **UI**, and the **OWUI 0.10.1 upgrade**
 are ✅ complete (see BUILD_LOG M28–M41).
@@ -92,7 +96,10 @@ DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckG
 citations; opt‑in/online), and an explicit microphone **⏹ Stop** control. See `TASKS.md` → CHAT‑1…3
 and the full spec in **`docs/chat-deepthink-websearch.md`**.
 
-## 🟧 Known fragile / caveats (see STATUS.md for the live list)
+## 🟧 Known fragile / caveats (see STATUS.md for the live list; full truth in `docs/honest-state.md`)
+- 🔴 **Agent GUI control is unguarded** — no per‑action confirmation, no kill‑switch (HON‑1). Biggest risk.
+- 🔴 **No prompt‑injection defense** for the web‑augmented agent (HON‑10).
+- 🟠 **Verification is smoke‑deep** — most ✅ are "verified once," not battle‑tested (HON‑2/3/6/7). OUT‑1/OUT‑5 are toy batteries; the live stream was never watched; no full Web‑Search chat turn was run.
 - Command‑exec surface unguarded on localhost (by design; now has a destructive confirm‑guard + denylist).
 - ~~Tests shallow + CI never executed~~ → **fixed**: deep + hermetic suite, agent‑loop tests, local CI proven (M49–M53).
 - Agent success rate ✅ baselined (5/5, M54) + RAG quality ✅ (5/5, M58); **training output + media generation still unverified** (OUT‑2/3).

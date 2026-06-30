@@ -50,6 +50,20 @@ own hardware.
 - **Proactive intelligence** — Co‑Pilot suggestions, predictive habits, insights, daily briefing,
   achievements, usage analytics.
 
+## ⚠️ Known limitations & safety (read before unattended use)
+This is a capable but **not finished‑appliance** system. The honest state is in
+**[`docs/honest-state.md`](docs/honest-state.md)**. The two things you must know:
+- **Agent GUI control has no confirmation and no kill‑switch.** In Full‑Access mode the agent can run any
+  command and **click/type/delete anywhere on the PC** unsupervised. Use dry‑run, watch it, don't leave it
+  unattended. (Tracked as HON‑1.)
+- **No prompt‑injection defense.** With Web Search / browse on, the agent reads untrusted web text while
+  holding PC‑control tools — a malicious page could try to steer it. Treat web‑augmented agent runs as the
+  riskiest mode. (HON‑10.)
+- **Keep it on localhost.** The security model is "localhost is trusted." Exposing it on the LAN with
+  `allow_remote_exec` lets others control your PC.
+- Features marked ✅ are **verified once, not battle‑tested.** Re‑run the eval scripts and trust your own
+  experience. The full backlog of real gaps is **HON‑1…11** in `TASKS.md`.
+
 ## 🚀 Quick start
 ```powershell
 cd C:\AI\agent-workspace\control-center

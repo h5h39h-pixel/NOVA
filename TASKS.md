@@ -7,6 +7,31 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 
 ---
 
+## ⚠ Honest gaps (self‑audit 2026‑06‑30) — the real remaining work
+
+These come from a candid self‑audit (`docs/honest-state.md`). They are **open and unbuilt** — the rest
+of this file's ✅ marks mean "code done + smoke‑verified once," **not** "battle‑tested." Read this section
+as the truthful backlog; the safety items (HON‑1, HON‑10) are the highest priority in the whole project.
+
+| ID | Task | Priority | Status | Notes |
+|---|---|---|---|---|
+| HON‑1 | **Confirmation/guard + global panic stop for agent GUI control** | P0 | ⬜ | Mouse/keyboard/`control`/`act_on_screen` are gated only by `exec_allowed()` (always true on localhost) with **no per‑action confirmation**. Full‑Access agent can click/type/delete anywhere unsupervised. Add a confirm step for control actions + a one‑click "stop all control" kill‑switch. **Biggest risk in the project.** |
+| HON‑10 | **Prompt‑injection defense for web‑augmented agent** | P0/P1 | ⬜ | Agent ingests untrusted web text (Web Search / browse) **while holding PC‑control tools**. A malicious page could steer it. No mitigation today — add content isolation / instruction‑boundary guards / tool‑use confirmation when web content is in context. |
+| HON‑2 | **Real GUI integration test** (drive an actual app via UIA: find → click → type → verify) | P1 | ⬜ | Control stack (PC‑4/5, FEA‑1) is only unit/smoke‑verified; integrated behavior unproven. |
+| HON‑3 | **Test‑coverage measurement** (`coverage.py`) | P1 | ⬜ | "Tested" currently has no number; whole branches are untested. |
+| HON‑7 | **Honest, larger eval batteries** | P1 | ⬜ | OUT‑1 (5 safe goals) + OUT‑5 (5 toy docs) are smoke tests. Need 50+ agent goals (incl. hard/multi‑app), RAG over a real corpus (measured recall), Arabic STT **WER** on real audio, and a DeepThink A/B. |
+| HON‑4 | **Persistent observability** (errors/metrics to disk, not memory) | P1 | ⬜ | `/api/errors` resets on restart. |
+| HON‑5 | **Load / soak / concurrency testing** | P1 | ⬜ | WAL untested under concurrent writers; chat is single‑flight (`chat_lock`). |
+| HON‑6 | **Verify live stream + Web‑Search chat turn end‑to‑end** | P1 | ⬜ | SV‑1 stream never watched streaming (FPS/backpressure/longevity); no full `websearch=true` chat turn run to a cited answer. |
+| HON‑8 | **Real lockfile** (hashes / pip‑compile) | P2 | ⬜ | Only direct deps pinned; transitive float — clean‑install passed *today*, not reproducible. |
+| HON‑9 | **CI actually running on a remote** | P2 | ⬜ | `ci_local.py` proves local only; GitHub Actions never executed. |
+| HON‑11 | **Refactor `static/js/pages.js`** (one enormous file) | P2 | ⬜ | Maintainability risk as features pile on. |
+
+**Honest re‑grading of some ✅ above:** OUT‑1, OUT‑5 (toy batteries) · FEA‑1 (UIA‑only; vision fallback
+imprecise) · SV‑1 (stream unwatched) · STB‑2 (survival‑as‑record, not resume) · POL‑3 (viewport‑only) ·
+FEA‑2 (GPU path verified, Arabic accuracy not measured). They are "done to a smoke‑test bar," not proven
+robust — see `docs/honest-state.md`.
+
 ## P0 — Security (command‑execution surface · auth · HTTPS)
 
 | ID | Task | Status | Notes / issue |
@@ -142,8 +167,13 @@ Core chat UX, requested 2026‑06‑30. Toggle buttons styled like the existing 
 ---
 
 ### Rollup
-- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** · P1 Outcome (OUT‑1 ✅; 4 open) · P1 Stability (STB‑1 ✅ STB‑3 ✅ STB‑5 ✅; 2 open).
-- **Next:** OUT‑5 (RAG quality) → STB‑2 (jobs survive restart) → STB‑4 (media backup).
-- **Pending restart:** M54 (agent path fix) + M56 (loop error surfacing) + M57 (WAL) activate on the next `server.py` restart.
-- **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
-  bespoke UI, Nova Brain, OWUI 0.10.1).
+- **Original roadmap (P0→P3 + Phases 7/8): all items shipped & smoke‑verified.** BUT see the **⚠ Honest
+  gaps (HON‑1…11)** at the top — that is the real remaining work, and it is **not** done.
+- **Highest priority now (safety): HON‑1** (confirmation/kill‑switch for agent GUI control) and **HON‑10**
+  (prompt‑injection defense). These outrank everything else — the control surface is currently
+  unguarded.
+- **Then:** HON‑2 (real GUI integration test) · HON‑3 (coverage) · HON‑7 (honest eval batteries) ·
+  HON‑4/5/6 (observability, soak, end‑to‑end stream/web) · HON‑8/9/11 (lockfile, CI remote, refactor).
+- **Reality check:** ✅ in this file = "built + verified once," not "battle‑tested." Re‑verify before
+  trusting unattended. Full truth: `docs/honest-state.md`.
+- **Completed foundation:** see `BUILD_LOG.md` milestones M28–M76.
