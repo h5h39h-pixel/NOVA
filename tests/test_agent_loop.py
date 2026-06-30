@@ -117,3 +117,15 @@ def test_agent_tool_write_confined():
     from nova.services.agent import agent_tool
     out = agent_tool("write_file", {"path": "C:\\Windows\\x.txt", "content": "x"})
     assert out.startswith("BLOCKED")                                 # outside the safe output root
+
+
+def test_agent_write_read_roundtrip(monkeypatch, tmp_path):
+    """OUT-1 regression: a relative path (even one the model prefixes with 'agent-output/')
+    must write to AND read back from the same place — no doubled directory, no CWD mismatch."""
+    import nova.services.agent as A
+    monkeypatch.setattr(A, "SAFE_WRITE_ROOT", tmp_path)
+    w = A.agent_tool("write_file", {"path": "agent-output/note.txt", "content": "hello-42"})
+    assert "wrote" in w
+    assert (tmp_path / "note.txt").exists() and not (tmp_path / "agent-output").exists()
+    assert "hello-42" in A.agent_tool("read_file", {"path": "note.txt"})
+    assert "hello-42" in A.agent_tool("read_file", {"path": "agent-output/note.txt"})

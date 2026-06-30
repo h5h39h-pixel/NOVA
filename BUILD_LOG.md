@@ -603,3 +603,25 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   4 live frontend); quality gate green.
 - **Milestone:** this completes **P0 Tests** (TST-1..6) — after P0 Security, the second P0 phase is done.
 - **Next:** P1 Outcome verification, starting with OUT-1 (agent goal battery / real success baseline).
+
+## M54 — OUT-1: agent goal battery + real write/read path bugfix (2026-06-30)  [P1 Outcome]
+
+- **What:** `scripts/agent_eval.py` runs a battery of 5 SAFE, verifiable goals through the REAL agent
+  loop + model (qwen2.5:14b) and scores true success; writes `docs/agent-baseline.md`.
+- **Found (the point of OUT-1):** first run scored **2/5**. The failures were a real bug, not model
+  weakness:
+  * `write_file` joins a relative path under SAFE_WRITE_ROOT, but the model naturally prefixes
+    `agent-output/` (the tool docs name that folder) -> files landed in a DOUBLED
+    `agent-output/agent-output/` directory.
+  * `read_file` resolved relative paths against the process CWD, not the output folder -> the agent
+    could not read back files it had just written. write/read were asymmetric.
+- **Fixed:** `nova/services/agent.py` -> `_strip_output_prefix()` (drops a leading agent-output/ or
+  output/) applied in `safe_write_path` + new `resolve_read_path()` (relative reads resolve under
+  SAFE_WRITE_ROOT, matching writes); tool descriptions updated to say 'use a bare filename'. Locked
+  with `test_agent_write_read_roundtrip` (write 'agent-output/note.txt' -> no doubled dir; read back
+  by bare and prefixed name).
+- **Result:** re-run scored **5/5 (100%)**. A measurable outcome improvement driven by verification.
+- **Verified:** quality gate green (incl. new regression test). NOTE: the live server imported the old
+  agent code at boot — a restart applies the fix to the running instance (the eval ran in a fresh
+  process, so its 5/5 reflects the fixed code).
+- **Next:** P1 Stability (STB-1 watchdog) and more P1 Outcome (OUT-2 training, OUT-5 RAG).

@@ -36,7 +36,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 
 | ID | Task | Status | Notes / issue |
 |---|---|---|---|
-| OUT‑1 | **Agent goal battery** — run fixed goals, measure real success rate, record baseline | ⬜ | Loop tested; success rate **unmeasured**. |
+| OUT‑1 | **Agent goal battery** — run fixed goals, measure real success rate, record baseline | ✅ | M54. `scripts/agent_eval.py` runs 5 safe verifiable goals through the real loop + model; baseline in `docs/agent-baseline.md`. **First run 2/5 exposed a real bug** (relative `write_file` paths nested a doubled `agent-output/`; `read_file` resolved against CWD → agent couldn't read back what it wrote). Fixed (`_strip_output_prefix` + `resolve_read_path`, regression‑tested) → **5/5 with qwen2.5:14b**. |
 | OUT‑2 | Verify **training** produces a usable nova‑local end‑to‑end | 🟧 | External scripts in `C:\AI\training`; only log‑parsing verified. |
 | OUT‑3 | Verify **image/video generation** actually succeeds (not just job‑starts) | 🟧 | Plumbing only. |
 | OUT‑4 | `screen_if` real‑screen matching test (OCR/vision against live content) | 🟧 | Unit‑tested with a **mocked** screen only. |
@@ -89,7 +89,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** (TST‑1…6) · P1 Outcome (5 open) · P1 Stability (5 open).
-- **Next:** **P1 Outcome** — OUT‑1 (agent goal battery) — and **P1 Stability** — STB‑1 (watchdog).
+- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** · P1 Outcome (OUT‑1 ✅; 4 open) · P1 Stability (5 open).
+- **Next:** **P1 Stability** — STB‑1 (watchdog) — and continue P1 Outcome (OUT‑2 training, OUT‑5 RAG quality).
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).

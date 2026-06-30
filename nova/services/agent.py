@@ -61,8 +61,10 @@ AGENT_TOOL_DEFS = {
     "generate_video": "- generate_video {prompt}: start a local video generation in the background.\n",
     "notify": "- notify {text}: send the user a desktop notification.\n",
     "speak": "- speak {text}: read text aloud to the user.\n",
-    "read_file": "- read_file {path}: read a text file's contents.\n",
-    "write_file": "- write_file {path, content}: write a text file (confined to the safe agent-output folder).\n",
+    "read_file": ("- read_file {path}: read a text file's contents. For a file you created, pass just its "
+                  "name (e.g. notes.txt) — it is read from your output folder. Use a full path for files elsewhere.\n"),
+    "write_file": ("- write_file {path, content}: write a text file. Pass just a bare filename (e.g. report.txt) — "
+                   "it is saved in your output folder automatically; do NOT prefix 'agent-output/'.\n"),
     "schedule": "- schedule {name, action, params, interval_sec}: create a background automation.\n",
 }
 AGENT_FOOTER_TMPL = (
@@ -96,14 +98,33 @@ def parse_action(text):
 SAFE_WRITE_ROOT = WORKSPACE / "agent-output"
 DENY_READ = (".ssh", ".aws", ".env", "credentials", "login data", "id_rsa", "id_ed25519",
              "ntuser.dat", "\\.git\\config", ".npmrc", ".pypirc")
+def _strip_output_prefix(p):
+    """Models naturally prefix paths with 'agent-output/' or 'output/' because the tool docs
+    name that folder — which would nest a doubled directory. Strip a single leading copy so a
+    relative path resolves cleanly under SAFE_WRITE_ROOT."""
+    s = str(p).replace("\\", "/").lstrip("/")
+    low = s.lower()
+    for pre in ("agent-output/", "output/"):
+        if low.startswith(pre):
+            return s[len(pre):]
+    return s
 def safe_read_path(p):
     try: rp = Path(p)
     except Exception: return None
     return None if any(d in str(rp).lower() for d in DENY_READ) else rp
+def resolve_read_path(p):
+    """Where to read from: absolute paths as-is; relative paths resolve against the agent's
+    output folder first (so it can read files it just wrote), matching safe_write_path."""
+    if safe_read_path(p) is None:
+        return None
+    rp = Path(p)
+    if not rp.is_absolute():
+        rp = SAFE_WRITE_ROOT / _strip_output_prefix(p)
+    return rp
 def safe_write_path(p):
     try:
         rp = Path(p)
-        if not rp.is_absolute(): rp = SAFE_WRITE_ROOT / rp
+        if not rp.is_absolute(): rp = SAFE_WRITE_ROOT / _strip_output_prefix(p)
         rp = rp.resolve(); root = SAFE_WRITE_ROOT.resolve()
         return rp if (rp == root or root in rp.parents) else None
     except Exception: return None
@@ -116,7 +137,7 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             hits = kb_search(a.get("query", ""), 4)
             return "\n".join(f"[{h['doc']}] {h['text'][:400]}" for h in hits) or "no results in knowledge base"
         if name == "read_file":
-            p = safe_read_path(a.get("path", ""))
+            p = resolve_read_path(a.get("path", ""))
             if not p: return "BLOCKED: that path is not readable (credential store)."
             if not p.exists(): return f"file not found: {p}"
             audit("agent", "read_file", str(p))
@@ -145,7 +166,7 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             if dry_run: return f"[dry-run] would write {len(a.get('content',''))} chars to {a.get('path','')}"
             if unrestricted:
                 rp = Path(a.get("path", ""))
-                if not rp.is_absolute(): rp = SAFE_WRITE_ROOT / rp
+                if not rp.is_absolute(): rp = SAFE_WRITE_ROOT / _strip_output_prefix(a.get("path", ""))
             else:
                 rp = safe_write_path(a.get("path", ""))
                 if not rp: return f"BLOCKED: writes are confined to {SAFE_WRITE_ROOT}. Enable Full Access to write elsewhere."

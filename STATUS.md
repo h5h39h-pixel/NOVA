@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **OUT‑1** Agent goal battery — run fixed goals, measure real multi‑step success rate, record a baseline. (P1)
-2. **STB‑1** Watchdog/supervisor to auto‑restart `server.py` on crash. (P1)
-3. **STB‑3** Surface errors from background loops (no silent `except: pass`). (P1)
+1. **STB‑1** Watchdog/supervisor to auto‑restart `server.py` on crash. (P1)
+2. **STB‑3** Surface errors from background loops (no silent `except: pass`). (P1)
+3. **OUT‑5** RAG retrieval quality check (relevance of citations). (P1)
 
-_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests COMPLETE** ✅ (M49–M53: deep service · hermetic · agent‑loop · clean‑venv+local‑CI · frontend interaction). Next phase: **P1 Outcome + Stability**._
+_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests COMPLETE** ✅ (M49–M53). **P1 Outcome started:** OUT‑1 ✅ agent baseline 5/5 after fixing a real write/read path bug (M54). Apply the agent fix to the live server with a restart when convenient._
 
 ---
 
@@ -47,7 +47,7 @@ _**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests COMPLETE** ✅ (M49–M53:
 | Item | The issue |
 |---|---|
 | **Command‑exec surface** | Hardened (P0 Security complete): confirm‑guard (SEC‑1) + centralized denylist (SEC‑2) + strict CSP/headers (SEC‑3) + at‑rest key encryption (SEC‑4) + HTTPS turnkey (SEC‑5) + call‑site audit incl. the `screen lang` injection fix (SEC‑6). Residual by design: localhost exec is unrestricted (the product's purpose) — gated on LAN. No global kill‑switch (optional). |
-| **Agent reliability** | Loop **mechanics now integration‑tested** with a mocked model (TST‑3, M51: dispatch/parse/stop/budget/gating/guards). Real multi‑step success rate with 14B is still **unmeasured** (that's OUT‑1). |
+| **Agent reliability** | Loop **mechanics integration‑tested** (TST‑3, M51) **and a real success baseline measured** (OUT‑1, M54: **5/5** with qwen2.5:14b after fixing a write/read path bug the battery caught). Baseline is a small safe‑tool battery — broader/destructive‑adjacent goals still unmeasured. Live server needs a restart to pick up the path fix. |
 | **Tests** | **P0 Tests complete** (M49–M53): deep per‑service assertions, **hermetic** pytest (network‑blocked), agent‑loop integration tests, clean‑venv install proof + local CI runner, and live frontend interaction tests. Suite = 72 hermetic + 4 live. Remaining test‑adjacent gap is **outcome verification** (does the agent/training/generation actually succeed?) — that's the P1 Outcome phase, not unit tests. |
 | **`screen_if` (conditional screen actions)** | Implemented + unit‑tested **with a mocked screen**; never run against a real screen / real vision matching. |
 | **Image/video generation** | Endpoints fire + jobs start; **actual generation success/quality never verified**. |
