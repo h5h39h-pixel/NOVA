@@ -227,9 +227,12 @@ function LiveVision(){
         <div class="lvtoggles">
           <label class="lvsw"><input type="checkbox" id="lv_enabled"> <span>${AR?'تفعيل الرؤية الحيّة (بث الشاشة)':'Enable screen vision (live stream)'}</span></label>
           <label class="lvsw"><input type="checkbox" id="lv_mouse"> <span>${AR?'تتبّع مؤشر الفأرة':'Track mouse position'}</span></label>
-          <label class="lvsw"><input type="checkbox" id="lv_kbd"> <span>${AR?'تتبّع النافذة النشطة (سياق)':'Track focused window (context)'}</span></label>
+          <label class="lvsw"><input type="checkbox" id="lv_kbd"> <span>${AR?'تتبّع النافذة + سياق الكتابة (اختياري)':'Track focused window + recent typing (context)'}</span></label>
+          <label class="lvsw"><input type="checkbox" id="lv_narrate"> <span>${AR?'سرد مستمر بالذكاء (دوري)':'Continuous AI narration (periodic)'}</span></label>
           <label class="lvfps">${AR?'إطارات/ث':'FPS'} <input type="range" id="lv_fps" min="1" max="15" value="4"> <b id="lv_fpsv">4</b></label>
+          <label class="lvfps" id="lv_narrwrap" hidden>${AR?'كل (ث)':'every (s)'} <input type="range" id="lv_narrint" min="10" max="300" step="5" value="30"> <b id="lv_narrintv">30</b></label>
         </div>
+        <p class="muted" id="lv_kbdwarn" hidden style="font-size:11px;color:var(--warn,#d97706)">⚠️ ${AR?'أثناء التفعيل تُلتقط الكتابة على كامل النظام (مؤقتاً، بالذاكرة فقط). لا تكتب كلمات السر.':'While on, typing across the whole desktop is captured (in-memory only, capped). Don\'t type passwords.'}</p>
       </div></div>
     <div class="card"><div class="hd"><h3>${AR?'الشاشة الحيّة':'Live screen'}</h3>
       <span class="muted" id="lv_mousepos"></span><span class="spacer"></span>
@@ -237,6 +240,7 @@ function LiveVision(){
       <div class="bd">
         <div class="lvstage"><img id="lv_img" alt="${AR?'فعّل الرؤية بالأعلى':'enable vision above to see the live screen'}"><div id="lv_cursor" class="lvcursor" hidden></div></div>
         <div id="lv_ctx" class="muted" style="margin-top:8px"></div>
+        <div id="lv_narration" class="lvdesc" style="margin-top:6px"></div>
         <div id="lv_desc" class="lvdesc"></div>
       </div></div>
   </div>`;
@@ -245,8 +249,10 @@ function LiveVision(){
     async function refresh(){
       let st; try{st=await api('/vision/state')}catch(e){return}
       $('#lv_enabled').checked=st.enabled; $('#lv_mouse').checked=st.track_mouse; $('#lv_kbd').checked=st.track_keyboard;
+      $('#lv_narrate').checked=!!st.narrate; $('#lv_narrint').value=st.narrate_interval||30; $('#lv_narrintv').textContent=st.narrate_interval||30;
+      $('#lv_narrwrap').hidden=!st.narrate; $('#lv_kbdwarn').hidden=!st.track_keyboard;
       $('#lv_fps').value=st.fps; $('#lv_fpsv').textContent=st.fps;
-      const badge=$('#lvstatus'); badge.textContent=st.enabled?'LIVE':'off'; badge.classList.toggle('on',st.enabled);
+      const badge=$('#lvstatus'); badge.textContent=st.enabled?(st.narrate?'LIVE · narrating':'LIVE'):'off'; badge.classList.toggle('on',st.enabled);
       const img=$('#lv_img');
       if(st.enabled){img.src='/api/vision/stream?t='+Date.now()} else {img.removeAttribute('src')}
       clearInterval(mouseTimer); mouseTimer=null;
@@ -260,17 +266,26 @@ function LiveVision(){
       if(img.clientWidth&&(screen.width||0)){cur.hidden=false;
         cur.style.left=(r.mouse.x*img.clientWidth/screen.width)+'px';
         cur.style.top=(r.mouse.y*img.clientHeight/screen.height)+'px'}}}catch(e){}}
-    async function pollCtx(){try{const r=await api('/vision/context'); if(r&&r.window)$('#lv_ctx').textContent='🪟 '+(r.window.title||'(no title)')}catch(e){}}
+    async function pollCtx(){try{const r=await api('/vision/context'); if(!r)return;
+      let s='🪟 '+((r.window&&r.window.title)||'(no title)');
+      if(r.recent_text)s+=' · ⌨ "'+r.recent_text.slice(-60).replace(/\n/g,'⏎')+'"';
+      $('#lv_ctx').textContent=s}catch(e){}}
     function save(patch){post('/settings',patch).then(s=>{State.settings=s;refresh()})}
     $('#lv_enabled').onchange=e=>save({screen_vision_enabled:e.target.checked});
     $('#lv_mouse').onchange=e=>save({track_mouse:e.target.checked});
     $('#lv_kbd').onchange=e=>save({track_keyboard:e.target.checked});
+    $('#lv_narrate').onchange=e=>save({vision_narrate:e.target.checked});
+    $('#lv_narrint').oninput=e=>{$('#lv_narrintv').textContent=e.target.value};
+    $('#lv_narrint').onchange=e=>save({vision_narrate_interval:+e.target.value});
     $('#lv_fps').oninput=e=>{$('#lv_fpsv').textContent=e.target.value};
     $('#lv_fps').onchange=e=>save({vision_fps:+e.target.value});
     $('#lv_describe').onclick=async()=>{const d=$('#lv_desc'); d.textContent='⏳ '+(AR?'ينظر…':'looking…');
       const r=await post('/vision/describe',{}); d.innerHTML=(r&&r.description)?mdRender(r.description):('error: '+((r&&r.error)||'vision off'))};
+    const narr=[]; const unsub=bus.on('vision_narration',m=>{ if(!m||!m.text)return;
+      narr.unshift('🗣 '+m.text); if(narr.length>8)narr.pop();
+      const el=$('#lv_narration'); if(el)el.innerHTML=narr.map(x=>`<div class="muted" style="font-size:12px">${esc(x)}</div>`).join(''); });
     refresh();
-    return ()=>{clearInterval(mouseTimer);clearInterval(ctxTimer);const img=$('#lv_img');if(img)img.removeAttribute('src')};
+    return [()=>{clearInterval(mouseTimer);clearInterval(ctxTimer);const img=$('#lv_img');if(img)img.removeAttribute('src')}, unsub];
   }
   return {html,mount};
 }

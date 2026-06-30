@@ -31,7 +31,9 @@ DEFAULT_SETTINGS = {
     "vision_max_width": 1280,        # downscale frames to this width before JPEG (bandwidth/CPU bound)
     "vision_quality": 70,            # JPEG quality 30–95
     "track_mouse": False,            # expose live cursor position (opt-in)
-    "track_keyboard": False,         # capture active-window/keyboard context (most sensitive; opt-in)
+    "track_keyboard": False,         # SV-4: capture active-window + recent-keystroke context (most sensitive; opt-in)
+    "vision_narrate": False,         # SV-2: opt-in continuous VLM narration loop (cost-aware; off by default)
+    "vision_narrate_interval": 30,   # SV-2: seconds between narration frames (10–300)
     "screen_memory_enabled": False,  # IDEA-2: opt-in — OCR snapshots of the screen into the KB ("what did I see earlier?")
     "screen_memory_keep": 50,        # IDEA-2b: retention cap — keep only the newest N screen-memory docs
     "agent_can_control": True,       # HON-1b: allow the AUTONOMOUS agent to drive mouse/keyboard (control/act_on_screen). Turn OFF to keep the agent from GUI control while still allowing manual control + the kill-switch.

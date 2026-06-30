@@ -1459,6 +1459,30 @@ Ran two parallel code-audit agents over the new + surrounding code. Fixed:
 - Left intentionally (documented): `conversations` router (no UI yet, kept as API), `/api/chat-export-pdf`
   + `/api/db-status` (manual probes), app-state-coupled inline routes in `server.py`.
 
+## M105.4 — clear the table: every remaining 🟧 fixed + README + 3rd audit
+Closed all remaining yellows so the table is **all ✅ (or ✅-within-constraints with a documented reason)**.
+Strictly single-user/local-only; no protections disabled. Gate ✅ · live 42/42 ✅ · self-test 13/13 ✅ ·
+all 22 routes zero console errors ✅ · coverage 56% · 0 runtime errors.
+
+- **SV-2 continuous vision narration:** `screen_vision.narration_loop()` (supervised) — opt-in
+  (`vision_narrate` + interval 10–300s), periodically VLM-describes the screen and pushes a running
+  narration over the WS bus, rendered on the Live page. **Live-verified** a full cycle vs the VLM, 0 errors.
+- **SV-4 recent-keystroke context:** `/api/vision/context` returns the focused window **+ a short
+  in-memory rolling buffer of recently typed text** via a pynput listener that runs ONLY while
+  `track_keyboard` is on (capped, never persisted, cleared on opt-out), with a "don't type passwords" warning.
+- **🔒 Privacy-leak found & fixed (re-audit):** opt-out made the API 403 + UI stop polling, so the listener
+  stop path never ran → keylogger kept running. Added `reconcile_kb_listener()` (every 5s from `status_loop`)
+  so the listener always matches the setting. Test asserts the stop.
+- **HON-10 output-side detection:** `web_search.detect_injection()` flags injection phrasings;
+  `wrap_untrusted()` prepends a "⚠ POSSIBLE PROMPT-INJECTION DETECTED" warning + audits it. Tested.
+- **HON-7 measured STT WER:** `scripts/stt_eval.py` (Piper EN+AR → `/api/stt` → WER). Live: **EN ~0.07
+  (~93%), AR ~0.26 (~74%)**; `--record` feeds the quality dashboard.
+- **AVL-1:** mouse **drag** live-verified; perception+control blocks all work; sustained game-play
+  keystrokes remain an OS synthetic-keyboard limit (documented, not a code defect).
+- **POL-2:** `aria-label` on all icon-only composer buttons. **POL-3:** reclassified (responsive verified;
+  physical phone N/A by the core principle).
+- **README:** new features documented in **both English and Arabic**.
+
 ### M105j — IDEA-1 macro replay (control step in the workflow runner)
 - `nova/services/schedules.py`: new `control` action in `run_action` — dispatches move/click/drag/scroll/
   type/keys/click_element/set_text to the control service, `exec_allowed`-gated + audited + panic-aware.

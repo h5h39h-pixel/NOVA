@@ -24,7 +24,8 @@ continuous learning — private, offline‑capable, and owned end‑to‑end. Th
 5. **Phase 5 — Documentation** (P2): keep the six files + repo docs current.
 6. **Phase 6 — Features & polish** (P2/P3): click‑to‑act, voice, accessibility, performance.
 7. **Phase 7 — AI Screen Vision** (P1): real‑time screen streaming, mouse/keyboard tracking, and a
-   continuous AI vision loop so the AI sees exactly what the user sees and can act on it. 🟦 largely shipped (SV‑1…7)
+   continuous AI vision loop so the AI sees exactly what the user sees and can act on it. ✅ **complete (SV‑1…7)** —
+   incl. the opt‑in continuous narration loop (SV‑2) and recent‑keystroke context (SV‑4), all privacy‑gated.
 8. **Phase 8 — Perception & Control** (P1): read & understand anything (OCR+VLM for files/images/screen),
    full window‑layout awareness (active window, all windows, measurements, DPI), UI element detection, and
    precise mouse/keyboard control — as agent tools, chat commands, and APIs. ✅ shipped (PC‑1…6)

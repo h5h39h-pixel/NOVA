@@ -25,6 +25,8 @@ def vision_state():
         "quality": _clamp(int(s.get("vision_quality", 70) or 70), 30, 95),
         "track_mouse": bool(s.get("track_mouse")),
         "track_keyboard": bool(s.get("track_keyboard")),
+        "narrate": bool(s.get("vision_narrate")),
+        "narrate_interval": _clamp(int(s.get("vision_narrate_interval", 30) or 30), 10, 300),
     }
 
 
@@ -133,6 +135,95 @@ def active_window():
         return {"title": buf.value}
     except Exception:
         return None
+
+
+# ---- SV-4: opt-in recent-keystroke context ---------------------------------
+# A SMALL in-memory rolling buffer of recently typed text, captured by a pynput listener that runs
+# ONLY while `track_keyboard` is on. Never persisted, capped, cleared the moment the gate is turned
+# off. Privacy: this is a global capture while active — gated, off by default, with a clear warning.
+from collections import deque
+_KB = {"listener": None, "buf": None, "keys": 0}
+
+
+def _ensure_kb_listener(on):
+    if on and _KB["listener"] is None:
+        try:
+            from pynput import keyboard
+        except Exception:
+            return
+        _KB["buf"] = deque(maxlen=240); _KB["keys"] = 0
+
+        def on_press(key):
+            try:
+                _KB["keys"] += 1
+                ch = getattr(key, "char", None)
+                if ch is not None:
+                    _KB["buf"].append(ch)
+                else:
+                    name = str(key).replace("Key.", "")
+                    if name == "space": _KB["buf"].append(" ")
+                    elif name == "enter": _KB["buf"].append("\n")
+                    elif name == "tab": _KB["buf"].append("\t")
+                    elif name == "backspace" and _KB["buf"]:
+                        _KB["buf"].pop()
+            except Exception:
+                pass
+        lst = keyboard.Listener(on_press=on_press)
+        lst.start(); _KB["listener"] = lst
+    elif not on and _KB["listener"] is not None:
+        try: _KB["listener"].stop()
+        except Exception: pass
+        _KB["listener"] = None; _KB["buf"] = None; _KB["keys"] = 0
+
+
+def reconcile_kb_listener():
+    """Make the keyboard listener match the `track_keyboard` setting. Called periodically by a
+    background loop so that turning tracking OFF reliably STOPS the listener even though the API
+    endpoint 403s when off (so it would never otherwise hit the stop path) — closes a privacy leak."""
+    try:
+        _ensure_kb_listener(bool(get_settings().get("track_keyboard")))
+    except Exception:
+        pass
+
+
+def keyboard_context():
+    """SV-4: focused-window title + (opt-in) a short rolling buffer of recently typed text. When
+    `track_keyboard` is off, returns only the window and ensures the listener is stopped."""
+    on = bool(get_settings().get("track_keyboard"))
+    _ensure_kb_listener(on)
+    win = active_window()
+    if not on:
+        return {"enabled": False, "window": win}
+    recent = ("".join(_KB["buf"]) if _KB["buf"] else "")[-200:]
+    return {"enabled": True, "window": win, "recent_text": recent, "keys": _KB["keys"]}
+
+
+# ---- SV-2: continuous VLM narration loop (opt-in, throttled) ----------------
+def narrate_enabled():
+    s = get_settings()
+    return bool(s.get("screen_vision_enabled")) and bool(s.get("vision_narrate"))
+
+
+async def narration_loop():
+    """When `screen_vision_enabled` + `vision_narrate` are both on, periodically VLM-describe the screen
+    and push a running narration over the WS bus (rendered live). Opt-in + throttled (VLM cost) — idles
+    cheaply when off. Supervised in server.py (auto-restarts if it ever crashes)."""
+    import asyncio, time
+    from nova.core.events import push
+    while True:
+        if not narrate_enabled():
+            await asyncio.sleep(5)            # cheap idle poll until enabled
+            continue
+        interval = _clamp(int(get_settings().get("vision_narrate_interval", 30) or 30), 10, 300)
+        try:
+            d = await asyncio.to_thread(describe_now,
+                                        "In one concise sentence, describe what is happening on the screen right now.")
+            desc = (d.get("description") or "").strip()
+            if desc:
+                push({"type": "vision_narration", "text": desc, "ts": time.time()})
+        except Exception:
+            pass
+        await asyncio.sleep(interval)
 
 
 # ---- live MJPEG frame generator --------------------------------------------

@@ -32,18 +32,29 @@ is a dependency‑free SPA served by a FastAPI backend; everything persists to a
   read/write files, **read & understand** any file/image, browse, **see/record/monitor the screen**
   (it decides when), **precise mouse/keyboard control**, generate media, schedule automations. Dry‑run
   preview + Full‑Access mode.
-- **AI Screen Vision** (`#/live`) — real‑time screen stream, cursor overlay, focused‑window context, and
-  on‑demand "describe what's on screen" (qwen2.5‑VL). Privacy‑first: opt‑in, local, non‑persistent.
+- **Media in chat** — generate images/video and 📸 capture the screen inline; **✨ Refine / edit** any
+  generated image (ComfyUI img2img) right from the chat.
+- **🎙️ Hands‑free voice** — a Workspace toggle: listen (silence‑detected) → transcribe → answer → speak
+  the reply (local Piper) → listen again. Full spoken conversation, 100% local.
+- **AI Screen Vision** (`#/live`) — real‑time screen stream, cursor overlay, focused‑window context,
+  on‑demand "describe what's on screen", and an **opt‑in continuous narration loop** (periodic VLM
+  description). Privacy‑first: opt‑in, local, non‑persistent.
 - **Perception & Control** — window awareness (active window, all windows, size/position, DPI), UI
   element detection, and **reliable text entry via UI Automation** + pixel‑accurate mouse.
-- **Knowledge Base (RAG)** — local embeddings (`nomic-embed-text`) → SQLite vector store → cosine
-  retrieval with citations.
+- **🎬 Macro recorder** — record your mouse + typing (pynput) and replay it as a saved Workflow.
+- **🧠 Persistent memory** — durable facts Nova remembers across sessions (injected into chat + agent).
+- **🧠 Screen memory** (opt‑in) — OCR snapshots of your screen into the KB so you can ask "what did I see
+  earlier?" (retention‑capped + one‑click purge).
+- **Knowledge Base (RAG) + Folder Q&A** — local embeddings (`nomic-embed-text`) → SQLite vector store →
+  cosine retrieval with citations; **index a whole folder** and chat over it.
+- **Automation** — schedules, **region‑watch → act** (`screen_if` with a pinned region / text‑vanished
+  trigger), and a **📈 quality dashboard** charting eval/health scores over time.
 - **Training Studio** — one‑click LoRA retrain of `nova-local`, live progress, self‑improving
   RAG→training loop.
-- **Media** — local image (SDXL/Flux) and video (LTX) generation via ComfyUI.
-- **Voice** — local STT (GPU Whisper, Arabic‑capable) with an explicit ⏹ Stop, and TTS (Piper, adjustable
-  speed, auto English/Arabic voice).
-- **Trust & ops** — token auth, full audit log, daily DB snapshots + media backup, self‑test, real‑time
+- **Voice** — local STT (GPU Whisper, Arabic‑capable; measured ~93% EN / ~74% AR word accuracy) with an
+  explicit ⏹ Stop, and TTS (Piper, adjustable speed, auto English/Arabic voice).
+- **Trust & ops** — token auth, full audit log, daily DB snapshots + media backup, **self‑healing
+  background loops** (auto‑restart on crash), prompt‑injection fencing + detection, self‑test, real‑time
   system monitor, and a **⛔ panic kill‑switch** that instantly halts all PC control.
 
 ## 🚀 How to run
@@ -131,18 +142,28 @@ Six source‑of‑truth files (`STATUS.md`, `ROADMAP.md`, `TASKS.md`, `PROJECT_P
 - **وكيل ذاتي** — حلقة ReAct تخطّط وتستخدم الأدوات وتنفّذ: بحث في المعرفة والويب، تشغيل أوامر، قراءة/كتابة
   ملفات، **قراءة وفهم** أي ملف أو صورة، تصفّح، **رؤية/تسجيل/مراقبة الشاشة** (يقرر هو متى)، **تحكم دقيق
   بالفأرة ولوحة المفاتيح**، توليد وسائط، جدولة مهام. مع معاينة تجريبية ووضع صلاحية كاملة.
+- **الوسائط داخل المحادثة** — توليد صور/فيديو و📸 التقاط الشاشة داخل المحادثة؛ و**✨ تحسين/تعديل** أي صورة
+  مولّدة (ComfyUI img2img) مباشرة من المحادثة.
+- **🎙️ محادثة صوتية بدون يدين** — مفتاح في مساحة العمل: استماع (مع كشف الصمت) → تفريغ → إجابة → نطق الرد
+  (Piper محلياً) → استماع من جديد. محادثة صوتية كاملة، محلية ١٠٠٪.
 - **رؤية الشاشة بالذكاء** (`#/live`) — بث مباشر للشاشة، مؤشر الفأرة، سياق النافذة النشطة، ووصف فوري لما على
-  الشاشة (qwen2.5‑VL). الخصوصية أولاً: اختياري ومحلي ولا يُحفظ.
+  الشاشة، و**حلقة سرد مستمرة اختيارية** (وصف دوري عبر نموذج الرؤية). الخصوصية أولاً: اختياري ومحلي ولا يُحفظ.
 - **الإدراك والتحكم** — معرفة النوافذ (النشطة وكلها، الحجم والموضع، DPI)، واكتشاف عناصر الواجهة، و**إدخال
   نص موثوق عبر UI Automation** وفأرة بدقة البكسل.
-- **قاعدة المعرفة (RAG)** — تضمينات محلية (`nomic-embed-text`) ومتجر متجهات في SQLite واسترجاع بالتشابه مع
-  ذكر المصادر.
+- **🎬 مسجّل الماكرو** — سجّل نقرات الفأرة والكتابة (pynput) وأعد تشغيلها كسير عمل محفوظ.
+- **🧠 ذاكرة دائمة** — حقائق يتذكّرها نوفا عبر الجلسات (تُحقن في المحادثة والوكيل).
+- **🧠 ذاكرة الشاشة** (اختياري) — لقطات OCR لشاشتك تُفهرس في قاعدة المعرفة لتسأل "ماذا رأيت سابقاً؟"
+  (بحد أقصى للاحتفاظ وزر مسح فوري).
+- **قاعدة المعرفة (RAG) وأسئلة المجلدات** — تضمينات محلية (`nomic-embed-text`) ومتجر متجهات في SQLite
+  واسترجاع بالتشابه مع ذكر المصادر؛ و**فهرسة مجلد كامل** والدردشة حوله.
+- **الأتمتة** — جدولة، و**مراقبة منطقة → تنفيذ** (`screen_if` مع منطقة محددة أو محفّز "اختفى النص")،
+  و**📈 لوحة جودة** ترسم نتائج التقييم/الصحة عبر الزمن.
 - **استوديو التدريب** — إعادة تدريب `nova-local` بنقرة، تقدّم مباشر، وحلقة تعلّم ذاتية (المعرفة → التدريب).
-- **الوسائط** — توليد صور (SDXL/Flux) وفيديو (LTX) محلياً عبر ComfyUI.
-- **الصوت** — تحويل كلام إلى نص محلي (Whisper على كرت الشاشة، يدعم العربية) مع زر **⏹ إيقاف** واضح، ونطق
-  (Piper، سرعة قابلة للتعديل، صوت عربي/إنجليزي تلقائي).
-- **الثقة والتشغيل** — مصادقة برمز، سجل تدقيق كامل، نسخ احتياطي يومي لقاعدة البيانات والوسائط، فحص ذاتي،
-  مراقبة نظام لحظية، و**زر إيقاف طوارئ ⛔** يوقف كل تحكم بالحاسوب فوراً.
+- **الصوت** — تحويل كلام إلى نص محلي (Whisper على كرت الشاشة، يدعم العربية؛ دقة مقاسة ~٩٣٪ إنجليزي / ~٧٤٪
+  عربي) مع زر **⏹ إيقاف** واضح، ونطق (Piper، سرعة قابلة للتعديل، صوت عربي/إنجليزي تلقائي).
+- **الثقة والتشغيل** — مصادقة برمز، سجل تدقيق كامل، نسخ احتياطي يومي، **حلقات خلفية ذاتية الإصلاح**
+  (تُعاد تلقائياً عند التعطّل)، تحصين ضد حقن الأوامر مع كشفها، فحص ذاتي، مراقبة نظام لحظية، و**زر إيقاف
+  طوارئ ⛔** يوقف كل تحكم بالحاسوب فوراً.
 
 ## 🚀 كيفية التشغيل
 ```powershell

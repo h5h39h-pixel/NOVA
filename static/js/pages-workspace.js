@@ -44,12 +44,12 @@ function Workspace(){
         <button class="tgl agentonly" id="tg-full" data-tip="${AR?'يسمح للوكيل بتشغيل أي أمر/تحكم':'Let the agent run any command / control the PC'}">🔓 ${L.full}</button>
         <button class="tgl" id="tg-attach" data-tip="${AR?'أرفق صوراً/مستندات/أي ملف':'Attach images, documents, any file'}">📎 ${L.attach}</button>
         <button class="tgl" id="tg-open" data-tip="${AR?'افتح ملفاً على القرص واعمل عليه':'Open a file on disk and work on it'}">📂 ${AR?'فتح ملف':'Open file'}</button>
-        <button class="tgl" id="tg-shot" data-tip="${AR?'التقط الشاشة في المحادثة':'Capture the screen into the chat'}">📸</button>
-        <button class="tgl" id="tg-img" data-tip="${AR?'ولّد صورة':'Generate an image'}">🎨</button>
-        <button class="tgl" id="tg-vid" data-tip="${AR?'ولّد فيديو':'Generate a video'}">🎬</button>
+        <button class="tgl" id="tg-shot" aria-label="${AR?'التقط الشاشة في المحادثة':'Capture the screen into the chat'}" data-tip="${AR?'التقط الشاشة في المحادثة':'Capture the screen into the chat'}">📸</button>
+        <button class="tgl" id="tg-img" aria-label="${AR?'ولّد صورة':'Generate an image'}" data-tip="${AR?'ولّد صورة':'Generate an image'}">🎨</button>
+        <button class="tgl" id="tg-vid" aria-label="${AR?'ولّد فيديو':'Generate a video'}" data-tip="${AR?'ولّد فيديو':'Generate a video'}">🎬</button>
         <span class="spacer"></span>
-        <button class="btn" id="wsmic" data-tip="${AR?'إدخال صوتي':'Voice input'}">🎤</button>
-        <button class="btn" id="wshf" data-tip="${AR?'محادثة صوتية بدون يدين':'Hands-free voice conversation'}">🎙️</button>
+        <button class="btn" id="wsmic" aria-label="${AR?'إدخال صوتي':'Voice input'}" data-tip="${AR?'إدخال صوتي':'Voice input'}">🎤</button>
+        <button class="btn" id="wshf" aria-label="${AR?'محادثة صوتية بدون يدين':'Hands-free voice conversation'}" data-tip="${AR?'محادثة صوتية بدون يدين':'Hands-free voice conversation'}">🎙️</button>
         <button class="btn p" id="wssend">${L.send}</button>
         <button class="btn danger" id="wsstop" style="display:none">⏹ ${L.stop}</button>
       </div>

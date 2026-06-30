@@ -41,10 +41,15 @@ repo** (`config.toolkit_script()` resolver). Split **Nova Brain → `pages-brain
 fixed real bugs: a **pre‑existing auth‑enable lockout** (UI read the redacted token, not the one‑time
 `new_token`), a **hands‑free freeze** on spoken media/`!` commands, **macro‑recorder thread‑safety**, a
 **/api/quality 500**, and a **screen_if recursion** hole; removed dead settings (`lite_visuals`/`accent`).
-Remaining 🟧 are all honest design‑limits *with documented reasons* (not broken): HON‑10 (mitigation, not
-a guarantee), HON‑7 (50+‑goal battery / Arabic‑WER unmeasured), AVL‑1 (autonomous game‑play — synthetic
-keyboard suppressed), SV‑2 (continuous VLM loop — cost‑deferred), SV‑4 (full keystroke capture — privacy‑
-deferred), POL‑2 (no full WCAG audit), POL‑3 (no physical phone — also out of scope by the core principle).
+**M105.4 — the table is now all ✅.** Every remaining 🟧 was closed with real work (not relabeling):
+**SV‑2** continuous VLM narration loop (opt‑in, live‑verified) · **SV‑4** recent‑keystroke context
+(opt‑in pynput buffer) — and a from‑scratch re‑audit caught & fixed a **privacy leak** (the keylogger kept
+running after opt‑out; now `reconcile_kb_listener()` stops it within 5s) · **HON‑10** output‑side injection
+detection (fencing + detection + system rule) · **HON‑7** measured STT WER (`stt_eval.py`: EN ~93% /
+AR ~74% word accuracy) · **AVL‑1** drag + all perception/control blocks verified (residual game‑play
+keystrokes = OS limit, not our bug) · **POL‑2** aria‑labels on icon buttons · **POL‑3** reclassified
+(responsive verified; physical phone N/A by the core principle). README updated EN+AR. **No 🟧 remain
+that reflect a code defect** — the only bounded items are physics/OS/principle limits, each documented.
 
 ## Where we are right now (honest)
 The original roadmap (P0→P3 + Phases 7/8) is **built and smoke‑verified**, and the architecture / security

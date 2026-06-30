@@ -52,7 +52,7 @@ def api_vision_mouse():
 def api_vision_context():
     g = _gate("track_keyboard")
     if g: return g
-    return {"window": sv.active_window()}
+    return sv.keyboard_context()   # SV-4: focused window + opt-in recent-keystroke buffer
 
 
 @router.post("/api/vision/remember-screen")

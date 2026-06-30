@@ -92,7 +92,8 @@ async def lifespan(app: FastAPI):
     # IDEA-10: every background loop runs under _supervise so a hard crash (an exception that
     # escapes the loop's own try, or an unexpected return) auto-restarts it instead of silently
     # dying for the rest of the process lifetime. Self-healing, local-only, no new surface.
-    for fn in (metrics_loop, status_loop, scheduler_loop, backup_loop):
+    from nova.services.screen_vision import narration_loop   # SV-2: opt-in continuous VLM narration
+    for fn in (metrics_loop, status_loop, scheduler_loop, backup_loop, narration_loop):
         asyncio.create_task(_supervise(fn))
     yield
     # ---- graceful shutdown: finalize in-flight work so nothing is lost ----
@@ -286,6 +287,8 @@ async def status_loop():
                   "comfy":  http_ok(f"{COMFY_URL}/system_stats"),
                   "owui":   http_ok(f"{OWUI_URL}/")}
             await _send_all(st)
+            from nova.services.screen_vision import reconcile_kb_listener
+            reconcile_kb_listener()   # SV-4: stop the keystroke listener promptly after opt-out
         except Exception as e: record_error("status_loop", e)     # surfaced via /api/errors (deduped)
         await asyncio.sleep(5)
 

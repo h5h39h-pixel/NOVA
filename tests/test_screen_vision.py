@@ -47,9 +47,51 @@ def test_mouse_gate(client):
     assert r.status_code == 200 and "mouse" in r.json()
 
 
-def test_keyboard_context_gate(client):
+def test_keyboard_context_gate(client, monkeypatch):
+    import nova.services.screen_vision as SV
+    monkeypatch.setattr(SV, "_ensure_kb_listener", lambda on: None)   # never start a real global keylogger in tests
     from nova.core.db import set_settings
     set_settings({"screen_vision_enabled": True, "track_keyboard": False})
     assert client.get("/api/vision/context").status_code == 403
     set_settings({"track_keyboard": True})
-    assert client.get("/api/vision/context").status_code == 200
+    r = client.get("/api/vision/context")
+    assert r.status_code == 200 and r.json().get("enabled") is True
+
+
+def test_narrate_gate(tmpdb):
+    """SV-2: continuous narration only runs when BOTH screen vision and narrate are on."""
+    import nova.services.screen_vision as SV
+    from nova.core.db import set_settings
+    set_settings({"screen_vision_enabled": False, "vision_narrate": True})
+    assert SV.narrate_enabled() is False
+    set_settings({"screen_vision_enabled": True, "vision_narrate": False})
+    assert SV.narrate_enabled() is False
+    set_settings({"screen_vision_enabled": True, "vision_narrate": True})
+    assert SV.narrate_enabled() is True
+    st = SV.vision_state()
+    assert "narrate" in st and "narrate_interval" in st
+
+
+def test_keyboard_context_off_no_listener(tmpdb):
+    """SV-4: with track_keyboard off, context returns enabled:False and starts no listener."""
+    import nova.services.screen_vision as SV
+    from nova.core.db import set_settings
+    set_settings({"track_keyboard": False})
+    ctx = SV.keyboard_context()
+    assert ctx["enabled"] is False and SV._KB["listener"] is None
+
+
+def test_kb_listener_reconcile_stops_on_optout(tmpdb):
+    """SV-4 privacy: reconcile_kb_listener() STOPS a running listener once track_keyboard is off
+    (closes the leak where the API 403s on opt-out and never hits the stop path)."""
+    import nova.services.screen_vision as SV
+    from nova.core.db import set_settings
+
+    class _Fake:
+        def __init__(self): self.stopped = False
+        def stop(self): self.stopped = True
+    fake = _Fake()
+    SV._KB["listener"] = fake          # simulate a listener left running from when tracking was on
+    set_settings({"track_keyboard": False})
+    SV.reconcile_kb_listener()
+    assert fake.stopped is True and SV._KB["listener"] is None

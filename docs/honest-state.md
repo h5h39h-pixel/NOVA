@@ -177,6 +177,23 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## M105.4 (2026‑06‑30) — cleared the whole table + a 3rd from‑scratch audit
+Closed every remaining 🟧 with real implementation, and re‑audited from scratch.
+- **SV‑2** continuous narration loop (opt‑in, supervised, live‑verified vs the VLM, 0 errors).
+- **SV‑4** recent‑keystroke context (opt‑in pynput buffer, in‑memory, capped, never persisted).
+- **🔒 Privacy leak found & fixed:** turning `track_keyboard` OFF 403'd the API and stopped UI polling, so
+  the listener's stop path never ran → the global keylogger **kept running after opt‑out**. Fixed with a
+  5‑second `reconcile_kb_listener()` from `status_loop`. This is the single most important find of the
+  round — exactly the kind of "feature that leaks after you turn it off" that erodes a privacy‑first tool.
+- **HON‑10** output‑side injection detection (defense‑in‑depth). **HON‑7** measured STT WER (EN ~93% /
+  AR ~74%) via a new reusable `stt_eval.py`. **AVL‑1** drag + all control blocks verified.
+  **POL‑2/POL‑3** finished/reclassified.
+- **Honest framing of the "all ✅" table:** ✅ here means "done to the right bar for a single‑user local
+  tool," not "perfect forever." HON‑10 is strong layered mitigation (no injection defense is absolute);
+  AVL‑1 game‑play is still bounded by OS keyboard suppression; SV‑4 is a deliberate, gated keylogger the
+  owner opts into. None of these are code defects — they're documented constraints. That distinction is
+  the whole point of this file.
+
 ## M105.2 (2026‑06‑30) — finished the yellows + two audit passes (found & fixed real bugs)
 Closed every remaining 🟧 the owner named (IDEA‑1 recording, IDEA‑4, coverage, vendored generate.ps1),
 then ran **two adversarial code‑audit passes**. Real issues found and FIXED this round:
