@@ -130,7 +130,7 @@ Core chat UX, requested 2026‑06‑30. Toggle buttons styled like the existing 
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | POL‑1 | Performance budget for the animated background (measure FPS; auto‑lite on weak GPUs) | ⬜ | "Lite visuals" toggle exists. |
-| POL‑2 | Accessibility pass (ARIA, keyboard nav, contrast) | ⬜ | Essentially none today. |
+| POL‑2 | Accessibility pass (ARIA, keyboard nav, contrast) | 🟧 | M71. Skip‑to‑content link, `role`/`aria-label` on nav + main, `aria-live="polite"` toasts (screen‑reader announcements), and `:focus-visible` keyboard outlines. Icon buttons already carry `title`s. Not a full WCAG audit (single‑user tool) but the core keyboard/SR gaps are closed. |
 | POL‑3 | Mobile testing on real devices | ⬜ | Responsive CSS untested on hardware. |
 | POL‑4 | 32B throughput re‑benchmark on Ollama/llama.cpp updates | 🟧 | `docs/32b-throughput.md` (monitoring). |
 

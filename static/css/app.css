@@ -1028,3 +1028,12 @@ body.lite .card:hover{transform:none!important}
 .lvstage #lv_img:not([src]){min-height:200px}
 .lvcursor{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid #22d3ee;border-radius:50%;box-shadow:0 0 12px rgba(34,211,238,.8);pointer-events:none;transition:left .08s linear,top .08s linear}
 .lvdesc{margin-top:10px;line-height:1.6}
+
+/* ---- POL-2: accessibility (keyboard focus, skip link) ---- */
+.skiplink{position:fixed;left:-999px;top:8px;z-index:9999;background:#1118;color:#fff;
+  padding:8px 14px;border-radius:8px;border:1px solid var(--bd);text-decoration:none}
+.skiplink:focus{left:8px}
+:focus-visible{outline:2px solid #22d3ee;outline-offset:2px;border-radius:6px}
+.btn:focus-visible,.tbtn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
+#main:focus-visible{outline:none}

@@ -859,3 +859,13 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   was used. Leverages the Phase 8 control service to fix the long-standing click-to-act imprecision.
 - **Verified:** `test_act_core_term` (instruction → core term); full gate green.
 - **Note:** vision fallback remains best-effort for custom-drawn UIs without UIA names.
+
+## M71 — POL-2: accessibility pass (2026-06-30)  [P3 Polish]
+
+- **What:** skip-to-content link; `role=navigation`/`aria-label` on the sidebar nav; `role=main` +
+  focusable `#main`; `role=status aria-live=polite` on the toast container (screen readers announce
+  toasts); `:focus-visible` keyboard outlines for buttons/links/inputs. Icon buttons already had
+  `title` accessible names.
+- **Verified:** render-verified (skip link, nav role, aria-live present; zero console errors); gate green.
+- **Honest scope:** not a full WCAG audit (personal single-user tool) — closes the core keyboard +
+  screen-reader gaps.
