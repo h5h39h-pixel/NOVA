@@ -44,7 +44,9 @@ exposed.
 ## Hardening checklist (if you ever expose it)
 1. Enable **token auth** before enabling **LAN access**.
 2. Leave **`allow_remote_exec` off** unless you fully trust every device on the network.
-3. Turn on **HTTPS** (`https_enabled: true`).
+3. Turn on **HTTPS** with one command: `python scripts/https.py enable` (generates a self-signed
+   cert and flips `https_enabled`), then restart the server → `https://localhost:8900`. Off again:
+   `python scripts/https.py disable`.
 4. Keep the machine and `data/control.db` physically/OS-secured.
 5. Prefer a VPN/SSH tunnel over raw LAN exposure.
 

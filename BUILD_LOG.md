@@ -504,3 +504,13 @@ Made the six project files the **mandatory, permanent** source of truth and the 
 - **Verified:** `tests/test_secretbox_roundtrip` + `tests/test_settings_encrypts_cloud_key` (raw
   value is `enc:…`, `get_cloud_api_key()` returns the plaintext). Gate green; live suite 42/42.
 - **Next:** SEC-5 (one-command HTTPS enablement).
+
+## M47 — SEC-5: one-command HTTPS enablement (2026-06-30)  [P0 Security]
+
+- **What:** `scripts/https.py enable|disable` flips `https_enabled` in config.json and (on enable)
+  pre-generates the self-signed cert via `config.ensure_cert()`, printing next steps. Documented in
+  SECURITY.md. (`server.py` already serves TLS when `https_enabled`.)
+- **Why:** enabling TLS previously meant hand-editing config.json; now it's one command.
+- **Verified:** enable → config True + cert files created; disable → config False (HTTP restored).
+  Gate green.
+- **Next:** SEC-6 (audit every subprocess/exec call site).

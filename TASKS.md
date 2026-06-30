@@ -15,7 +15,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | SEC‑2 | Centralize + strengthen the destructive‑command denylist (shared by agent + terminal) | ✅ | M44. New `nova/core/safety.py` — regex + command‑boundary aware (catches piped deletes/aliases/flag variants; avoids FPs like `echo "format…"`, `format-table`). Shared by Terminal + agent; 24 unit tests. |
 | SEC‑3 | Tighten HTTP security headers (CSP `default-src 'self'`, `frame-ancestors 'self'`, Permissions‑Policy) | ✅ | M45. Strict CSP (local‑only, `object-src 'none'`, `frame-ancestors 'self'`), `X-Frame-Options`, `Permissions-Policy` (mic=self). Verified: all 11 routes render with zero console/CSP errors + header test. |
 | SEC‑4 | Encrypt `cloud_api_key` at rest (use existing `cryptography` dep; key from machine‑local secret) | ✅ | M46. `nova/core/secretbox.py` (Fernet; key in git‑ignored `<data>/.nova_key`, not in DB). Encrypt‑on‑save (`enc:…`), transparent decrypt via `get_cloud_api_key()`; legacy plaintext still readable. 4 tests. |
-| SEC‑5 | One‑command HTTPS enablement + doc (`https_enabled` + cert) | ⬜ | `ensure_cert()` exists; make turnkey. |
+| SEC‑5 | One‑command HTTPS enablement + doc (`https_enabled` + cert) | ✅ | M47. `scripts/https.py enable|disable` flips config + pre‑generates the self‑signed cert; documented in SECURITY.md. Round‑trip verified. |
 | SEC‑6 | Security review pass of every `subprocess`/exec call site | ⬜ | Audit `run_action`, agent tools, tts, screen, owui. |
 | SEC‑E | Exec **LAN gate** (`allow_remote_exec`) + audit + `exec_allowed()` | ✅ | M‑B. Localhost always allowed by design; LAN requires opt‑in. |
 | SEC‑E2 | Hashed auth tokens · rate limiting · security headers (baseline) · audit log | ✅ | M26/M‑B. |
