@@ -52,6 +52,7 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 - Scheduled DB snapshots, DB migration framework, observability (`/api/health`, `/api/errors`, metrics history).
 - pytest suite (24) + live suite (42) + frontend load gate; pre‑commit hook; CI workflow (written).
 - Open WebUI upgraded to **0.10.1**; integration made schema‑agnostic; custom tools/models preserved.
+- **Frontend refactored (HON‑11, M78/M79):** `pages.js` (1440)→4 modules · `app.css` (1039)→4 cascade files · `server.py` toolkit routes → `nova/api/toolkit.py`. Behavior‑preserving (byte‑identical), render‑verified. New map: `docs/frontend-structure.md`.
 
 ## Fragile — works but needs improvement 🟧
 | Item | The issue |

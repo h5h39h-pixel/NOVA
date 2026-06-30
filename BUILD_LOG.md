@@ -969,3 +969,13 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   monoliths (pages.js, app.css) + one misplaced route group is the maintainability win; further
   fragmentation would hurt readability.
 - **Verified:** gate green; live 42/42; render-verified CSS + all 23 routes (M78).
+
+## M80 — Document the new modular structure (2026-06-30)  [Docs]
+
+- **Added `docs/frontend-structure.md`** — the post-HON-11 map: JS load order (core → pages →
+  pages-create → pages-agent → pages-system → shell), CSS cascade order (app → components → visuals →
+  extras), the backend layered DAG, and the refactor lessons (split monoliths byte-identically +
+  render-verify; leave cohesive modules intact; don't tidy during a split; order is load-bearing).
+- **Updated** ROADMAP (Phase 9 maintainability note), PROJECT_PLAN (SPA architecture decision +
+  lesson), STATUS (done list), ARCHITECTURE.md (module list + UI workflow + dir tree), TASKS (HON-11 ✅).
+- **Verified:** gate green (docs-only).

@@ -31,7 +31,11 @@ continuous learning — private, offline‑capable, and owned end‑to‑end. Th
 9. **Phase 9 — Hardening v2 (honest gaps)** (P0/P1): close the real gaps from the self‑audit — **guard +
    kill‑switch for agent GUI control (HON‑1)**, **prompt‑injection defense (HON‑10)**, real GUI
    integration test, coverage, honest eval batteries, persistent observability, soak/concurrency, real
-   lockfile + CI. ⬜ **NEW — top priority** (HON‑1…11). See `docs/honest-state.md`.
+   lockfile + CI. 🟦 in progress (HON‑11 ✅ refactor done; HON‑12 found). See `docs/honest-state.md`.
+
+**Maintainability (HON‑11, done):** the two frontend monoliths were split — `pages.js` (1440)→4 JS
+modules and `app.css` (1039)→4 cascade files — and `server.py` toolkit routes moved to `nova/api/`.
+Behavior‑preserving + render‑verified. New structure map: `docs/frontend-structure.md`.
 
 Foundation phases **0 (Safety Net)**, **modular refactor**, **UI**, and the **OWUI 0.10.1 upgrade**
 are ✅ complete (see BUILD_LOG M28–M41).

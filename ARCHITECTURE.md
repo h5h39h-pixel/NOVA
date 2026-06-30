@@ -18,7 +18,7 @@ server.py                  composition root: builds the FastAPI app, wires
                            lifespan + middleware, defines the HTTP/WS routes,
                            ProcMgr, agent, metrics, toolkit
    │
-static/  (index.html, css/app.css, js/{core,pages,shell}.js)   the SPA dashboard
+static/  (index.html, css/app*.css, js/{core,pages,pages-create,pages-agent,pages-system,shell}.js)   the SPA dashboard
 ```
 
 **The one rule:** a lower layer never imports a higher one.
@@ -75,20 +75,24 @@ Each extraction is verified with `python run_tests.py` (40 checks) **before** th
 2. **Logic** → a function/class in `nova/services/<feature>.py` (import from core only).
 3. **HTTP/WS** → add the route in `server.py` (or, as routers are extracted, a
    `nova/api/<feature>.py` `APIRouter` included by `server.py`).
-4. **UI** → a page function in `static/js/pages.js` + a `ROUTES` entry in `core.js`; styles in `css/app.css`.
+4. **UI** → a page function in the matching `static/js/pages-*.js` + a `ROUTES` entry in `core.js`; styles in the appropriate `css/app-*.css` (see `docs/frontend-structure.md`).
 5. **Verify** → `python run_tests.py` stays green; add a check for the new surface.
 
 ## Frontend
 
-The SPA is split into three ordered modules loaded sequentially (shared global scope,
-no bundler — load order matters):
+The SPA is split into ordered modules loaded sequentially (shared global scope,
+no bundler — load order matters). After the HON‑11 refactor (M78/M79) the page code is
+modular — full map in `docs/frontend-structure.md`:
 
 - `static/js/core.js` — DOM/`api` helpers, the icon engine (Font Awesome via a
   MutationObserver), `State`, the WebSocket-fed event `bus`, the `I18N` table + `t()`,
   the hash router (`ROUTES`, `route`, `renderNav`), and render helpers.
-- `static/js/pages.js` — one `function Page()` returning `{html, mount}` per screen.
+- `static/js/pages.js` · `pages-create.js` · `pages-agent.js` · `pages-system.js` — page
+  builders (one `function Page()` → `{html, mount}` per screen), grouped by domain.
 - `static/js/shell.js` — WebSocket connect, toasts, notification center, command
-  palette, theme, auth gate, and `boot()` (called last).
+  palette, theme, auth gate, `autoLite`, and `boot()` (called last).
+- CSS is likewise split into `css/app.css` → `app-components.css` → `app-visuals.css` →
+  `app-extras.css` (cascade order preserved).
 
 This is intentionally framework-free and CDN-light; it can be migrated to a
 component framework page-by-page because each page is already an isolated unit.

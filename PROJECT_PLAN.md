@@ -41,8 +41,12 @@ fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each p
   training hook) rather than back‑imports.
 - **Composition root:** `server.py` (~555 lines) wires the app, lifespan, middleware, background
   loops, and includes the 21 routers. Logic lives in `nova/services/*`, routes in `nova/api/*`.
-- **Framework‑free SPA:** `static/js/{core,pages,shell}.js`, one global scope, load order matters.
-  No bundler. Auto cache‑busting (server stamps `?v=<asset mtime>`).
+- **Framework‑free SPA:** one global scope, load order matters, no bundler. Auto cache‑busting (server
+  stamps `?v=<asset mtime>`, globbing all `js/*.js` + `css/*.css`). After HON‑11 the pages/styles are
+  **modular**: JS = `core.js` → `pages.js` → `pages-create.js` → `pages-agent.js` → `pages-system.js`
+  → `shell.js`; CSS = `app.css` → `app-components.css` → `app-visuals.css` → `app-extras.css`. Full map:
+  `docs/frontend-structure.md`. **Lesson:** split the genuine monoliths byte‑identically + render‑verify;
+  leave cohesive modules intact; don't tidy in the same step as the split.
 - **Single SQLite store** (`control.db`) with a `schema_version` migration framework + daily snapshots.
 - **Fully local:** vendored fonts + Font Awesome; all model/services traffic proxied through our
   backend; works offline.
