@@ -196,6 +196,9 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
                              for m in r["matches"][:8])
         if name == "control":
             from nova.services.settings import exec_allowed
+            from nova.core.db import get_settings
+            if not get_settings().get("agent_can_control", True):
+                return "BLOCKED: agent GUI control is disabled (Settings → agent_can_control). Ask the user to act, or enable it."
             if not exec_allowed():
                 return "BLOCKED: control is disabled while exposed on the LAN (enable allow_remote_exec)."
             act = a.get("action", "")
@@ -281,6 +284,9 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             fn, _ = screen_svc.capture_screenshot(); audit("agent", "screenshot", fn)
             return f"captured the screen: /files/{fn}"
         if name == "act_on_screen":
+            from nova.core.db import get_settings
+            if not get_settings().get("agent_can_control", True):
+                return "BLOCKED: agent GUI control is disabled (Settings → agent_can_control)."
             instr = a.get("instruction", "")
             if dry_run: return f"[dry-run] would locate '{instr}', click it" + (f" and type '{a.get('text')}'" if a.get("text") else "")
             r = screen_svc.act_on_screen(instr, a.get("text"), a.get("key"), bool(a.get("double")))

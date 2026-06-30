@@ -1108,3 +1108,13 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   injection is not.
 - No code change (control.py left as-is — swapping the input method wouldn't fix a focus problem).
   Gate green.
+
+## M92 — HON-1b: disable-agent-GUI-control toggle (2026-06-30)  [P1 Safety]
+
+- New `agent_can_control` setting (default on) + Settings toggle. When off, the agent's `control` and
+  `act_on_screen` tools refuse (return BLOCKED) while manual `/api/control/*` + the HON-1 panic stop
+  still work — a cautious user can keep the autonomous agent out of GUI control entirely.
+- Test `test_agent_control_gate` (blocked path only — no real input). Gate green; restarted; live 42/42.
+- Layered safety now: agent_can_control (can the agent touch the GUI?) → exec_allowed (LAN gate) →
+  CONTROL_PAUSED panic stop (instant kill). A per-action confirm prompt for autonomous loops is still
+  future work.

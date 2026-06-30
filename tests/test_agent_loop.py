@@ -130,6 +130,16 @@ def test_agent_deepthink_in_prompt(monkeypatch):
     assert "DEEPTHINK" in seen.get("sys", "")
 
 
+def test_agent_control_gate(tmpdb):
+    """HON-1b: when agent_can_control is off, the agent's GUI-control tools refuse (no input sent)."""
+    from nova.core.db import set_settings
+    from nova.services.agent import agent_tool
+    set_settings({"agent_can_control": False})
+    out = agent_tool("control", {"action": "move", "x": 10, "y": 10})
+    assert out.startswith("BLOCKED") and "agent_can_control" in out
+    assert agent_tool("act_on_screen", {"instruction": "the OK button"}).startswith("BLOCKED")
+
+
 def test_agent_tool_blocks_destructive(tmpdb):
     from nova.services.agent import agent_tool
     out = agent_tool("run_command", {"command": "Remove-Item -Recurse -Force C:\\data"})

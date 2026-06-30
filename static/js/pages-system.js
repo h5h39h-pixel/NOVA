@@ -277,6 +277,7 @@ function Settings(){
       <div class="flex"><button class="btn" id="thd">🌙 Dark</button><button class="btn" id="thl">☀️ Light</button><button class="btn" id="tha">🌗 Auto</button></div>
       <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${localStorage.getItem('lite')?'on':''}" id="slite"></button> Lite visuals — reduce background animations (low-end GPUs)</label>
       <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${s.confirm_exit!==false?'on':''}" id="sconfirm"></button> Confirm before closing the tab (warn while Nova is running)</label>
+      <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${s.agent_can_control!==false?'on':''}" id="sagentctl"></button> 🖱️ Let the autonomous agent control mouse/keyboard (off = agent can't drive the GUI; manual control + panic stop still work)</label>
       <label class="f mt">🔊 Voice speed (TTS) <span class="aset-v" id="ttsratev">${(+s.tts_rate||1).toFixed(1)}×</span></label>
       <input type="range" id="sttsrate" min="0.7" max="1.6" step="0.1" value="${+s.tts_rate||1}" style="width:100%">
       <label class="f mt">Backup &amp; Restore</label>
@@ -299,6 +300,8 @@ function Settings(){
       if(on)localStorage.setItem('lite','1');else localStorage.removeItem('lite');location.reload()};
     const sconfirm=$('#sconfirm');if(sconfirm)sconfirm.onclick=function(){const on=!this.classList.contains('on');this.classList.toggle('on',on);
       post('/settings',{confirm_exit:on}).then(x=>{State.settings=x});toast('info',on?'Exit confirmation enabled':'Exit confirmation disabled','')};
+    const sactl=$('#sagentctl');if(sactl)sactl.onclick=function(){const on=!this.classList.contains('on');this.classList.toggle('on',on);
+      post('/settings',{agent_can_control:on}).then(x=>{State.settings=x});toast(on?'info':'success',on?'Agent GUI control enabled':'Agent GUI control disabled',on?'the agent may move the mouse/keyboard':'the agent can no longer drive the GUI')};
     {const r=$('#sttsrate');if(r)r.oninput=e=>{const v=+e.target.value;$('#ttsratev').textContent=v.toFixed(1)+'×';clearTimeout(r._t);r._t=setTimeout(()=>post('/settings',{tts_rate:v}).then(x=>{State.settings=x}),400)};}
     $('#thd').onclick=()=>{localStorage.setItem('theme','dark');applyTheme()};
     $('#thl').onclick=()=>{localStorage.setItem('theme','light');applyTheme()};
