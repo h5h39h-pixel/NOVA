@@ -99,6 +99,12 @@ async def lifespan(app: FastAPI):
     set_main_loop(asyncio.get_running_loop())
     init_db()
     init_job_object()
+    try:
+        from nova.services.jobs import reconcile_interrupted
+        gone = reconcile_interrupted()   # STB-2: flag jobs killed by the last shutdown
+        if gone: log.info(f"reconciled {len(gone)} interrupted job(s) from a prior run")
+    except Exception as e:
+        log.warning(f"job reconcile failed: {e}")
     log.info("AI Control Center starting up")
     psutil.cpu_percent(interval=None)  # prime
     asyncio.create_task(metrics_loop())

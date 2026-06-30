@@ -788,3 +788,16 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **DOC-2:** README highlights refreshed — chat now lists DeepThink + Web Search + the ⏹ Stop mic;
   added an "AI Screen Vision (Live)" highlight; linked the new docs.
 - **Verified:** quality gate green (docs-only). P2 Docs now complete (DOC-1 ongoing rule, DOC-2/3 ✅).
+
+## M66 — STB-2: persist jobs + reconcile interrupted on restart (2026-06-30)  [P1 Stability]
+
+- **What:** jobs are now persisted to a new `jobs` table (db.py schema). `ProcMgr.start` inserts a row;
+  `_run` updates it on finish (status/ended/exit_code). At startup, `reconcile_interrupted()` marks any
+  row still `starting/running/paused` as **`interrupted`** (the prior shutdown's Job Object killed the
+  children) and posts a notification per job, so an interrupted training/recording no longer vanishes
+  silently. Wired into the lifespan after `init_db`.
+- **Honest scope:** this is *survival as a record + surfacing*, not true auto-resume — a killed OS
+  process can't be resumed; documented as such (STB-2 stays 🟧).
+- **Verified:** `test_reconcile_interrupted_jobs` (running→interrupted, finished untouched); full gate
+  green; server restarted; live suite 42/42.
+- **Next:** P2 Features (FEA-4 screen_if UI), P3 polish, and the externally-blocked OUT-2/3/4.

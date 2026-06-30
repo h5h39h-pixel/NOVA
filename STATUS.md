@@ -58,7 +58,8 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 | **Pinned deps** | **Proven to clean‑install** from a fresh venv (M52, all wheels, no conflicts). Caveat: only *direct* deps are pinned — transitive deps resolve to latest‑compatible at install time (not a full lockfile). |
 | **Secrets** | `cloud_api_key` now **encrypted at rest** (SEC‑4, Fernet; key in `.nova_key`); tokens hashed; config.json git‑ignored. (Resolved.) |
 | **Background loops** | **Fixed (STB‑3, M56):** metrics/status/scheduler/backup loops now `record_error(...)` → visible in `/api/errors` + Diagnostics (deduped). They still recover next tick rather than crash. |
-| **Watchdog** | **Fixed (STB‑1, M55):** `watchdog.ps1` now resolves a real python (was the WindowsApps stub → restarts silently failed), logs, and uses a fail threshold. Still: a server restart kills running training/recording (Job Object) — STB‑2 will address resume. |
+| **Watchdog** | **Fixed (STB‑1, M55):** `watchdog.ps1` resolves a real python (was the WindowsApps stub → restarts silently failed), logs, fail‑threshold. |
+| **Jobs across restart** | **Improved (STB‑2, M66):** jobs persist to a `jobs` table; on startup, ones left running are marked **interrupted** + the user is notified (no silent loss). A killed training/recording still can't auto‑resume (Job Object terminates children) — surfaced, not resumed. |
 | **beforeunload text** | Browser shows generic wording + only after interaction (browser limitation, not fixable). |
 
 ## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62

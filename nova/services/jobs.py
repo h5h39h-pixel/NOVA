@@ -11,9 +11,54 @@ module never has to import server.py — keeping the dependency graph acyclic.
 import time, threading, subprocess, re
 import psutil
 from nova.core.events import push
-from nova.core.db import add_history
+from nova.core.db import add_history, db
 from nova.core.process import assign_to_job
 from nova.services.notifications import add_notification
+
+
+# ---- STB-2: persist jobs so a server restart doesn't silently lose them ----
+def _job_insert(job, source):
+    try:
+        c = db()
+        rid = c.execute("INSERT INTO jobs(jid,name,kind,status,started,source) VALUES(?,?,?,?,?,?)",
+                        (job.id, job.name, job.kind, job.status, job.started, source)).lastrowid
+        c.commit(); c.close()
+        job.db_id = rid
+    except Exception:
+        pass
+
+
+def _job_finish(job):
+    try:
+        if getattr(job, "db_id", None) is None: return
+        c = db()
+        c.execute("UPDATE jobs SET status=?, ended=?, exit_code=? WHERE id=?",
+                  (job.status, time.time(), job.exit_code, job.db_id))
+        c.commit(); c.close()
+    except Exception:
+        pass
+
+
+def reconcile_interrupted():
+    """On startup, any job row still 'running'/'starting'/'paused' was killed by the previous
+    shutdown (the Job Object terminates children). Mark them 'interrupted' and report them so the
+    user knows — training/recording can't truly resume a killed OS process, but it won't vanish."""
+    try:
+        c = db()
+        rows = [dict(r) for r in c.execute(
+            "SELECT id,name,kind FROM jobs WHERE status IN ('starting','running','paused')").fetchall()]
+        if rows:
+            c.execute("UPDATE jobs SET status='interrupted', ended=? WHERE status IN ('starting','running','paused')",
+                      (time.time(),))
+            c.commit()
+        c.close()
+        for r in rows:
+            add_notification("error", f"{r['name']} interrupted",
+                             f"a {r['kind']} job was running when the server last stopped; it did not resume",
+                             category="system")
+        return rows
+    except Exception:
+        return []
 
 _training_hook = None
 def set_training_hook(fn):
@@ -25,7 +70,7 @@ class Job:
     def __init__(self, jid, name, args, cwd=None, kind="job"):
         self.id, self.name, self.args, self.cwd, self.kind = jid, name, args, cwd, kind
         self.proc = None; self.status = "starting"; self.started = time.time()
-        self.exit_code = None; self.tail = []; self.paused = False
+        self.exit_code = None; self.tail = []; self.paused = False; self.db_id = None
 
     def info(self):
         return {"id": self.id, "name": self.name, "kind": self.kind, "status": self.status,
@@ -41,6 +86,7 @@ class ProcMgr:
             self._n += 1; jid = f"job{self._n}"
         job = Job(jid, name, args, cwd, kind)
         self.jobs[jid] = job
+        _job_insert(job, source)
         threading.Thread(target=self._run, args=(job, source), daemon=True).start()
         return job
 
@@ -77,6 +123,7 @@ class ProcMgr:
             job.tail.append(f"[launcher error] {e}")
             push({"type": "term", "job": job.id, "name": job.name, "line": f"[error] {e}"})
         dur = time.time() - t0
+        _job_finish(job)
         add_history(job.name, job.exit_code, dur, "\n".join(job.tail), source)
         push({"type": "job", "job": job.info()})
         lvl = "success" if job.exit_code == 0 else "error"

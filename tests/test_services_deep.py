@@ -149,6 +149,25 @@ def test_web_search_mocked(monkeypatch):
     assert web_search("") == []                                # empty query short-circuits
 
 
+def test_reconcile_interrupted_jobs(tmpdb):
+    """STB-2: jobs left 'running' by a prior shutdown are marked 'interrupted' (not lost silently);
+    already-finished jobs are untouched."""
+    from nova.core.db import db, set_settings
+    from nova.services.jobs import reconcile_interrupted
+    set_settings({"desktop_notifications": False})
+    c = db()
+    c.execute("INSERT INTO jobs(jid,name,kind,status,started) VALUES('job1','train','training','running',1.0)")
+    c.execute("INSERT INTO jobs(jid,name,kind,status,started,ended) VALUES('job2','done','job','done',1.0,2.0)")
+    c.commit(); c.close()
+    gone = reconcile_interrupted()
+    assert len(gone) == 1 and gone[0]["name"] == "train"
+    c = db()
+    s1 = c.execute("SELECT status FROM jobs WHERE jid='job1'").fetchone()[0]
+    s2 = c.execute("SELECT status FROM jobs WHERE jid='job2'").fetchone()[0]
+    c.close()
+    assert s1 == "interrupted" and s2 == "done"
+
+
 def test_extract_text(tmp_path):
     from nova.services.files import extract_text
     p = tmp_path / "x.txt"; p.write_text("hello world", encoding="utf-8")
