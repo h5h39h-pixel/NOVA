@@ -21,3 +21,4 @@ pyautogui>=0.9.54
 pyperclip>=1.8
 ddgs            # web search for the chat Web Search toggle (DuckDuckGo, no API key)
 uiautomation     # UI Automation element detection (Phase 8 Perception & Control)
+pynput           # IDEA-1 macro recorder — passive global mouse/keyboard capture (recording only)

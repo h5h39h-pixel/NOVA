@@ -55,6 +55,15 @@ _cfg = _load()
 WORKSPACE   = Path(_cfg["workspace"])
 AI_ROOT     = Path(_cfg["ai_root"])
 TOOLKIT     = WORKSPACE / "toolkit"
+REPO_TOOLKIT = Path(__file__).resolve().parent / "toolkit"   # version-controlled scripts vendored in-repo
+
+
+def toolkit_script(name):
+    """Resolve a toolkit script path, preferring the repo-vendored copy (version-controlled, travels
+    with a clone) and falling back to the external WORKSPACE toolkit. Lets us own scripts we modify
+    (e.g. generate.ps1 with img2img) in-repo without forking the whole external toolkit."""
+    repo = REPO_TOOLKIT / name
+    return repo if repo.exists() else (TOOLKIT / name)
 UPLOAD_DIR  = WORKSPACE / "data" / "uploads"   # uploads, generated images, screenshots, browse captures
 DB_PATH     = WORKSPACE / "data" / "control.db"
 LOG_DIR     = WORKSPACE / "data" / "logs"

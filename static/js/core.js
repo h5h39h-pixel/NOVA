@@ -113,7 +113,7 @@ const I18N={
   cmd_ph:'PowerShell command…  (e.g. nvidia-smi, ollama ps)',chat_ph:'Message the model…',
   saved:'saved',health:'System Health',services:'Services',add:'Add to queue',run_all:'Run all',
   language:'Language',default_local:'Default local model',default_cloud:'Default cloud model',
-  cloud_key:'Cloud API key',desktop_notif:'Desktop notifications',accent:'Accent color',save_settings:'Save settings'},
+  cloud_key:'Cloud API key',desktop_notif:'Desktop notifications',save_settings:'Save settings'},
  ar:{app:'مركز التحكم',sub:'مركز قيادة الذكاء المحلي',
   nav_dashboard:'الرئيسية',nav_monitor:'مراقبة النظام',nav_terminal:'الطرفية',nav_chat:'المحادثة',
   nav_models:'النماذج',nav_tools:'الأدوات',nav_video:'استوديو الفيديو',nav_training:'استوديو التدريب',
@@ -146,7 +146,7 @@ const I18N={
   cmd_ph:'أمر PowerShell…  (مثل nvidia-smi)',chat_ph:'اكتب رسالتك للنموذج…',
   saved:'محفوظ',health:'صحة النظام',services:'الخدمات',add:'أضف للقائمة',run_all:'تشغيل الكل',
   language:'اللغة',default_local:'النموذج المحلي الافتراضي',default_cloud:'النموذج السحابي الافتراضي',
-  cloud_key:'مفتاح السحابة',desktop_notif:'إشعارات سطح المكتب',accent:'لون التمييز',save_settings:'حفظ الإعدادات'}
+  cloud_key:'مفتاح السحابة',desktop_notif:'إشعارات سطح المكتب',save_settings:'حفظ الإعدادات'}
 };
 const t=k=>(I18N[State.lang]&&I18N[State.lang][k])||I18N.en[k]||k;
 

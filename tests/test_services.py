@@ -128,6 +128,33 @@ def test_screen_memory_gate(monkeypatch, tmpdb):
     assert any("main.py" in h["text"] for h in KB.kb_search("which file was open"))
 
 
+def test_macro_recorder(tmpdb):
+    """IDEA-1: passive recorder builds control steps; typed chars collapse into a 'type' step; a saved
+    macro becomes a replayable Workflow of control steps."""
+    from nova.services import macro as MM
+    MM._REC.update(active=True, steps=[], typed=[])      # simulate an active recording (no real listeners)
+    MM._record_char("h"); MM._record_char("i")            # buffered typing
+    MM._record_click(100, 200, "left")                    # click flushes the 'type' step first
+    MM._record_char("y"); MM._record_char("o")
+    MM._record_special("enter")                           # special key flushes typing then records keys
+    r = MM.stop_recording()
+    steps = r["steps"]
+    assert steps[0] == {"action": "type", "text": "hi"}
+    assert steps[1] == {"action": "click", "x": 100, "y": 200, "button": "left"}
+    assert steps[2] == {"action": "type", "text": "yo"}
+    assert steps[3] == {"action": "keys", "keys": "enter"}
+    assert MM.recording() is False
+
+    wf = MM.to_workflow_steps(steps)
+    assert wf[1] == {"action": "control", "params": {"action": "click", "x": 100, "y": 200, "button": "left"}}
+    wid = MM.save_macro("test macro", steps)
+    from nova.core.db import db
+    c = db(); row = c.execute("SELECT name, steps FROM workflows WHERE id=?", (wid,)).fetchone(); c.close()
+    assert row["name"].startswith("🎬") and "test macro" in row["name"]
+    import json
+    assert json.loads(row["steps"])[0]["action"] == "control"
+
+
 def test_control_macro_action(monkeypatch, tmpdb):
     """IDEA-1 (replay): a workflow `control` step dispatches to the control service (macro replay)."""
     import nova.services.schedules as SCH

@@ -5,7 +5,7 @@ heavy lifting is the toolkit PowerShell scripts + ComfyUI."""
 import uuid
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from config import TOOLKIT, UPLOAD_DIR
+from config import UPLOAD_DIR, toolkit_script
 from nova.core.process import ps_args, _q
 from nova.services.jobs import PM
 from nova.services.audit import audit
@@ -18,7 +18,7 @@ async def api_toolkit(tool: str, req: Request):
     b = await req.json()
     if tool == "video":
         prompt = b.get("prompt", "a cinematic shot")
-        cmd = '& "{}" "{}"'.format(TOOLKIT / "genvideo.ps1", prompt.replace('"', '`"'))
+        cmd = '& "{}" "{}"'.format(toolkit_script("genvideo.ps1"), prompt.replace('"', '`"'))
         if b.get("ckpt"):   cmd += ' -Ckpt "{}"'.format(b["ckpt"])
         if b.get("length"): cmd += ' -Length {}'.format(int(b["length"]))
         if b.get("steps"):  cmd += ' -Steps {}'.format(int(b["steps"]))
@@ -32,7 +32,7 @@ async def api_toolkit(tool: str, req: Request):
         if model not in ("sdxl", "flux-schnell", "flux-dev"): model = "sdxl"
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         fn = f"img_{uuid.uuid4().hex[:8]}.png"; outp = UPLOAD_DIR / fn
-        cmd = '& "{}" "{}" -Model {} -Out "{}"'.format(TOOLKIT / "generate.ps1", prompt.replace('"', '`"'), model, outp)
+        cmd = '& "{}" "{}" -Model {} -Out "{}"'.format(toolkit_script("generate.ps1"), prompt.replace('"', '`"'), model, outp)
         init = b.get("init_image")            # IDEA-9 img2img: refine an existing image
         if init:
             name = str(init).replace("\\", "/").split("/")[-1]   # accept "/files/x.png" or a bare name
@@ -47,7 +47,7 @@ async def api_toolkit(tool: str, req: Request):
         audit("image", "refine" if init else "generate", f"{model}: {prompt[:60]}")
         return {"ok": True, "job": job.id, "file": f"/files/{fn}", "model": model}
     if tool == "speak":
-        job = PM.start("speak", ps_args(f'& "{TOOLKIT / "speak.ps1"}" {_q(b.get("text",""))}'),
+        job = PM.start("speak", ps_args(f'& "{toolkit_script("speak.ps1")}" {_q(b.get("text",""))}'),
                        kind="command", source="speak")
         return {"ok": True, "job": job.id}
     return JSONResponse({"error": "unknown tool"}, status_code=400)

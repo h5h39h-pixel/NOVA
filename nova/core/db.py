@@ -14,7 +14,6 @@ DEFAULT_SETTINGS = {
     "default_local_model": "llama3.1:8b",
     "default_cloud_model": "claude-opus-4-8",
     "cloud_api_key": "",
-    "accent": "#6366f1",
     "desktop_notifications": True,
     "metrics_interval": 1.5,
     "webhook_url": "",            # Slack/Discord/ntfy/generic incoming webhook
@@ -23,7 +22,6 @@ DEFAULT_SETTINGS = {
     "auth_token": "",             # legacy plaintext (superseded by auth_token_hash)
     "lan_access": False,          # bind 0.0.0.0 instead of localhost (ONLY meaningful with auth on)
     "allow_remote_exec": False,   # permit /api/exec + agent run_command when exposed on LAN (off by default)
-    "lite_visuals": False,        # reduce background animations (particles/aurora/tilt) for low-end GPUs
     "stt_model": "small",         # local Whisper size: tiny | base | small | medium | large-v3 (small = good Arabic, GPU-fast)
     "confirm_exit": True,         # warn before closing the tab/window ("Nova is still running")
     "tts_rate": 1.0,              # speech rate for Piper TTS (1.0 normal, >1 faster, <1 slower)

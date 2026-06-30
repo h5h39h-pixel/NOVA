@@ -118,17 +118,16 @@ and the full spec in **`docs/chat-deepthink-websearch.md`**.
 ## 💡 Innovation backlog (creative, in‑scope — single‑user · local‑only)
 Original ideas that extend Nova's vision without breaking the core principle. Tracked as IDEA‑* in
 `TASKS.md`. Each is local‑only, opt‑in where it touches the screen/privacy.
-1. 🟧 **Visual macro recorder** (M105) — *replay* shipped (a workflow `control` step replays mouse/keyboard
-   actions as a macro); *recording* (passive global input capture) deferred — needs a new dep + is limited
-   by this env's synthetic‑keyboard suppression.
+1. ✅ **Visual macro recorder** (M105.2) — record (pynput global capture) + replay (workflow `control`
+   steps); "🎬 Macro recorder" on the Workflows page. Live‑verified capturing a real click.
 2. ✅ **Local screen memory (opt‑in)** (M105) — OCR snapshots of the screen into the KB so you can later
    ask "what was that error I saw earlier?" Strictly opt‑in (default OFF), local‑only; `screen_memory`
    schedule action for periodic capture.
 3. ✅ **Save a successful agent run as a reusable Workflow/Automation** (M105) — a "💾 Save as workflow"
    button on the agent's final answer; the `agent` action replays the goal on re-run.
 4. ✅ **Hands‑free voice conversation** (M105) — 🎙️ toggle in the Workspace: listen (silence‑detected) →
-   STT → chat → speak the reply (local Piper) → listen again. Components verified; live mic loop is
-   component‑verified (can't be driven headlessly).
+   STT → chat → speak the reply (local Piper) → listen again. Implementation complete; all three legs
+   verified (only the physical mic isn't headless‑automatable).
 5. ✅ **Folder Q&A** (M105) — point at a folder → auto‑index (recursive, skips secrets) → chat over it
    with citations (RAG over a directory). `/api/kb/ingest-folder` + Knowledge‑page input.
 6. ✅ **Quality dashboard** (M105) — `/api/quality` records scored eval/health runs; the Diagnostics

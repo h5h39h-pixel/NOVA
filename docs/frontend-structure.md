@@ -13,9 +13,10 @@ after every file loads, so cross‑file function/`const` references resolve at c
 | `js/core.js` | ~223 | DOM/api helpers, icon engine, `State`, event bus, i18n, **router + `ROUTES`**, render helpers (`card`, `ringHTML`, `mdRender`, …). |
 | `js/pages.js` | ~145 | Everyday pages: Dashboard, Monitor, Terminal + shared dashboard helpers (`kpi`, `updateKpis`, `renderSvc`). |
 | `js/pages-create.js` | ~329 | Creation/media + screen: Models, Tools, Video, Training, Screen Studio, Live Vision, Bugs + the STT voice helpers (`dictate`, `_micUI`). |
-| `js/pages-data.js` | ~199 | Data pages: Learning, A/B Test, Knowledge, Automation (incl. `screen_if`), Workflows, Batch. |
-| `js/pages-system.js` | ~337 | System/insight: Nova Brain (3D map + `BRAIN_PALETTE`), Diagnostics, Audit, Open WebUI, Settings. |
-| `js/pages-workspace.js` | ~250 | **The unified "Nova" page** — Chat + Agent merged, pro toggles, ✨Auto model, attach/open files, media (capture/image/video) in chat. (Replaced the old separate Chat + `pages-agent.js`, which were removed.) |
+| `js/pages-data.js` | ~225 | Data pages: Learning, A/B Test, Knowledge (incl. folder Q&A), Automation (incl. `screen_if` region/absent), Workflows + **🎬 macro recorder**, Batch. |
+| `js/pages-brain.js` | ~192 | **Nova Brain** — the self-contained 3D force-directed knowledge map (+ `BRAIN_PALETTE`). Split out of `pages-system.js` (M105.2) since it shared nothing with the config pages. |
+| `js/pages-system.js` | ~177 | System/insight: Diagnostics (+ Quality Trend), Audit, Open WebUI, Settings (+ Persistent Memory, Screen memory). |
+| `js/pages-workspace.js` | ~360 | **The unified "Nova" page** — Chat + Agent merged, pro toggles, ✨Auto model, attach/open files, media (capture/image/video + ✨refine) in chat, **🎙️ hands-free voice loop**. (Replaced the old separate Chat + `pages-agent.js`.) |
 | `js/shell.js` | ~213 | WebSocket bus, toasts, notifications, command palette, theme, auth gate, `autoLite`, `boot()` (calls `route()` last). |
 
 **Rule:** new pages go in the matching `pages-*.js`; `ROUTES` (in `core.js`) maps a route id → page
@@ -35,8 +36,10 @@ Loaded after the fonts/FA in this order (later files override earlier — preser
 ## Backend — layered DAG (unchanged)
 `config ← core ← services ← api ← server`; nothing imports `server.py`. Routes live in `nova/api/*`
 (now incl. `toolkit.py`, `control.py`, `screen_vision.py`, `understand.py`, `exec.py`, `stt.py`,
-`files_api.py`, **`memory.py`** [IDEA‑8]); logic in `nova/services/*` (now incl. `stt.py` for the
-Whisper loader and **`memory.py`** for local persistent memory). `server.py` also gained `_supervise()`
+`files_api.py`, **`memory.py`** [IDEA‑8], **`quality.py`** [IDEA‑6], **`macro.py`** [IDEA‑1]); logic in
+`nova/services/*` (now incl. `stt.py`, **`memory.py`**, **`quality.py`**, **`macro.py`** [pynput recorder]).
+`config.py` gained `toolkit_script(name)` — prefers a repo‑vendored `toolkit/` script (e.g. the img2img
+`generate.ps1`) over the external `WORKSPACE/toolkit`. `server.py` also gained `_supervise()`
 [IDEA‑10] which auto‑restarts any background loop that crashes hard. After the
 M96 extraction, `server.py` is **~576 lines** — closer to a pure composition root (lifespan, loops,
 middleware, router includes + a small set of app‑state‑coupled routes: ws, health/errors, selftest,

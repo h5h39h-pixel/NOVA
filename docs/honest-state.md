@@ -177,6 +177,34 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## M105.2 (2026‑06‑30) — finished the yellows + two audit passes (found & fixed real bugs)
+Closed every remaining 🟧 the owner named (IDEA‑1 recording, IDEA‑4, coverage, vendored generate.ps1),
+then ran **two adversarial code‑audit passes**. Real issues found and FIXED this round:
+- **🔴 Auth lockout (pre‑existing).** Enabling token auth returned the one‑time token as `new_token`, but
+  the Settings UI read `s.auth_token` (always redacted) — so the token was never shown and auto‑login
+  never fired → reload locked you out. Fixed the frontend to use `new_token` (prompt‑reveal once + auto
+  login); removed the dead persistent‑token field; added a "lost it? toggle off/on to re‑mint" hint.
+- **🟠 Hands‑free voice could freeze.** If a spoken phrase matched a media command ("take a screenshot")
+  or a `!cmd`, `send()` returned without a chat event, so the loop never resumed. Added `hfResumeIfWaiting()`
+  on both early‑return paths.
+- **🟠 Macro recorder thread‑safety.** Mouse + keyboard listeners ran on two threads mutating shared
+  buffers lock‑free → could drop keystrokes. Added a dedicated `_BUF` lock around all buffer mutation.
+- **🟠 Macro privacy.** Recording captures ALL desktop typing. Added a prominent "don't type passwords"
+  warning (UI + start toast) and documented it. (Still: no masking — opt‑in, local, user‑initiated only.)
+- **🟡 `/api/quality` 500** on non‑numeric/no‑body input → now returns a clean error.
+- **🟡 `screen_if` recursion** — `then_action: screen_if/schedule` now rejected (no self‑recursion).
+- **🟡 Macro replay timing** — added an 80ms settle between replayed control steps.
+- **Cleanup:** removed dead settings `lite_visuals`/`accent` (never read) + their i18n labels; fixed stale
+  `pages-agent.js` comments + an orphan Brain banner; isolated the supervise test's error file.
+- **Split:** extracted Nova Brain (3D map, ~192 lines) from `pages-system.js` → `pages-brain.js`
+  (it shared nothing with the config pages). `pages-system.js` 364→177.
+**Verified:** gate ✅ · live 42/42 ✅ · self‑test 13/13 ✅ · all 22 routes zero console errors ✅ ·
+coverage **49%→56%** · 0 runtime errors. Macro recording live‑verified (captured a real OS click).
+**Left intentionally (documented, low‑risk):** the `conversations` router has no UI after the chat→workspace
+merge (kept as an API for a future history sidebar); `/api/chat-export-pdf` + `/api/db-status` are
+manual‑probe endpoints with no UI; a handful of `server.py` routes stay inline because they're coupled to
+app/lifespan state.
+
 ## M105d (2026‑06‑30) — IDEA‑2 screen memory + IDEA‑3/5 (honest)
 - **IDEA‑5 Folder Q&A, IDEA‑3 save‑agent‑run, IDEA‑2 screen memory** shipped & live‑verified (each with
   a real roundtrip, then test artifacts cleaned up). All local‑only; no protections disabled.

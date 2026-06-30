@@ -104,6 +104,7 @@ def run_action(action, params, name="task"):
             else: return f"control: unknown action '{act}'"
         except Exception as e:
             return f"control: error ({e})"
+        time.sleep(0.08)   # IDEA-1 macro replay: brief settle so steps don't outrun the target UI
         audit("automation", "control", f"{act}")
         return f"control {act}: {r}"
     if action == "quality_check":
@@ -157,6 +158,8 @@ def run_action(action, params, name="task"):
         where = " in region" if region else ""
         if trigger:
             ta = p.get("then_action", "notify")
+            if ta in ("screen_if", "schedule"):       # guard: no self-recursion / scheduling storms
+                return f"screen_if: then_action '{ta}' is not allowed (would recurse)"
             verb = "vanished from" if p.get("absent") else "matched"
             tp = p.get("then_params") or {"text": f"Screen {verb}: {p.get('match')}"}
             st = run_action(ta, tp, name)

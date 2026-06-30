@@ -1412,6 +1412,52 @@ dashboard), IDEA-9 (img2img refine), IDEA-4 (hands-free voice, 🟧 live-loop), 
 observe loop, closed). IDEA-1 (visual macro recorder) is 🟧: the **replay** half shipped (a workflow `control` step replays
 mouse/keyboard actions as a macro, gated + panic-aware, tested), but passive **recording** of live input
 is deferred (needs a new dep + is constrained by this env's synthetic-keyboard suppression; documented).
+**[Superseded by M105.2 — recording half now shipped.]**
+
+## M105.2 — finish the yellows: macro recording, hands-free, coverage, vendored generate.ps1
+Continued autonomously to close every remaining 🟧 the owner named. Strictly local-only; no protections
+disabled. Gate ✅ · live 42/42 ✅ · self-test 13/13 ✅ · all 22 routes render zero console errors ✅.
+
+- **IDEA-1 recording half (now ✅):** `nova/services/macro.py` — **pynput** global mouse/keyboard
+  listeners passively capture clicks + typing into `control` steps (typed chars collapse into a `type`
+  step; special keys flush + record as `keys`); user-initiated start/stop, 500-event cap, `exec_allowed`-
+  gated. `nova/api/macro.py`: `/api/macro/{state,start,stop,save}`. Workflows page got a "🎬 Macro
+  recorder" panel (record → name → save as workflow). `pynput==1.8.2` pinned in requirements.txt/.in and
+  the lockfile regenerated (pip-compile, hashes). Tests: pure handlers + API save (no real listeners).
+  **Live-verified:** started recording, generated a real OS click at (6,6) → captured as
+  `{action:click,x:6,y:6,button:left}`, listeners stopped cleanly, 0 runtime errors. Honest caveats:
+  typed text replays via UIA; special-key replay limited by env keyboard suppression; physical-px coords.
+- **IDEA-4 hands-free (now ✅):** implementation complete + all three legs verified (STT round-trip, chat
+  stream, TTS `ok=True`); the only non-automatable part is a physical mic (no headless mic) — an
+  environment limit, not a code gap. Removed the 🟧.
+- **generate.ps1 vendored into the repo (IDEA-9 follow-up):** copied the img2img-enabled `generate.ps1`
+  to `toolkit/generate.ps1` *inside the repo* (so it travels with a clone). New `config.toolkit_script(name)`
+  resolver prefers the repo-vendored copy and falls back to the external `WORKSPACE/toolkit`; `toolkit.py`
+  now resolves genvideo/generate/speak through it. Verified: `generate.ps1` → repo copy, `ocr.ps1` →
+  external fallback.
+- **Test coverage 51% → 55%:** new `tests/test_coverage_boost.py` (automodel 0%→covered: every routing
+  branch; `process.ps_args/_q` round-trip; analytics/insights/search/media/owui routes; insights service)
+  + macro/quality API tests in `test_api.py`. Also isolated the IDEA-10 supervise test's error file
+  (M105k) so the gate no longer leaks a phantom `/api/errors` entry.
+- **requirements.lock** regenerated with pynput (pip-compile --generate-hashes).
+
+### M105.2b — two adversarial audit passes (found & fixed real bugs)
+Ran two parallel code-audit agents over the new + surrounding code. Fixed:
+- 🔴 **Auth lockout (pre-existing):** Settings read the redacted `s.auth_token` instead of the one-time
+  `new_token`, so enabling auth showed no token + didn't auto-login → reload locked you out. Frontend now
+  uses `new_token` (one-time prompt reveal + auto-login); removed the dead token field.
+- 🟠 **Hands-free freeze:** spoken media-commands/`!cmd` returned from `send()` without a chat event, so
+  the loop never resumed. Added `hfResumeIfWaiting()` on both paths.
+- 🟠 **Macro thread-safety:** added a `_BUF` lock around buffer mutation (mouse+keyboard listener threads).
+- 🟠 **Macro privacy:** prominent "captures all typing — don't type passwords" warning (UI + toast + docs).
+- 🟡 `/api/quality` input guard (no more 500 on bad body); `screen_if` self-recursion guard; 80ms settle
+  between replayed macro `control` steps.
+- **Dead code removed:** `lite_visuals` + `accent` settings (never read) + i18n labels; stale
+  `pages-agent.js` comments + orphan Brain banner.
+- **Split:** Nova Brain → `pages-brain.js` (pages-system.js 364→177); added to index.html load order.
+- Coverage 51%→**56%**; gate ✅ · live 42/42 ✅ · self-test 13/13 ✅ · 22 routes zero console errors ✅.
+- Left intentionally (documented): `conversations` router (no UI yet, kept as API), `/api/chat-export-pdf`
+  + `/api/db-status` (manual probes), app-state-coupled inline routes in `server.py`.
 
 ### M105j — IDEA-1 macro replay (control step in the workflow runner)
 - `nova/services/schedules.py`: new `control` action in `run_action` — dispatches move/click/drag/scroll/

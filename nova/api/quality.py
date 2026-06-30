@@ -14,10 +14,17 @@ def api_quality(suite: str = "", limit: int = 200):
 
 @router.post("/api/quality")
 async def api_quality_record(req: Request):
-    b = await req.json()
-    if "suite" not in b or "score" not in b or "total" not in b:
+    try:
+        b = await req.json()
+    except Exception:
+        return {"ok": False, "error": "invalid JSON body"}
+    if not isinstance(b, dict) or "suite" not in b or "score" not in b or "total" not in b:
         return {"ok": False, "error": "need suite, score, total"}
-    return {"ok": True, "run": Q.record(b["suite"], b["score"], b["total"], b.get("detail", ""))}
+    try:
+        run = Q.record(b["suite"], float(b["score"]), float(b["total"]), b.get("detail", ""))
+    except (TypeError, ValueError):
+        return {"ok": False, "error": "score and total must be numbers"}
+    return {"ok": True, "run": run}
 
 
 @router.post("/api/quality/snapshot")

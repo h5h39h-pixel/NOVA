@@ -1,6 +1,6 @@
 // -*- part of the Nova SPA (framework-free, global scope, load order matters) -*-
-// Data pages — Learning, A/B Test, Knowledge, Automation, Workflows, Batch. Loaded after pages-agent.js.
-// Split from pages-agent.js (HON-11 cont.).
+// Data pages — Learning, A/B Test, Knowledge, Automation, Workflows (+ macro recorder), Batch.
+// Loaded after pages-create.js, before pages-brain.js/pages-system.js (see index.html order).
 
 function Learning(){
   const html=`<div class="grid g4" style="margin-bottom:16px">
@@ -168,7 +168,13 @@ function Workflows(){
       <div class="flex" style="gap:7px"><select class="t" id="wact" style="width:auto">${ACTIONS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}</select><input class="t" id="wparam" placeholder="parameter (command / prompt / text / folder / query)"><button class="btn" id="wadd">＋</button></div>
       <div id="wsteps" class="mt"></div>
       <button class="btn p mt" id="wcreate" style="width:100%">💾 Save workflow</button>
-      <p class="muted mt" style="font-size:12px">Steps run in sequence — each waits for the previous to finish.</p>`)}
+      <p class="muted mt" style="font-size:12px">Steps run in sequence — each waits for the previous to finish.</p>
+      <hr style="border:none;border-top:1px solid var(--line2);margin:14px 0">
+      <label class="f">🎬 Macro recorder <span class="tag" id="mrstate"></span></label>
+      <p class="muted" style="font-size:12px">Record your mouse clicks &amp; typing, then save it as a replayable workflow. Local-only; records only while active.</p>
+      <p class="muted" style="font-size:11px;color:var(--warn,#d97706)">⚠️ While recording, ALL typing on the whole desktop is captured (not just this app) — <b>do not type passwords or secrets</b> until you stop.</p>
+      <div class="flex" style="gap:7px"><button class="btn" id="mrec">⏺ Record</button><input class="t" id="mrname" placeholder="macro name"><button class="btn p" id="mrsave" disabled>💾 Save macro</button></div>
+      <p class="muted mt" style="font-size:11px">Note: typed text replays via UI Automation; mouse clicks replay by coordinates (record &amp; replay at the same screen scale).</p>`)}
     ${card('Workflows <span class="tag" id="wstatus"></span>',`<div id="wlist"><div class="empty">…</div></div>`)}
    </div>`;
   function pkey(a){return a==='command'?'command':a==='video'?'prompt':a==='kb_search'?'query':a==='kb_index'?'folder':a==='browse'?'url':'text'}
@@ -188,7 +194,23 @@ function Workflows(){
       if(m.ev==='start'){st.className='tag run';st.textContent='running: '+m.name}
       else if(m.ev==='step'&&m.state==='running'){st.textContent='step '+(m.i+1)+': '+m.action}
       else if(m.ev==='done'){st.className='tag '+(m.ok?'on':'err');st.textContent=m.ok?'completed ✓':'failed';load()}});
-    return [u];
+    // ---- IDEA-1: macro recorder ----
+    let recTimer=null;
+    const setRec=on=>{const b=$('#mrec'),s=$('#mrstate'),sv=$('#mrsave');if(!b)return;
+      b.textContent=on?'⏹ Stop':'⏺ Record';b.classList.toggle('danger',on);if(sv)sv.disabled=on;
+      if(s){s.className='tag '+(on?'run':'');s.textContent=on?'recording…':''}};
+    const rec=$('#mrec');if(rec)rec.onclick=async()=>{
+      const st=await api('/macro/state');
+      if(st&&st.recording){const r=await post('/macro/stop',{});setRec(false);clearInterval(recTimer);
+        toast('success','Recording stopped',`${(r&&r.count)||0} steps captured`);}
+      else{const r=await post('/macro/start',{});if(r&&r.ok){setRec(true);
+        recTimer=setInterval(async()=>{const s=await api('/macro/state');const tg=$('#mrstate');if(tg&&s)tg.textContent=`recording… ${s.count} steps`;},1000);
+        toast('warn','🎬 Recording — all typing captured','don\'t type passwords until you stop');}
+        else toast('error','Could not start',(r&&r.error)||'');}};
+    const mrsave=$('#mrsave');if(mrsave)mrsave.onclick=async()=>{const name=$('#mrname').value.trim()||'macro';
+      const r=await post('/macro/save',{name});if(r&&r.ok){toast('success','Macro saved',`${r.steps} steps → workflow`);$('#mrname').value='';load();}
+      else toast('error','Save failed',(r&&r.error)||'nothing recorded');};
+    return [u,()=>{clearInterval(recTimer);}];
   }
   return {html,mount};
 }
@@ -205,9 +227,3 @@ function Batch(){
     $('#bi').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ba').click()});$('#br').onclick=runAll;return []}
   return {html,mount};
 }
-
-/* ============================ NOVA BRAIN 2.0 — living 3D neural map ============================
-   A dependency-free WebGL-grade visualization on a 2D canvas: 3D force-directed layout,
-   depth-projected glowing nodes clustered by community color, additive-glow links, pulsing
-   energy, drag-rotate, zoom, hover tooltips, click-to-focus, search, cluster legend filter,
-   live polling, and fullscreen. Fully local — no Three.js/CDN. */

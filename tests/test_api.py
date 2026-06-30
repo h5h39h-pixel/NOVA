@@ -59,6 +59,31 @@ def test_agent_save_workflow(client):
     assert wf["steps"][0]["params"]["deepthink"] is True
 
 
+def test_macro_api_save(client):
+    """IDEA-1: macro state + saving an explicit step list as a workflow (no real listeners started)."""
+    st = client.get("/api/macro/state").json()
+    assert st["recording"] is False
+    steps = [{"action": "click", "x": 10, "y": 20, "button": "left"},
+             {"action": "type", "text": "hello"}]
+    r = client.post("/api/macro/save", json={"name": "demo", "steps": steps}).json()
+    assert r["ok"] and r["steps"] == 2
+    wfs = client.get("/api/workflows").json()
+    wf = next(w for w in wfs if w["id"] == r["id"])
+    assert wf["steps"][0]["action"] == "control" and wf["steps"][0]["params"]["action"] == "click"
+    # empty save is rejected
+    assert client.post("/api/macro/save", json={"name": "x", "steps": []}).json()["ok"] is False
+
+
+def test_quality_api(client):
+    """IDEA-6: record via API + read summary; snapshot endpoint runs the cheap health check."""
+    rec = client.post("/api/quality", json={"suite": "unit", "score": 7, "total": 8}).json()
+    assert rec["ok"] and rec["run"]["pct"] == 87.5
+    q = client.get("/api/quality").json()
+    assert any(s["suite"] == "unit" for s in q["summary"])
+    snap = client.post("/api/quality/snapshot").json()
+    assert snap["ok"] and "pct" in snap["run"]
+
+
 def test_memory_api_crud(client):
     """IDEA-8: add → list → recall → delete a durable memory via the API."""
     add = client.post("/api/memory", json={"text": "I prefer concise answers", "pinned": True}).json()

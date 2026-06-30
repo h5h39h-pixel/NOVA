@@ -225,16 +225,19 @@ function Workspace(){
     }
 
     // ---- send ----
+    // If hands-free is waiting on a turn that won't emit a chat event (media command / !cmd), keep the
+    // voice loop alive instead of freezing — resume listening.
+    function hfResumeIfWaiting(){ if(hf.on && hf.waiting){ hf.waiting=false; $('#wshf').classList.remove('rec'); hfListenOnce(); } }
     async function send(){
       const v = $('#wsinput').value.trim();
       if((!v && !attached.length) || busy) return;
-      if(mode==='chat' && v && !v.startsWith('!') && await tryMediaCommand(v)){ $('#wsinput').value=''; $('#wsinput').style.height='auto'; return; }
+      if(mode==='chat' && v && !v.startsWith('!') && await tryMediaCommand(v)){ $('#wsinput').value=''; $('#wsinput').style.height='auto'; hfResumeIfWaiting(); return; }
       const model = $('#wsmodel').value || 'auto';
       // chat: !cmd quick exec
       if(mode==='chat' && v.startsWith('!')){
         const cmd=v.slice(1).trim(); addMsg('user', v); $('#wsinput').value='';
         const out=addMsg('ai',''); out.span.textContent='⌨️ $ '+cmd+'\n';
-        const r=await execCommand(cmd); if(!(r&&r.job)) out.span.textContent+= (r===null?'(cancelled)':('error: '+((r&&r.error)||'failed'))); return;
+        const r=await execCommand(cmd); if(!(r&&r.job)) out.span.textContent+= (r===null?'(cancelled)':('error: '+((r&&r.error)||'failed'))); hfResumeIfWaiting(); return;
       }
       let context='', markers='';
       if(attached.length){ context=attached.map(a=>`### File: ${a.filename}\n${a.text}`).join('\n\n');
