@@ -156,7 +156,7 @@ function Chat(){
       <input class="srch" id="convsrch" placeholder="🔎 search conversations…">
       <div class="convlist" id="convlist"><div class="empty">…</div></div>
     </aside>
-    <div>
+    <div class="chatmain">
       <div class="chathd">
         <select class="t" id="cm" style="width:auto;padding:5px 9px;font-size:12px"></select>
         <button class="btn sm" id="cmpbtn" title="Compare two models">⚖</button>
@@ -173,7 +173,7 @@ function Chat(){
       <div id="attachbar"></div>
       <div class="chips" id="chips"></div>
       <div class="chat drop" id="chat"></div>
-      <div class="inrow">
+      <div class="inrow composer">
         <button class="btn" id="attach" title="Attach file (PDF/TXT/DOCX/image)">📎</button>
         <button class="btn" id="mic" title="Voice input">🎤</button>
         <button class="btn" id="prev" title="Live preview (Markdown/code/RTL)">👁</button>

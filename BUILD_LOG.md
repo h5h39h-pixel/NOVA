@@ -363,3 +363,24 @@ per commit, quality gate green throughout. 32/34 tasks done; 2 deferred by judgm
 - **Deferred:** T-033 per-page bespoke UI (optional; global theme already applied), T-034 32b
   throughput (upstream-gated). **Excluded by decision:** multi-user, RTL mirroring.
 - _Verified_: pyflakes clean · node --check clean · pytest 24 · live suite 42/42 · self-test 13/13.
+
+## M39 — Per-page bespoke UI (T-033) + 32B tracking (T-034)
+
+Tailored each key page to its core task (focused/minimal — no unrelated widgets), on the global
+theme. Verified every page by headless render; quality gate green (pytest 24, live 42/42, zero
+console errors on all routes).
+
+- **Chat → messaging app:** full-height layout with a glass **composer pinned at the bottom**
+  (attach/voice/preview/input/Send), conversation list with gradient avatar tiles, lively glass
+  message bubbles (gradient user / glass AI) with slide-in. Fixed a grid-row sizing bug so columns
+  scroll internally instead of growing the page.
+- **Training → progress & control:** progress is the hero — big gradient % + thick bar + ETA + GPU
+  chips, prominent Start/Stop/Pause/Resume; stats, live log, test, history kept.
+- **Screen → preview & recording:** enlarged, prominent preview/record surfaces; previews appear
+  only when active (clean idle state); recordings list + playback.
+- **Agent → thinking & interaction:** **fixed a real bug** — `.asettings{display:flex}` overrode the
+  `hidden` attribute so the settings/tools panel could never collapse and the gear did nothing.
+  Added `.asettings[hidden]{display:none!important}` → settings now collapse by default, leaving the
+  avatar + live reasoning area + composer + example goals as the focus; gear toggle works.
+- **T-034:** `docs/32b-throughput.md` — baseline (14b ~120 tok/s default; 32b ~5 shared/~11 isolated),
+  watch-list (Ollama/llama.cpp Blackwell, new quants, drivers), and re-benchmark steps. Monitoring.

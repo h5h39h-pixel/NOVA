@@ -7,10 +7,11 @@ _See `PLAN.md` (strategy) and `TASKS.md` (task detail)._
 > ⚠️ **Estimates, not commitments.** Effort is in focused days (1 d ≈ 6 h). The calendar assumes a
 > part-time cadence; compress to ~2 weeks if worked full-time. Re-baseline after Phase 0.
 
-> ✅ **STATUS (2026-06-30): Milestones M-A → M-E all delivered** in one focused execution pass.
-> 32/34 tasks done; 2 deferred by judgment (T-033 optional per-page UI gold-plating, T-034
-> upstream-gated). All committed to git; quality gate (pyflakes + node + pytest 24 + live 42/42) green.
-> See `TASKS.md` for per-task status and `BUILD_LOG.md` (M38) for the execution record.
+> ✅ **STATUS (2026-06-30): Milestones M-A → M-E delivered + T-033 bespoke UI done.** 33/34 tasks done.
+> **Monitoring:** T-034 32B throughput (upstream-gated, `docs/32b-throughput.md`) — 🟡.
+> All committed to git; quality gate (pyflakes + node + pytest 24 + live 42/42) green;
+> redesigned pages render with zero console errors.
+> See `TASKS.md` for per-task status and `BUILD_LOG.md` (M39) for the execution record.
 
 ---
 

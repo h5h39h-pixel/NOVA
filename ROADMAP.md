@@ -44,6 +44,8 @@ _Last updated: 2026-06-30 (M37 Nova Brain 2.0). History of how each item was bui
 | **Backend fully modularized** (`nova/` package) | ✅ | **M34–M35 — 21 API routers + 18 services + 4 core; server.py 2400→495 lines (composition root). Injection hooks for run_action/build_briefing/training. ARCHITECTURE.md** |
 | Frontend split into ordered modules (core/pages/shell.js) | ✅ | M34 |
 | **Nova Brain 2.0** — living 3D neural map (force layout, community colors, search/filter, focus, fullscreen) | ✅ | **M37 — vanilla canvas, fully local; verified via headless render** |
+| **Engineering hardening** (git, pinned deps, vendored assets, tests+CI, exec gate, cache-bust, backups, migrations, observability) | ✅ | **M38 — Phases 0–4; see PLAN.md/TASKS.md** |
+| **Per-page bespoke UI** (Chat→messaging · Training→progress · Screen→preview · Agent→thinking) | ✅ | **M39 — T-033; focused/minimal; render-verified; fixed agent settings-collapse bug** |
 | Model evaluation (9 local models benchmarked; picks chosen) | ✅ | M31 — default qwen2.5:14b |
 | **Vibrant / living UI** (multi-accent palette, glass depth, aurora+grid+constellation, parallax, 3D card tilt) | ✅ | **M36 — final cascade CSS layer + parallax/tilt JS; reduced-motion safe; Arabic + responsive intact** |
 

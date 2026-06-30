@@ -66,8 +66,8 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 | T-030 | Training progress: parser prefers structured `[PROGRESS] {json}` → key=value → tqdm; unit-tested | P2 | 6h | — | ✅ |
 | T-031 | STT accuracy: `stt_model` setting (tiny…large-v3), hot-swap in `get_whisper`, lang hint | P3 | 4h | T-005 | ✅ |
 | T-032 | Click-to-act spike: `docs/click-to-act.md` evaluates UIA(pywinauto) vs grounding → **decision: park best-effort, hybrid plan documented** | P3 | 1–2d | T-006 | ✅ |
-| T-033 | Per-page bespoke UI layouts (Chat, Training, Screen) | P3 | 2–3d | — | 🟡 deferred — global theme (M36) already applies premium styling to every page; bespoke layouts are optional gold-plating, not started to avoid a rushed redesign |
-| T-034 | Track 32b throughput on Ollama/llama.cpp Blackwell updates (**upstream-gated, no code**) | P3 | ongoing | — | 🟡 ongoing |
+| T-033 | Per-page bespoke UI (Chat→messaging app w/ glass composer · Training→progress/control hero · Screen→preview/record · Agent→thinking/interaction + **fixed settings-collapse bug**). Each verified by render; focused/minimal per guidance; suite green | P3 | 2–3d | — | ✅ |
+| T-034 | 32b throughput — baseline + watch-list + re-benchmark steps in `docs/32b-throughput.md` (**upstream-gated, no code**) | P3 | ongoing | — | 🟡 Monitoring |
 
 ## Out of scope (by decision)
 | Item | Reason |
@@ -79,7 +79,7 @@ _Actionable breakdown of the hardening & completion plan (`PLAN.md`). Updated 20
 ---
 
 ### Rollup
-- **Total tasks:** 34 · **Done: 32 ✅** · **Deferred/ongoing: 2 🟡** (T-033 optional UI gold-plating, T-034 upstream-gated).
-- **Phases 0–4 (M-A…M-E) all delivered.** Each phase committed to git; quality gate green throughout.
+- **Total tasks:** 34 · **Done: 33 ✅** · **Monitoring: 1 🟡** (T-034 upstream-gated).
+- **Phases 0–5 delivered** (M-A…M-E hardening + T-033 bespoke UI). Each step committed to git; quality gate green throughout.
 - **Excluded by decision:** multi-user/RBAC, RTL mirroring.
-- **Verification:** `python scripts/check.py` → pyflakes + node --check + **pytest 24** ; live suite **42/42** ; self-test **13/13**.
+- **Verification:** `python scripts/check.py` → pyflakes + node --check + **pytest 24** ; live suite **42/42** ; self-test **13/13** ; all redesigned pages render with **zero console errors**.
