@@ -195,6 +195,14 @@ def test_understand_file_missing(tmp_path):
     assert r["ok"] is False and "not found" in r["error"]
 
 
+def test_act_core_term():
+    """FEA-1: a natural instruction reduces to the core UIA target term."""
+    from nova.services.screen import _core_term
+    assert _core_term("click the Save button").lower() == "save"
+    assert _core_term("press the OK button") == "OK"
+    assert "search" in _core_term("click on the search field").lower()
+
+
 def test_control_awareness():
     """PC-2: window/screen awareness returns sane structures (read-only; no input is sent)."""
     from nova.services.control import active_window, list_windows, screen_info

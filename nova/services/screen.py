@@ -143,14 +143,33 @@ def locate_element(description, region=None):
     except Exception as e:
         return {"ok": False, "error": str(e)[:160], "file": f"/files/{fn}"}
 
+_ACT_STOP = re.compile(r"\b(the|a|an|button|icon|menu|link|field|box|tab|on|screen|please|click|press|select|to)\b", re.I)
+def _core_term(instr):
+    """Reduce a natural instruction ('click the Save button') to its core target ('Save') so the
+    UI-Automation name match can find it."""
+    return " ".join(_ACT_STOP.sub(" ", instr or "").split())
+
 def act_on_screen(instruction, text=None, key=None, double=False):
-    """High-level: locate the target described by `instruction`, click it, then optionally type/press a key."""
-    loc = locate_element(instruction)
+    """High-level: locate the target described by `instruction`, click it, then optionally type/press
+    a key. **Tries precise UI-Automation element detection first** (exact pixel center, fast, reliable);
+    falls back to vision-model grounding when the element has no UIA name (FEA-1)."""
+    loc, via = None, "uia"
+    try:
+        from nova.services.control import find_element
+        term = _core_term(instruction) or instruction
+        r = find_element(term, partial=True, max_results=1)
+        if r.get("matches"):
+            c = r["matches"][0]["center"]; loc = {"ok": True, "x": c["x"], "y": c["y"]}
+    except Exception:
+        loc = None
+    if not loc:
+        via = "vision"
+        loc = locate_element(instruction)
     if not loc.get("ok"):
         return loc
     click_at(loc["x"], loc["y"], double=double)
     time.sleep(0.5)
-    out = {"ok": True, "clicked": [loc["x"], loc["y"]]}
+    out = {"ok": True, "clicked": [loc["x"], loc["y"]], "via": via}
     if text:
         type_text(text); out["typed"] = text
     if key:

@@ -119,7 +119,7 @@ Core chat UX, requested 2026‑06‑30. Toggle buttons styled like the existing 
 
 | ID | Task | Status | Notes / issue |
 |---|---|---|---|
-| FEA‑1 | Click‑to‑act reliability (UI Automation / pywinauto + focus) | 🟧 | Best‑effort; plan in `docs/click-to-act.md`. |
+| FEA‑1 | Click‑to‑act reliability (UI Automation / pywinauto + focus) | ✅ | M70. `act_on_screen` now tries **precise UI‑Automation element detection first** (exact pixel center via `control.find_element`, reduced from natural instructions by `_core_term`) and only falls back to vision grounding when there's no UIA name. Returns `via:"uia"|"vision"`. Much more reliable on real apps. |
 | FEA‑2 | STT Arabic/noisy accuracy (larger Whisper default / tuning) | 🟧 | `stt_model` configurable; default weak on Arabic. |
 | FEA‑3 | Voice improvements (input UX, TTS voices) | ⬜ | |
 | FEA‑4 | Conditional screen actions UX in Automation page (expose `screen_if`) | ⬜ | Backend done (M39); no dedicated UI. |

@@ -850,3 +850,12 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   the "where am i" chat command render-verified (active window + windows + screen, zero console errors);
   live suite 42/42. Full spec `docs/perception-control.md`.
 - **Phase 8 (Perception & Control) COMPLETE** (PC-1..6).
+
+## M70 — FEA-1: click-to-act uses precise UI Automation first (2026-06-30)  [P2 Features]
+
+- **What:** `act_on_screen` now resolves the target via UI-Automation element detection first
+  (`control.find_element` on a `_core_term`-reduced instruction → exact pixel center) and only falls
+  back to the vision model when no UIA element matches. Returns `via` so callers/agent see which path
+  was used. Leverages the Phase 8 control service to fix the long-standing click-to-act imprecision.
+- **Verified:** `test_act_core_term` (instruction → core term); full gate green.
+- **Note:** vision fallback remains best-effort for custom-drawn UIs without UIA names.

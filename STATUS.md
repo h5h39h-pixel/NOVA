@@ -52,7 +52,7 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 | **`screen_if` (conditional screen actions)** | Implemented + unit‑tested **with a mocked screen**; never run against a real screen / real vision matching. |
 | **Image/video generation** | **Image verified (OUT‑3, M67):** SDXL produced a correct 1024×1024 image in 9.1s via the live API+ComfyUI (visually confirmed; `scripts/gen_eval.py`). Video (LTX) uses the same path but is not yet auto‑verified (slower). |
 | **Training pipeline** | The fine‑tune scripts live **outside the repo** in `C:\AI\training` (`learn.ps1`, `train_lora.py`, `harvest_chats.py`). We only orchestrate + parse logs — never verified they produce a good model. |
-| **Click‑to‑act** | Best‑effort only — 7B vision grounding imprecise at 4K + Win11 focus rules. Don't rely on it. |
+| **Click‑to‑act** | **Improved (FEA‑1, M70):** `act_on_screen` tries precise UI‑Automation element detection first (exact center) → vision only as fallback. Reliable where apps expose UIA names; vision fallback still imprecise at 4K for custom‑drawn UIs. |
 | **STT (Arabic/noisy)** | base/CPU Whisper; weak on Arabic. Size now configurable. |
 | **CI** | The CI *commands* now **actually run** locally via `scripts/ci_local.py` (clean‑venv install → gate → PASS, M52). GitHub‑hosted execution still needs a Git remote the owner must create (`act` can't emulate `windows-latest`). |
 | **Pinned deps** | **Proven to clean‑install** from a fresh venv (M52, all wheels, no conflicts). Caveat: only *direct* deps are pinned — transitive deps resolve to latest‑compatible at install time (not a full lockfile). |
