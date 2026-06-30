@@ -88,5 +88,17 @@ in `TASKS.md` under **"Honest gaps (self‑audit)"** as **HON‑1…N**.
   post‑restart diagnostics.
 - **Split `pages.js`** before it gets worse.
 
+## Addendum (2026‑06‑30) — incidents & findings from the hardening pass
+- **GUI control is genuinely fragile AND was briefly destructive.** Building the HON‑2 GUI integration
+  test, the automated run force‑killed the user's open Notepad (multi‑tab session) via `taskkill /F`
+  before I made it non‑destructive. Win11 UWP Notepad is one shared multi‑tab window with session
+  restore, so automating it safely is hard and the type+readback was flaky. **Lessons:** (1) never
+  `taskkill /F` a shared app the user may be using; (2) GUI automation on the live desktop is real,
+  risky, and best‑effort — exactly the click‑to‑act caveat; (3) a reliable GUI test needs an isolated
+  disposable target app (HON‑2b). The HON‑1 panic stop exists precisely for when GUI control misbehaves.
+- **Honest eval numbers after enlarging the batteries:** agent 9/9 (safe goals); RAG 11/12 (92%) on an
+  overlapping corpus (one real miss). Coverage 49%. These are credible, not perfect — as intended.
+
 _Bottom line: capable, clean, broad — but under‑guarded and verification‑shallow where it matters most
-(screen control + agent reliability). Harden and prove those before trusting it unattended._
+(screen control + agent reliability). Harden and prove those before trusting it unattended. The GUI‑
+control path in particular is best‑effort and can disrupt the live desktop — keep the panic stop handy._

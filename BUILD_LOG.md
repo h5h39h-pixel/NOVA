@@ -1056,3 +1056,17 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - These replace the earlier toy 5/5 smoke baselines with credibly harder ones (RAG now shows a real
   failure). Still open (kept honest): 50+ goals / multi-app, Arabic STT WER, DeepThink A/B → HON-7 stays 🟧.
 - **Verified:** gate green; batteries run live.
+
+## M88 — HON-2: GUI integration test (flaky on UWP Notepad) + a destructive-cleanup incident (2026-06-30)  [P1 + incident]
+
+- **Built** `scripts/gui_eval.py` to drive a live app (Notepad) via the control stack: awareness
+  correctly detected the Notepad window, but **type+readback was FLAKY** — Win11 UWP Notepad is a single
+  shared multi-tab window with session restore, so the launch opened a tab in the EXISTING Notepad and
+  the marker didn't verify. This confirms the click-to-act / GUI-control fragility caveat.
+- **Incident (recorded honestly):** the first version's cleanup used `taskkill /F /IM notepad.exe`, which
+  force-closed the user's already-open Notepad (multiple tabs). That was destructive. **Fixed:** the
+  script now REFUSES to run if Notepad is already open and NEVER force-kills (leaves Notepad for the user
+  to close). Lesson added to `docs/honest-state.md`.
+- HON-2 → 🟧 (awareness verified; end-to-end GUI control unverified/flaky). New HON-2b: do it with an
+  isolated disposable target app. The HON-1 panic stop is the backstop for misbehaving GUI control.
+- **Verified:** gate green (script is pyflakes-clean; not run again).
