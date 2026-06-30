@@ -87,6 +87,7 @@ auto‑narration loop, click‑event capture, wire the Live page directly to `ac
 ## P1 — Chat interface improvements (CHAT · owner request)
 
 Core chat UX, requested 2026‑06‑30. Toggle buttons styled like the existing RAG/compare toggles.
+**Full spec:** `docs/chat-deepthink-websearch.md` (what/why/how + implementation + deps).
 
 | ID | Task | Status | Notes |
 |---|---|---|---|

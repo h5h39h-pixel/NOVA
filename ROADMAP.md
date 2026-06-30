@@ -86,7 +86,8 @@ See `TASKS.md` → "AI Screen Vision (SV)" for SV‑1…7 and `PROJECT_PLAN.md` 
 
 ## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62
 DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckGo results via `ddgs`, with
-citations; opt‑in/online), and an explicit microphone **⏹ Stop** control. See `TASKS.md` → CHAT‑1…3.
+citations; opt‑in/online), and an explicit microphone **⏹ Stop** control. See `TASKS.md` → CHAT‑1…3
+and the full spec in **`docs/chat-deepthink-websearch.md`**.
 
 ## 🟧 Known fragile / caveats (see STATUS.md for the live list)
 - Command‑exec surface unguarded on localhost (by design; now has a destructive confirm‑guard + denylist).

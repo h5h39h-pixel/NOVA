@@ -88,5 +88,7 @@ Owner‑requested chat UX, 2026‑06‑30:
 - **Microphone stop** → the mic button becomes an explicit **⏹ Stop** while recording (the stop logic
   existed; the affordance was unclear). `web_search` is the first new runtime dependency since the
   pinning (`ddgs` added to `requirements.txt`/`.in`).
+- **Full spec:** `docs/chat-deepthink-websearch.md` (behavioral spec, implementation, dependencies,
+  extension ideas).
 
 ## 🚫 Out of scope (permanent): multi‑user/RBAC, RTL mirroring, cloud/scaling.

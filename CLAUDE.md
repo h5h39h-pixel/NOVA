@@ -24,4 +24,9 @@ self-test 13/13 · visual changes render-verified · the six files updated + com
 - Treat `/api/exec` + agent `run_command` as production-grade risk (it controls the PC).
 - Training scripts in `C:\AI\training` are an external dependency (we orchestrate, not own).
 - Open WebUI runs as a Docker container; our integration is schema-agnostic.
+- Chat has DeepThink + Web Search toggles (`ddgs` dep, DuckDuckGo, opt-in/online) — spec in
+  `docs/chat-deepthink-websearch.md`. AI Screen Vision (Phase 7) lives at `#/live` + `nova/services/
+  screen_vision.py` + `/api/vision/*` (all privacy-gated, opt-in).
+- New runtime deps must be pinned in `requirements.txt` AND added to `requirements.in`, then verified
+  with `python scripts/ci_local.py` (clean-venv install).
 - Excluded forever: multi-user/RBAC, RTL mirroring, cloud/scaling.

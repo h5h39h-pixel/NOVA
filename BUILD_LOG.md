@@ -765,3 +765,15 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   screenshot captured. (Did not enable real capture in the screenshot — privacy.)
 - **Completes:** SV-1/3/5/7 ✅; SV-2 (on-demand describe ✅, continuous loop deferred) and SV-4
   (focused-window context ✅, full keystroke capture deferred) are intentionally partial.
+
+## M64 — DOC: full spec for DeepThink + Web Search (2026-06-30)  [P2 Docs]
+
+- **Owner request:** document the DeepThink + Web Search feature comprehensively for any future
+  developer (human or Claude).
+- **Added `docs/chat-deepthink-websearch.md`** — what it does, why it matters, behavioral spec, full
+  frontend+backend implementation (file/function level), tests, dependencies (`ddgs`), and extension
+  ideas. Covers the microphone Stop fix too.
+- **Cross-linked** from ROADMAP, TASKS (CHAT section), PROJECT_PLAN §7. Added a CLAUDE.md note (chat
+  toggles + ddgs dep + Screen Vision pointers + the "pin new deps in requirements.txt AND .in, verify
+  with ci_local.py" rule) so future sessions see it automatically.
+- **Verified:** quality gate green (docs-only).
