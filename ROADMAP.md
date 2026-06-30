@@ -134,7 +134,8 @@ Original ideas that extend Nova's vision without breaking the core principle. Tr
    the `screen_if` automation (region + "act when absent" in the builder).
 8. ✅ **Local persistent memory** (M105) — durable user facts/preferences recalled across sessions;
    owner‑editable in Settings, injected into chat + agent prompts; local‑only.
-9. **Image edit pipeline** — generate then iteratively refine images (ComfyUI img2img) from the chat.
+9. ✅ **Image edit pipeline** (M105) — generate then iteratively refine images (ComfyUI img2img) from
+   the chat via a "✨ Refine / edit" button on every generated image.
 10. ✅ **Self‑healing loops** (M105) — every background loop auto‑restarts on a hard crash (`_supervise`,
    exp‑backoff), with the crash recorded to `/api/errors`.
 

@@ -33,8 +33,18 @@ async def api_toolkit(tool: str, req: Request):
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         fn = f"img_{uuid.uuid4().hex[:8]}.png"; outp = UPLOAD_DIR / fn
         cmd = '& "{}" "{}" -Model {} -Out "{}"'.format(TOOLKIT / "generate.ps1", prompt.replace('"', '`"'), model, outp)
-        job = PM.start("image: " + prompt[:40], ps_args(cmd), kind="image", source="image")
-        audit("image", "generate", f"{model}: {prompt[:60]}")
+        init = b.get("init_image")            # IDEA-9 img2img: refine an existing image
+        if init:
+            name = str(init).replace("\\", "/").split("/")[-1]   # accept "/files/x.png" or a bare name
+            initp = UPLOAD_DIR / name
+            if not initp.exists():
+                return JSONResponse({"ok": False, "error": f"init image not found: {name}"}, status_code=404)
+            try: dn = max(0.0, min(float(b.get("denoise", 0.6)), 1.0))
+            except Exception: dn = 0.6
+            cmd += ' -InitImage "{}" -Denoise {}'.format(initp, dn)
+        label = ("refine: " if init else "image: ") + prompt[:40]
+        job = PM.start(label, ps_args(cmd), kind="image", source="image")
+        audit("image", "refine" if init else "generate", f"{model}: {prompt[:60]}")
         return {"ok": True, "job": job.id, "file": f"/files/{fn}", "model": model}
     if tool == "speak":
         job = PM.start("speak", ps_args(f'& "{TOOLKIT / "speak.ps1"}" {_q(b.get("text",""))}'),

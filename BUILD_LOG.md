@@ -1376,3 +1376,17 @@ Continued the backlog autonomously (no protections disabled, single-user/local-o
   - Diagnostics page: "📈 Quality Trend" card (per-suite latest % with ▲/▼ delta + snapshot button).
   - Test `test_quality_record_and_summary` + live roundtrip (snapshot 4/5 — one service genuinely down;
     agent record 100%; summary shows both suites). Gate ✅ · live 42/42 ✅.
+
+### M105h — IDEA-9 image edit / img2img refine
+- **IDEA-9:** refine/edit an existing image instead of generating from noise.
+  - `toolkit/generate.ps1`: new `-InitImage` + `-Denoise` params — when set, copies the init image into
+    ComfyUI's input dir and builds LoadImage→VAEEncode→KSampler(denoise<1) from that latent (additive;
+    text-to-image path unchanged when `-InitImage` is absent).
+  - `nova/api/toolkit.py`: `/api/toolkit/image` accepts `init_image` (`/files/x.png` or a bare name,
+    resolved under UPLOAD_DIR) + `denoise` (clamped 0–1); labels/audits the job as "refine".
+  - `static/js/pages-workspace.js`: every rendered generated image gets a **"✨ Refine / edit"** button
+    that prompts for a change and re-runs img2img on that file.
+  - **Live verified end-to-end:** base "red apple" PNG (1.21 MB) → refine to "green apple, oil painting"
+    (denoise 0.6) → new valid PNG (1.28 MB). Gate ✅.
+  - Note: `generate.ps1` is a toolkit script (external dep we orchestrate); the change is additive and
+    backward-compatible.

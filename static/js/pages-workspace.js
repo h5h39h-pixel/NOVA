@@ -178,7 +178,11 @@ function Workspace(){
     //      (no 404 polling); only load the file once the job is done. ----
     function renderMedia(m, file, label, kind){
       if(kind==='video'){ m.span.innerHTML=`<video class="genvid" controls src="${file}?t=${Date.now()}"></video><div class="muted" style="font-size:11px">${esc(label)}</div>`; }
-      else { m.span.innerHTML=`<a href="${file}" target="_blank"><img class="genimg" src="${file}?t=${Date.now()}"></a><div class="muted" style="font-size:11px">${esc(label)}</div>`; }
+      else { m.span.innerHTML=`<a href="${file}" target="_blank"><img class="genimg" src="${file}?t=${Date.now()}"></a><div class="muted" style="font-size:11px">${esc(label)}</div>`;
+        const rf=document.createElement('button'); rf.className='btn sm'; rf.style.marginTop='6px'; rf.textContent='✨ '+(AR?'تحسين/تعديل':'Refine / edit');
+        rf.onclick=async()=>{ const np=prompt(AR?'صف التعديل المطلوب على الصورة:':'Describe how to change this image:', label); if(!np)return;
+          const r=await post('/toolkit/image',{prompt:np,model:'sdxl',init_image:file,denoise:0.6}); if(r&&r.file) showMedia(r.file,np,'img',r.job); else toast('error',AR?'فشل التحسين':'Refine failed',(r&&r.error)||''); };
+        m.span.appendChild(rf); }
       scroll();
     }
     async function showMedia(file, label, kind, jobId){
