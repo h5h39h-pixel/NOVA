@@ -713,3 +713,20 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   privacy controls (keyboard capture is the most sensitive). New `screen_vision` service + api + a
   "Live" SPA page when implemented.
 - **Verified:** quality gate green (docs-only change). Status: planned (SV-1..7 = TODO).
+
+## M61 — SV: AI Screen Vision backend + privacy gates (2026-06-30)  [P1 Phase 7]
+
+- **What:** implemented the Screen Vision backend. New `nova/services/screen_vision.py` (JPEG frame
+  grab via screen._grab + pillow downscale; `mjpeg_frames` async generator that re-reads settings each
+  tick; `mouse_pos`/`active_window` via stdlib ctypes; `describe_now` reusing the VLM) and
+  `nova/api/screen_vision.py` routes: `/api/vision/state|stream|frame|mouse|context|describe`. Router
+  registered in server.py. Settings gates added to DEFAULT_SETTINGS (all opt-in, OFF by default).
+- **Privacy-first (SV-6 done):** every capture route 403s unless its gate is on
+  (`screen_vision_enabled`, plus `track_mouse`/`track_keyboard` for those); stream + describe audited;
+  nothing is persisted (frames stream in memory). Keyboard (SV-4) is the privacy-light focused-window
+  title only — full keystroke capture deferred (needs pynput, high risk) as a documented decision.
+- **Verified:** 6 hermetic backend tests (`test_screen_vision.py`) — grab returns JPEG, all gates
+  default-off (stream/frame/describe 403), frame works when enabled, mouse/keyboard gates enforced.
+  Full gate green. (server.py changed → live after next restart.)
+- **Pending:** SV-5 frontend "Live" page (stream + mouse overlay + describe + toggles) and the
+  continuous narration loop (SV-2 UI).

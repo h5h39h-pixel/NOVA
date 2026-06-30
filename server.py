@@ -139,6 +139,7 @@ from nova.api.chat import router as chat_router
 from nova.api.training import router as training_router
 from nova.api.schedules import router as schedules_router
 from nova.api.screen import router as screen_router
+from nova.api.screen_vision import router as screen_vision_router
 from nova.api.settings import router as settings_router
 from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
@@ -161,6 +162,7 @@ app.include_router(chat_router, tags=["chat"])
 app.include_router(training_router, tags=["training"])
 app.include_router(schedules_router, tags=["automation"])
 app.include_router(screen_router, tags=["screen"])
+app.include_router(screen_vision_router, tags=["screen-vision"])
 app.include_router(settings_router, tags=["settings"])
 app.include_router(tts_router, tags=["media"])
 app.include_router(backup_router, tags=["backup"])

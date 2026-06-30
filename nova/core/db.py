@@ -26,6 +26,13 @@ DEFAULT_SETTINGS = {
     "lite_visuals": False,        # reduce background animations (particles/aurora/tilt) for low-end GPUs
     "stt_model": "base",          # local Whisper size: tiny | base | small | medium | large-v3
     "confirm_exit": True,         # warn before closing the tab/window ("Nova is still running")
+    # ---- AI Screen Vision (Phase 7) — ALL opt-in, local-only, non-persistent by default ----
+    "screen_vision_enabled": False,  # master switch for the live screen stream + vision loop
+    "vision_fps": 4,                 # live stream frames/sec (throttled; 1–15)
+    "vision_max_width": 1280,        # downscale frames to this width before JPEG (bandwidth/CPU bound)
+    "vision_quality": 70,            # JPEG quality 30–95
+    "track_mouse": False,            # expose live cursor position (opt-in)
+    "track_keyboard": False,         # capture active-window/keyboard context (most sensitive; opt-in)
 }
 
 def db():
