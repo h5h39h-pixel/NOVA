@@ -661,8 +661,9 @@ def _errors_total():
 import re as _re
 _INDEX = STATIC / "index.html"
 def _asset_version():
-    paths = [STATIC / "css/app.css", STATIC / "js/core.js", STATIC / "js/pages.js",
-             STATIC / "js/shell.js", STATIC / "fonts/fonts.css", STATIC / "vendor/fa/css/all.min.css"]
+    # glob so newly-added JS/CSS modules are covered automatically (no manual list to maintain)
+    paths = list((STATIC / "js").glob("*.js")) + list((STATIC / "css").glob("*.css"))
+    paths += [STATIC / "fonts/fonts.css", STATIC / "vendor/fa/css/all.min.css"]
     try: return str(int(max(p.stat().st_mtime for p in paths if p.exists())))
     except Exception: return "1"
 @app.get("/", response_class=HTMLResponse)

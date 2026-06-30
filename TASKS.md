@@ -25,7 +25,8 @@ as the truthful backlog; the safety items (HON‑1, HON‑10) are the highest pr
 | HON‑6 | **Verify live stream + Web‑Search chat turn end‑to‑end** | P1 | ⬜ | SV‑1 stream never watched streaming (FPS/backpressure/longevity); no full `websearch=true` chat turn run to a cited answer. |
 | HON‑8 | **Real lockfile** (hashes / pip‑compile) | P2 | ⬜ | Only direct deps pinned; transitive float — clean‑install passed *today*, not reproducible. |
 | HON‑9 | **CI actually running on a remote** | P2 | ⬜ | `ci_local.py` proves local only; GitHub Actions never executed. |
-| HON‑11 | **Refactor `static/js/pages.js`** (one enormous file) | P2 | ⬜ | Maintainability risk as features pile on. |
+| HON‑11 | **Refactor `static/js/pages.js`** (one enormous file) | 🟦 | M78. **Done for pages.js:** split 1440‑line monolith → `pages.js` (Dashboard/Monitor/Terminal/Chat) + `pages-create.js` (Models/Tools/Video/Training/Screen/Live/Bugs+voice) + `pages-agent.js` (Agent/Learning/ABTest/Knowledge/Automation/Workflows/Batch) + `pages-system.js` (Brain/Diagnostics/Audit/OWUI/Settings). Byte‑identical split; all 23 routes render, zero new console errors. Cache‑buster now globs `js/*.css`+`css/*`. **Remaining:** split `app.css` + slim `server.py` (in progress). |
+| HON‑12 | **OWUI embedded view blocked by our own CSP** (found during the refactor render‑sweep) | P2 | ⬜ | The `#/owui` page iframes `http://localhost:3000`, but the tightened CSP (SEC‑3 `default-src 'self'`) blocks framing it (+ cross‑origin localStorage denied). Fix: add `frame-src http://localhost:3000` to the CSP, or open OWUI in a new tab instead of an iframe. Pre‑existing since M45, not caused by the split. |
 
 **Honest re‑grading of some ✅ above:** OUT‑1, OUT‑5 (toy batteries) · FEA‑1 (UIA‑only; vision fallback
 imprecise) · SV‑1 (stream unwatched) · STB‑2 (survival‑as‑record, not resume) · POL‑3 (viewport‑only) ·
