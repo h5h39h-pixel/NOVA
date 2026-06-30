@@ -27,13 +27,13 @@ is **HON‑1…11** in `TASKS.md`.
 - **RTL mirroring** — Arabic stays text‑only on the fixed LTR layout.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
-## Next actions — only HON‑9 remains (and it's owner‑gated)
-1. **HON‑9** CI on a *hosted* remote — needs a GitHub remote/account the owner must create. Mitigated:
-   `scripts/ci_local.py` runs the full workflow locally; next I'll auto‑run it via a git pre‑push hook
-   so CI fires on every push without a remote.
+## Next actions — honest backlog HON‑1…12 COMPLETE
+The full self‑audit backlog is done (M81–M94). The only thing not local‑doable is **GitHub‑hosted** CI
+execution (HON‑9), which needs a remote the owner creates — CI already auto‑runs locally on every
+commit + push, and the workflow is validated and ready for a remote.
 
-_HON‑2/2b/2c **solved** (M93): GUI text control now works via UIA SetValue after finding synthetic
-keyboard input is suppressed here. The honest backlog is essentially done._
+_GUI text control fixed via UIA SetValue (M93, after finding synthetic keyboard input is suppressed
+here); CI auto‑runs via git hooks (M94). Re‑run the eval tools after model/dep changes._
 
 _**Honest backlog HON‑1…12 essentially complete** (M81–M92): HON‑1 kill‑switch ✅, HON‑1b agent‑control
 toggle ✅, HON‑3 coverage ✅, HON‑4 persistent errors ✅, HON‑5 load/concurrency ✅, HON‑6 stream+web verify

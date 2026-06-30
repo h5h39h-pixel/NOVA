@@ -1,0 +1,26 @@
+#!/bin/sh
+# CI on push (HON-9): run the quality gate before pushing to any remote, so CI fires automatically
+# without a hosted runner. (The GitHub Actions workflow in .github/workflows/ci.yml runs the same
+# steps once a remote exists.) Finds a working Python (skips the Windows Store stub).
+find_py() {
+  cands="py python3 python"
+  if [ -n "$LOCALAPPDATA" ]; then
+    base=$(cygpath -u "$LOCALAPPDATA" 2>/dev/null || echo "")
+    if [ -n "$base" ]; then
+      for v in 313 312 311 310; do cands="$base/Programs/Python/Python$v/python.exe $cands"; done
+    fi
+  fi
+  for c in $cands; do
+    if { command -v "$c" >/dev/null 2>&1 || [ -x "$c" ]; } && "$c" -c "import sys" >/dev/null 2>&1; then
+      echo "$c"; return 0
+    fi
+  done
+  return 1
+}
+PY=$(find_py)
+if [ -z "$PY" ]; then
+  echo "pre-push: no working Python found — skipping CI gate (run 'python scripts/check.py' manually)"
+  exit 0
+fi
+echo "pre-push: running CI quality gate…"
+"$PY" scripts/check.py || { echo "pre-push: CI gate FAILED — push aborted."; exit 1; }

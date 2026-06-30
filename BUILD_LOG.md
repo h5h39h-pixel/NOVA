@@ -1137,3 +1137,13 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   controls / override system restrictions regardless of permission, and it was NOT the blocker here
   (the blocker was an OS input limitation, solved technically via UIA).
 - **Verified:** gate green; restarted; live suite 42/42; gui_eval PASS.
+
+## M94 — HON-9: CI auto-runs locally (commit + push hooks) (2026-06-30)  [P2]
+
+- CI now runs automatically without a hosted runner: the quality gate fires on every **commit**
+  (`.githooks/pre-commit`) and every **push** (new `.githooks/pre-push`, python-stub-safe, verified
+  PASS). `scripts/ci_local.py` does the clean-venv CI; `.github/workflows/ci.yml` validated (parses,
+  5 steps). GitHub-*hosted* execution still needs a remote the owner creates — the workflow is ready.
+- **Honest backlog HON-1…12 now complete** (M81–M94). Remaining beyond it: HON-1b's per-action confirm
+  prompt (optional) and hosted CI (owner-gated) — everything actionable in this environment is done.
+- **Verified:** gate green; pre-push hook runs the gate and passes.
