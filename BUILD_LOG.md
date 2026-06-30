@@ -1229,3 +1229,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - Fixed a placeholder bug that polled a non-existent /files/pending. Remaining: polling shows benign
   404s only while the async file generates (not on page load → frontend gate stays clean).
 - **Verified:** gate green; live render — 📸 and an image-gen command both rendered images in chat.
+
+## M102 — smarter ✨ Auto model + agent vision-loop prompt (2026-06-30)  [Feature]
+
+- `automodel.py` enriched: vision keywords → VLM; coding → code model; reasoning/math/DeepThink →
+  reasoning or largest chat; long input (>1600 chars) → larger-context; agent → control model; Arabic
+  detection annotates the default (multilingual). Verified routing across 5 task types (vision→
+  qwen2.5vl, coding→qwen3-coder:30b, reasoning→largest, Arabic→default, agent→tool model).
+- Agent system prompt nudged for GUI/visual tasks: explicit perceive→act→observe loop (look via
+  see_screen/screen_awareness/find_element → act via control/act_on_screen → look again) — supports
+  AVL-style tasks ("what's on my desktop", iterative screen interaction).
+- **Verified:** gate green; restarted; live auto-model routing correct.

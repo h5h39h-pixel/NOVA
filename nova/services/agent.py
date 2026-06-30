@@ -91,6 +91,9 @@ AGENT_FOOTER_TMPL = (
     "Rules: exactly one JSON object per step. Only use the tools listed above — never invent tools "
     "(there is no 'parse_text'; reason over observations yourself). 'final' is NOT an action — to finish, "
     "output {{\"thought\":\"...\",\"final\":\"...\"}}. Prefer kb_search before answering about the user's documents. "
+    "For anything involving the screen or a GUI app: LOOK first (see_screen / screen_awareness / "
+    "find_element), then ACT (control / act_on_screen / click at exact coordinates), then LOOK AGAIN to "
+    "verify and adapt — iterate this perceive→act→observe loop until the goal is met. "
     "Take one action, observe, continue. Finish within {max_steps} steps."
 )
 def build_agent_sys(tools=None, max_steps=8):
