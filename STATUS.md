@@ -24,11 +24,11 @@ The next campaign is hardening, by priority below.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
 ## Next 3 actions (highest priority)
-1. **STB‑1** Watchdog/supervisor to auto‑restart `server.py` on crash. (P1)
-2. **STB‑3** Surface errors from background loops (no silent `except: pass`). (P1)
+1. **STB‑5** SQLite WAL mode + concurrency review. (P1)
+2. **STB‑2** Persist/resume training & recording across server restart. (P1)
 3. **OUT‑5** RAG retrieval quality check (relevance of citations). (P1)
 
-_**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests COMPLETE** ✅ (M49–M53). **P1 Outcome started:** OUT‑1 ✅ agent baseline 5/5 after fixing a real write/read path bug (M54). Apply the agent fix to the live server with a restart when convenient._
+_**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent baseline 5/5 after a real path bugfix, M54) · STB‑1 ✅ (watchdog python‑stub fix, M55) · STB‑3 ✅ (loops surface errors, M56). **⚠ Restart `server.py`** to activate M54 + M56 on the live instance._
 
 ---
 
@@ -57,8 +57,8 @@ _**P0 Security COMPLETE** ✅ (M43–M48). **P0 Tests COMPLETE** ✅ (M49–M53)
 | **CI** | The CI *commands* now **actually run** locally via `scripts/ci_local.py` (clean‑venv install → gate → PASS, M52). GitHub‑hosted execution still needs a Git remote the owner must create (`act` can't emulate `windows-latest`). |
 | **Pinned deps** | **Proven to clean‑install** from a fresh venv (M52, all wheels, no conflicts). Caveat: only *direct* deps are pinned — transitive deps resolve to latest‑compatible at install time (not a full lockfile). |
 | **Secrets** | `cloud_api_key` now **encrypted at rest** (SEC‑4, Fernet; key in `.nova_key`); tokens hashed; config.json git‑ignored. (Resolved.) |
-| **Background loops** | Swallow exceptions silently (`except: pass`) — a dead loop is invisible except via `/api/health`. |
-| **No watchdog** | If `server.py` crashes nothing restarts it; a server restart kills running training/recording (Job Object). |
+| **Background loops** | **Fixed (STB‑3, M56):** metrics/status/scheduler/backup loops now `record_error(...)` → visible in `/api/errors` + Diagnostics (deduped). They still recover next tick rather than crash. |
+| **Watchdog** | **Fixed (STB‑1, M55):** `watchdog.ps1` now resolves a real python (was the WindowsApps stub → restarts silently failed), logs, and uses a fail threshold. Still: a server restart kills running training/recording (Job Object) — STB‑2 will address resume. |
 | **beforeunload text** | Browser shows generic wording + only after interaction (browser limitation, not fixable). |
 
 ## In progress 🟦

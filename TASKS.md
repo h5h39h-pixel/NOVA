@@ -48,7 +48,7 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 |---|---|---|---|
 | STB‑1 | **Watchdog/supervisor** to auto‑restart `server.py` on crash | ✅ | M55. Hardened `watchdog.ps1`: **fixed the python‑stub bug** (old `(Get-Command python).Source` resolved to the WindowsApps stub → every restart silently failed) via `Resolve-Python`; added timestamped `watchdog.log`, N‑consecutive‑fail threshold, post‑restart re‑probe, and a `-Once` self‑check. Verified: `-Once` resolves the real Python312 + detects the live server. |
 | STB‑2 | Persist/resume training & recording across server restart | ⬜ | Job Object kills them on restart (by design today). |
-| STB‑3 | Error recovery + surfacing in background loops (no silent `except: pass`) | 🟧 | A dead loop is invisible except via `/api/health`. |
+| STB‑3 | Error recovery + surfacing in background loops (no silent `except: pass`) | ✅ | M56. `metrics_loop`/`status_loop`/`scheduler_loop` now `record_error(...)` (deduped, bounded — won't flood) so failures appear in `/api/errors` + Diagnostics instead of vanishing; `backup_loop` also records; shutdown finalizers `log.warning` instead of `pass`. Loops still don't crash (recover next tick). |
 | STB‑4 | Back up generated media/uploads (only the DB is snapshotted today) | ⬜ | |
 | STB‑5 | SQLite WAL mode + concurrency review | ⬜ | Single‑writer contention under load is untested. |
 | STB‑E | Daily DB snapshots (rotate 14) + migration framework + `/api/health` + error aggregation | ✅ | M‑B/M‑D. |
@@ -89,7 +89,8 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 ---
 
 ### Rollup
-- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** · P1 Outcome (OUT‑1 ✅; 4 open) · P1 Stability (5 open).
-- **Next:** **P1 Stability** — STB‑1 (watchdog) — and continue P1 Outcome (OUT‑2 training, OUT‑5 RAG quality).
+- **P0 Security: COMPLETE ✅** · **P0 Tests: COMPLETE ✅** · P1 Outcome (OUT‑1 ✅; 4 open) · P1 Stability (STB‑1 ✅ STB‑3 ✅; 3 open).
+- **Next:** STB‑5 (SQLite WAL) → STB‑2 (jobs survive restart) → P1 Outcome (OUT‑5 RAG quality).
+- **Pending restart:** M54 (agent path fix) + M56 (loop error surfacing) activate on the next `server.py` restart.
 - **Completed foundation:** see `BUILD_LOG.md` milestones M28–M41 (modular backend, hardening,
   bespoke UI, Nova Brain, OWUI 0.10.1).

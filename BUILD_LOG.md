@@ -636,3 +636,18 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Verified:** `watchdog.ps1 -Once` -> "python=...\Python312\python.exe server_up=True", exit 0
   (the real interpreter, not the stub). `watchdog.log` git-ignored.
 - **Next:** STB-3 (background loops surface errors instead of `except: pass`).
+
+## M56 — STB-3: background loops surface errors (2026-06-30)  [P1 Stability]
+
+- **What:** replaced silent `except Exception: pass` in `metrics_loop`, `status_loop`,
+  `scheduler_loop` with `record_error("<loop>", e)` so failures show up in `/api/errors` + the
+  Diagnostics page instead of vanishing. `backup_loop` now also `record_error`s on failure; the two
+  graceful-shutdown finalizers `log.warning` instead of `pass`. The in-memory aggregator dedupes by
+  signature with counts (bounded at 200), so a loop failing every tick can't flood it.
+- **Why:** previously a persistently-broken loop was invisible (the original STB-3 finding). Now it's
+  observable while the loop still recovers on the next tick (no crash).
+- **Left as-is:** the `tmp.unlink()` cleanup in a `finally` (benign temp-file removal) stays silent.
+- **Verified:** quality gate green (hermetic suite imports + exercises `server` via TestClient).
+- **Restart note:** this edits `server.py`; the running instance keeps the old loops until restarted.
+  M54 (agent path fix) + M56 both activate on the next `server.py` restart.
+- **Next:** STB-5 (SQLite WAL) / STB-2 (jobs survive restart).

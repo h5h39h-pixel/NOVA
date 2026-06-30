@@ -111,12 +111,12 @@ async def lifespan(app: FastAPI):
         if screen_svc.RECORDER.is_recording():
             r = screen_svc.RECORDER.stop()
             log.info(f"shutdown: finalized active screen recording -> {r.get('file')}")
-    except Exception: pass
+    except Exception as e: log.warning(f"shutdown: could not finalize screen recording: {e}")
     try:
         for j in list(PM.jobs.values()):
             if j.kind == "training" and j.status in ("running", "starting", "paused"):
                 log.info(f"shutdown: training job {j.id} still active (children owned by Job Object)")
-    except Exception: pass
+    except Exception as e: log.warning(f"shutdown: training-job check failed: {e}")
     log.info("AI Control Center shutting down cleanly")
 
 app = FastAPI(title="AI Control Center", lifespan=lifespan)
@@ -242,7 +242,7 @@ async def metrics_loop():
             if now - last_hist >= 30:        # persist a trend sample ~every 30s
                 last_hist = now
                 await asyncio.to_thread(record_history, m)
-        except Exception: pass
+        except Exception as e: record_error("metrics_loop", e)   # surfaced via /api/errors (deduped)
         await asyncio.sleep(float(get_settings().get("metrics_interval", 1.5)))
 
 async def status_loop():
@@ -253,7 +253,7 @@ async def status_loop():
                   "comfy":  http_ok(f"{COMFY_URL}/system_stats"),
                   "owui":   http_ok(f"{OWUI_URL}/")}
             await _send_all(st)
-        except Exception: pass
+        except Exception as e: record_error("status_loop", e)     # surfaced via /api/errors (deduped)
         await asyncio.sleep(5)
 
 async def scheduler_loop():
@@ -267,7 +267,7 @@ async def scheduler_loop():
             c.close()
             for row in due:
                 await asyncio.get_running_loop().run_in_executor(None, run_schedule, row)
-        except Exception: pass
+        except Exception as e: record_error("scheduler_loop", e)  # surfaced via /api/errors (deduped)
         await asyncio.sleep(15)
 
 async def backup_loop():
@@ -278,7 +278,7 @@ async def backup_loop():
             p = await asyncio.to_thread(snapshot_db)
             log.info(f"DB snapshot written: {p}")
         except Exception as e:
-            log.warning(f"DB snapshot failed: {e}")
+            log.warning(f"DB snapshot failed: {e}"); record_error("backup_loop", e)
         await asyncio.sleep(24 * 3600)
 
 # ---- websocket
