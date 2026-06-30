@@ -27,11 +27,17 @@ is **HON‑1…11** in `TASKS.md`.
 - **RTL mirroring** — Arabic stays text‑only on the fixed LTR layout.
 - **Cloud hosting / horizontal scaling** — local single‑machine only.
 
-## Next 3 actions (highest priority) — from the honest self‑audit
-1. **HON‑10** Prompt‑injection defense for the web‑augmented agent (it holds PC‑control tools while
-   reading untrusted web text). **Now the top safety item** (HON‑1 kill‑switch ✅ M81).
-2. **HON‑2 / HON‑3** Real GUI integration test (drive an app via UIA) · coverage measurement.
-3. **HON‑7** Honest larger eval batteries (replace the toy OUT‑1/OUT‑5 smoke tests) + HON‑12 (OWUI CSP).
+## Next actions — only 2 items remain, both blocked/deferred for real reasons
+1. **HON‑2c** Reliable GUI keyboard control — root cause is **Win11 foreground‑focus lock** (M91);
+   needs an activate→verify‑foreground→input routine or the mcp‑control path. Deferred (substantial +
+   environment‑bound + risks desktop disruption); awareness + mouse already work.
+2. **HON‑9** CI on a real remote — **blocked:** needs a GitHub remote/account the owner must create
+   (`scripts/ci_local.py` already runs the workflow locally).
+
+_**Honest backlog HON‑1…12 essentially complete** (M81–M92): HON‑1 kill‑switch ✅, HON‑1b agent‑control
+toggle ✅, HON‑3 coverage ✅, HON‑4 persistent errors ✅, HON‑5 load/concurrency ✅, HON‑6 stream+web verify
+✅, HON‑8 lockfile ✅, HON‑10 injection‑fence 🟧, HON‑11 refactor ✅, HON‑12 CSP ✅; HON‑2/2b/7 🟧 (built +
+honest findings). Remaining: HON‑2c (deep Win11 focus), HON‑9 (needs a remote)._
 
 _Original roadmap shipped & smoke‑verified (P0/P1/P2/P3 + Phases 7/8). **The honest backlog is HON‑1…11**
 (`TASKS.md` top + `docs/honest-state.md`). ✅ here means "built + verified once," not "battle‑tested."_
