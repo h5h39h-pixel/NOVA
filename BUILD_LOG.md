@@ -829,3 +829,24 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   breakdown; live suite 42/42.
 - **Next (Phase 8):** PC-2 window awareness, PC-3 element detection, PC-4/5 mouse+keyboard control, PC-6
   surfaces+tests.
+
+## M69 — PC-2..6: Perception & Control (window awareness + element detection + mouse/keyboard) (2026-06-30)  [P1 Phase 8]
+
+- **What:** `nova/services/control.py` + `nova/api/control.py`:
+  * **Awareness (PC-2):** active_window / list_windows / screen_info / awareness via ctypes Win32 +
+    psutil; per-monitor DPI-aware (reports true 3840x2160 @144dpi vs non-aware 2560x1440).
+  * **Element detection (PC-3):** find_element / click_element via `uiautomation` (UIA tree walk) →
+    name, type, bounding rect, click center.
+  * **Mouse (PC-4):** move/click/drag/scroll (pyautogui, DPI-aware).
+  * **Keyboard (PC-5):** press_keys ('ctrl+s'/lists) + type_text (clipboard, Unicode/Arabic).
+  * **Surfaces (PC-6):** GET /api/control/{active,windows,screen,awareness,find} + gated+audited
+    POST /api/control/{mouse,key,click-element}; agent tools screen_awareness/find_element/control;
+    chat commands (where am i / list windows / move mouse to X,Y / click X,Y / click "<name>" button /
+    read|describe this).
+- **Safety:** mutating control gated by exec_allowed() (localhost ok; LAN needs opt-in) + audited.
+- **Dependency:** `uiautomation==2.0.29` (pinned + requirements.in; pulls comtypes).
+- **Verified:** 3 hermetic tests (awareness/find/api read-only — no input sent); full gate green;
+  server restarted; live: control awareness returned true 4K/DPI + 13 windows; safe no-op move_mouse;
+  the "where am i" chat command render-verified (active window + windows + screen, zero console errors);
+  live suite 42/42. Full spec `docs/perception-control.md`.
+- **Phase 8 (Perception & Control) COMPLETE** (PC-1..6).

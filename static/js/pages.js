@@ -247,10 +247,32 @@ function Chat(){
     chat.addEventListener('dragleave',()=>chat.classList.remove('over'));
     chat.addEventListener('drop',e=>{e.preventDefault();chat.classList.remove('over');[...e.dataTransfer.files].forEach(uploadFile)});
 
+    // ---- Perception & Control chat commands ("where am i", "move mouse to X,Y", "read this") ----
+    async function tryPCCommand(v){
+      const s=v.trim().toLowerCase();
+      if(/^(where am i|what('?s| is)? open|list windows|active window)\b/.test(s)){
+        addMsg('user',v);const r=await api('/control/awareness');
+        const t='**Active window:** '+esc(r.active.title)+' ('+r.active.process+')\n\n'+
+          '**Open windows ('+r.windows.length+'):**\n'+r.windows.slice(0,15).map(w=>'- '+esc(w.title)+' _('+w.process+')_').join('\n')+
+          '\n\n**Screen:** '+r.screen.primary.w+'×'+r.screen.primary.h+' @ '+r.screen.dpi+'dpi (scale '+r.screen.scale+')';
+        addMsg('ai',t);return true}
+      let m=s.match(/^move (?:the )?(?:mouse|cursor) to \(?(\d+)[ ,]+(\d+)/);
+      if(m){addMsg('user',v);await post('/control/mouse',{action:'move',x:+m[1],y:+m[2]});addMsg('ai','🖱 moved mouse to '+m[1]+', '+m[2]);return true}
+      m=s.match(/^(double[- ]?)?click (?:at )?\(?(\d+)[ ,]+(\d+)/);
+      if(m){addMsg('user',v);await post('/control/mouse',{action:'click',x:+m[2],y:+m[3],double:!!m[1]});addMsg('ai','🖱 '+(m[1]?'double-':'')+'clicked '+m[2]+', '+m[3]);return true}
+      m=s.match(/^(?:click|press) (?:the )?["']?(.+?)["']? (?:button|element|link)$/);
+      if(m){addMsg('user',v);const r=await post('/control/click-element',{name:m[1]});addMsg('ai',r.ok?('🖱 clicked "'+esc(r.clicked)+'"'):('❌ '+(r.error||'not found')));return true}
+      if(/^(read|describe)( this| it)?$/.test(s)&&attached.length){
+        addMsg('user',v);const a=attached[0];const out=addMsg('ai','⏳ reading…');
+        const r=await post('/understand',{path:a.filename});
+        out.firstChild.innerHTML=mdRender(r.description||r.text||'(nothing detected)');attached=[];renderAttach();return true}
+      return false}
+
     // ---- send (chat / exec) ----
     const execJobs={};
     async function send(){let v=$('#ci').value.trim();if(!v&&!attached.length)return;
       if(!State.currentCid)await newChat();
+      if(await tryPCCommand(v)){$('#ci').value='';renderChips();return}
       const isAr=/[؀-ۿ]/.test(v);
       if(v.startsWith('!')){const cmd=v.slice(1).split(/&&|\|\|/).map(s=>s.trim().replace(/^!/,'')).filter(Boolean).join(' ; ');addMsg('user',v);$('#ci').value='';
         const out=addMsg('ai','');out.firstChild.textContent='⌨️ $ '+cmd+'\n';

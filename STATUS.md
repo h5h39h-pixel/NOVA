@@ -64,10 +64,11 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 
 ## 🆕 Perception & Control (Phase 8, P1) — in progress
 Owner request: read & understand anything (OCR+VLM), full window‑layout awareness, UI element detection,
-and precise mouse/keyboard control — as agent tools, chat commands, and APIs. **PC‑1 ✅ shipped (M68):**
-unified **Read & Understand** (`/api/understand`, agent `understand` tool, auto‑enriched image chat
-uploads) — verified live. **PC‑2…6 (window awareness, elements, mouse/keyboard control) in progress.**
-Tracked as **PC‑1…6** in `TASKS.md`.
+and precise mouse/keyboard control — as agent tools, chat commands, and APIs. **COMPLETE ✅** (M68
+PC‑1 + M69 PC‑2…6): unified **Read & Understand** (`/api/understand`, agent `understand`, auto‑enriched
+image uploads); **window/screen awareness** (DPI‑aware — true 4K), **element detection** (`uiautomation`),
+**precise mouse/keyboard control** (`/api/control/*`, agent `control`, chat commands like "where am i" /
+"move mouse to X,Y" / "read this"). Live‑verified. Full spec: `docs/perception-control.md`.
 
 ## 🆕 Chat interface improvements (CHAT, P1) — ✅ shipped M62
 DeepThink toggle (step‑by‑step reasoning), Web Search toggle (live DuckDuckGo via `ddgs`, cited;

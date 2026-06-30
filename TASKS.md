@@ -63,15 +63,15 @@ tools**, **chat commands** ("read this", "where am I?", "move mouse to 500,300")
 | ID | Task | Status | Notes |
 |---|---|---|---|
 | PC‑1 | **Read & Understand** — OCR + VLM for files/images/screenshots/screen; text + what it shows + purpose + details | ✅ | M68. `nova/services/understand.py` (`understand`/`understand_image`/`understand_file`) reusing `extract_text` + `screen.vlm_image`; `POST /api/understand`; agent tool `understand {path}`; **image chat uploads auto‑enriched** with VLM description + OCR (so "read/describe this" works). Verified live on a generated image. |
-| PC‑2 | **Window & screen awareness** — active window (title/process/rect), all visible windows, screen resolution + DPI, precise measurements | ⬜ | win32 via ctypes/pygetwindow; `GetForegroundWindow`/`EnumWindows`/`GetWindowRect`/`GetDpiForWindow`. |
-| PC‑3 | **Element detection** — find UI elements by name/text/partial match | ⬜ | UI Automation (`pywinauto`/`uiautomation`); return matched element name + bounding rect (→ click target). |
-| PC‑4 | **Precise mouse control** — move to exact X/Y, click, double/right‑click, drag, scroll | ⬜ | `pyautogui` (already a dep); pixel‑accurate; reuse/extend `screen.click_at`. |
-| PC‑5 | **Precise keyboard control** — key presses with modifiers, accurate text typing | ⬜ | `pyautogui` hotkey + clipboard‑paste typing (reuse `screen.type_text` for Unicode/Arabic accuracy). |
-| PC‑6 | **Surfaces + tests** — agent tools, chat commands, API endpoints, hermetic tests | ⬜ | "where am I?" / "list windows" / "move mouse to x,y" / "click x,y"; `POST /api/control/*`. |
+| PC‑2 | **Window & screen awareness** — active window (title/process/rect), all visible windows, screen resolution + DPI, precise measurements | ✅ | M69. `control.active_window/list_windows/screen_info/awareness` via ctypes Win32 + psutil; **per‑monitor DPI‑aware** (reports true 3840×2160 @144dpi vs non‑aware 2560×1440). `GET /api/control/{active,windows,screen,awareness}`. |
+| PC‑3 | **Element detection** — find UI elements by name/text/partial match | ✅ | M69. `control.find_element` via **`uiautomation`** (UIA tree walk); returns name, type, bounding rect + click center. `POST /api/control/find`. `click_element(name)` finds + clicks. |
+| PC‑4 | **Precise mouse control** — move to exact X/Y, click, double/right‑click, drag, scroll | ✅ | M69. `control.move_mouse/click/drag/scroll` (pyautogui, DPI‑aware coords). `POST /api/control/mouse`. Verified safely (no‑op move). |
+| PC‑5 | **Precise keyboard control** — key presses with modifiers, accurate text typing | ✅ | M69. `control.press_keys` ('ctrl+s' / lists) + `type_text` (clipboard‑paste, Unicode/Arabic). `POST /api/control/key`. |
+| PC‑6 | **Surfaces + tests** — agent tools, chat commands, API endpoints, hermetic tests | ✅ | M69. Agent tools `screen_awareness`/`find_element`/`control`; **chat commands** ("where am i", "list windows", "move mouse to X,Y", "click X,Y", "click the Save button", "read/describe this"); `/api/control/*`; 3 tests. "where am i" render‑verified live. |
 
-**Rollup:** P1. PC‑1 ✅. Next PC‑2 (awareness) → PC‑3 (elements) → PC‑4/5 (control) → PC‑6 (surfaces+tests).
-May add `pywin32`/`pywinauto`/`uiautomation` (pinned + ci_local‑verified). Privacy/safety: control actions
-are powerful — audited; localhost‑gated like exec.
+**Rollup:** **PC COMPLETE ✅** (M68 PC‑1 + M69 PC‑2…6). New dep `uiautomation` (pinned + in requirements.in).
+Mutating control is gated by `exec_allowed()` (localhost ok; LAN needs opt‑in) and audited. Full spec:
+`docs/perception-control.md`.
 
 ## P1 — AI Screen Vision (Phase 7 · NEW core feature)
 

@@ -27,6 +27,11 @@ self-test 13/13 · visual changes render-verified · the six files updated + com
 - Chat has DeepThink + Web Search toggles (`ddgs` dep, DuckDuckGo, opt-in/online) — spec in
   `docs/chat-deepthink-websearch.md`. AI Screen Vision (Phase 7) lives at `#/live` + `nova/services/
   screen_vision.py` + `/api/vision/*` (all privacy-gated, opt-in).
+- Read & Understand: `nova/services/understand.py` + `/api/understand` + agent `understand` tool.
+  Perception & Control (Phase 8): `nova/services/control.py` + `/api/control/*` + agent
+  `screen_awareness`/`find_element`/`control` + chat commands ("where am i", "move mouse to X,Y",
+  "read this"); `uiautomation` dep; mutating control is `exec_allowed()`-gated + audited. Spec:
+  `docs/perception-control.md`.
 - New runtime deps must be pinned in `requirements.txt` AND added to `requirements.in`, then verified
   with `python scripts/ci_local.py` (clean-venv install).
 - Excluded forever: multi-user/RBAC, RTL mirroring, cloud/scaling.

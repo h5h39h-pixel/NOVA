@@ -147,6 +147,7 @@ from nova.api.schedules import router as schedules_router
 from nova.api.screen import router as screen_router
 from nova.api.screen_vision import router as screen_vision_router
 from nova.api.understand import router as understand_router
+from nova.api.control import router as control_router
 from nova.api.settings import router as settings_router
 from nova.api.tts import router as tts_router
 from nova.api.backup import router as backup_router
@@ -171,6 +172,7 @@ app.include_router(schedules_router, tags=["automation"])
 app.include_router(screen_router, tags=["screen"])
 app.include_router(screen_vision_router, tags=["screen-vision"])
 app.include_router(understand_router, tags=["understand"])
+app.include_router(control_router, tags=["control"])
 app.include_router(settings_router, tags=["settings"])
 app.include_router(tts_router, tags=["media"])
 app.include_router(backup_router, tags=["backup"])

@@ -195,6 +195,31 @@ def test_understand_file_missing(tmp_path):
     assert r["ok"] is False and "not found" in r["error"]
 
 
+def test_control_awareness():
+    """PC-2: window/screen awareness returns sane structures (read-only; no input is sent)."""
+    from nova.services.control import active_window, list_windows, screen_info
+    a = active_window()
+    assert {"title", "process", "rect"}.issubset(a) and "w" in a["rect"]
+    assert isinstance(list_windows(), list)
+    s = screen_info()
+    assert s["primary"]["w"] > 0 and s["dpi"] > 0 and s["scale"] > 0
+
+
+def test_control_find_element_safe():
+    """PC-3: find_element returns a list of matches (empty for a nonsense name); no input sent."""
+    from nova.services.control import find_element
+    assert find_element("")["ok"] is False
+    r = find_element("zzz_no_such_element_qwerty_2026")
+    assert isinstance(r.get("matches"), list)
+
+
+def test_control_api_readonly(client):
+    """PC-6: read-only control endpoints respond (no gating needed, no input sent)."""
+    assert client.get("/api/control/screen").json()["primary"]["w"] > 0
+    assert "title" in client.get("/api/control/active").json()
+    assert isinstance(client.get("/api/control/windows").json()["windows"], list)
+
+
 def test_extract_text(tmp_path):
     from nova.services.files import extract_text
     p = tmp_path / "x.txt"; p.write_text("hello world", encoding="utf-8")

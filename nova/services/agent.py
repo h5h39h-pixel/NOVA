@@ -58,6 +58,14 @@ AGENT_TOOL_DEFS = {
     "act_on_screen": ("- act_on_screen {instruction, text, key}: ACT on the screen — locate the UI element described by "
                       "instruction (e.g. 'the search bar', 'the OK button') with the vision model, click it, then "
                       "optionally type `text` or press `key` (e.g. 'enter'). Use to operate apps you can see.\n"),
+    "screen_awareness": ("- screen_awareness {}: report the active window (title/process/position), all open "
+                         "windows, and the screen resolution/DPI. Use for 'where am I', 'what's open'.\n"),
+    "find_element": ("- find_element {name}: locate a UI element by its name/text (partial match) in the "
+                     "active window; returns its center X,Y so you can click it precisely.\n"),
+    "control": ("- control {action, x, y, x1,y1,x2,y2, amount, button, double, keys, text, name}: precise "
+                "mouse/keyboard control. action = move | click | drag | scroll | type | keys | click_element. "
+                "e.g. {action:'click', x:500, y:300} or {action:'keys', keys:'ctrl+s'} or "
+                "{action:'click_element', name:'Save'}.\n"),
     "generate_video": "- generate_video {prompt}: start a local video generation in the background.\n",
     "notify": "- notify {text}: send the user a desktop notification.\n",
     "speak": "- speak {text}: read text aloud to the user.\n",
@@ -159,6 +167,37 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             if r.get("text"): parts.append("TEXT:\n" + str(r["text"])[:1500])
             if r.get("description"): parts.append("UNDERSTANDING:\n" + str(r["description"])[:1500])
             return "\n\n".join(parts) or ("error: " + r.get("error", "could not read"))
+        if name == "screen_awareness":
+            from nova.services.control import awareness
+            r = awareness(); act = r["active"]; sc = r["screen"]
+            lines = [f"Active: {act['title']} ({act['process']}) at {act['rect']}",
+                     f"Screen: {sc['primary']['w']}x{sc['primary']['h']} @ {sc['dpi']}dpi (scale {sc['scale']})",
+                     "Open windows:"]
+            lines += [f"  - {w['title']} ({w['process']}) {w['rect']}" for w in r["windows"][:12]]
+            return "\n".join(lines)
+        if name == "find_element":
+            from nova.services.control import find_element
+            r = find_element(a.get("name", ""))
+            if not r.get("matches"): return f"no element matching '{a.get('name','')}'"
+            return "\n".join(f"{m['name']} [{m['type']}] center={m['center']['x']},{m['center']['y']}"
+                             for m in r["matches"][:8])
+        if name == "control":
+            from nova.services.settings import exec_allowed
+            if not exec_allowed():
+                return "BLOCKED: control is disabled while exposed on the LAN (enable allow_remote_exec)."
+            act = a.get("action", "")
+            if dry_run: return f"[dry-run] would control: {act} {a}"
+            from nova.services import control as C
+            if act == "move": r = C.move_mouse(a.get("x", 0), a.get("y", 0))
+            elif act == "click": r = C.click(a.get("x"), a.get("y"), a.get("button", "left"), bool(a.get("double")))
+            elif act == "drag": r = C.drag(a.get("x1", 0), a.get("y1", 0), a.get("x2", 0), a.get("y2", 0))
+            elif act == "scroll": r = C.scroll(a.get("amount", 0))
+            elif act == "type": r = C.type_text(a.get("text", ""))
+            elif act == "keys": r = C.press_keys(a.get("keys", ""))
+            elif act == "click_element": r = C.click_element(a.get("name", ""))
+            else: return f"unknown control action '{act}'"
+            audit("agent", "control", f"{act} {a.get('x','')},{a.get('y','')}")
+            return f"control {act}: {r}"
         if name == "notify":
             add_notification("info", "Agent", a.get("text", "")); return "user notified"
         if name == "speak":
