@@ -46,6 +46,17 @@ def _check_multi(ev, final):
     return p.exists() and "42" in p.read_text(encoding="utf-8", errors="replace") and "42" in (final or "")
 
 
+def _check_two_files(ev, final):
+    a = A.SAFE_WRITE_ROOT / "alpha.txt"; b = A.SAFE_WRITE_ROOT / "beta.txt"
+    return (a.exists() and "A" in a.read_text(errors="replace")
+            and b.exists() and "B" in b.read_text(errors="replace"))
+
+
+def _check_write_read_reason(ev, final):
+    p = A.SAFE_WRITE_ROOT / "fruit.txt"
+    return p.exists() and "BANANA" in p.read_text(errors="replace").upper() and "6" in (final or "")
+
+
 BATTERY = [
     {"id": "write_file", "tools": ["write_file"], "steps": 4,
      "goal": "Create a text file named eval1.txt in your output folder containing exactly the text "
@@ -64,12 +75,26 @@ BATTERY = [
      "goal": "First write the number 42 into a file called eval5.txt in your output folder. "
              "Then read that file back and tell me what number it contains.",
      "check": _check_multi},
+    {"id": "sum_three", "tools": ["run_command"], "steps": 4,
+     "goal": "Use a single PowerShell command to add 123 + 456 + 789, then tell me the total.",
+     "check": lambda ev, final: "1368" in _combined(ev, final)},
+    {"id": "date_year", "tools": ["run_command"], "steps": 4,
+     "goal": "Run a PowerShell command to get today's date, then tell me the current year.",
+     "check": lambda ev, final: "2026" in _combined(ev, final)},
+    {"id": "two_files", "tools": ["write_file"], "steps": 6,
+     "goal": "Create two files in your output folder: alpha.txt containing exactly A, and beta.txt "
+             "containing exactly B. Then finish.",
+     "check": _check_two_files},
+    {"id": "write_read_reason", "tools": ["write_file", "read_file"], "steps": 6,
+     "goal": "Write the word BANANA into a file fruit.txt in your output folder. Then read it back and "
+             "tell me how many letters the word has.",
+     "check": _check_write_read_reason},
 ]
 
 
 def _prep():
     A.SAFE_WRITE_ROOT.mkdir(parents=True, exist_ok=True)
-    for f in ("eval1.txt", "eval5.txt"):
+    for f in ("eval1.txt", "eval5.txt", "alpha.txt", "beta.txt", "fruit.txt"):
         (A.SAFE_WRITE_ROOT / f).unlink(missing_ok=True)
     (A.SAFE_WRITE_ROOT / "eval_secret.txt").write_text("TOKEN-4F9A2", encoding="utf-8")
 

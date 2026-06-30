@@ -1045,3 +1045,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   answered "Python 3.13.1" explicitly citing "the provided context" (the HON-10-fenced web results),
   579 chars, zero console errors — confirming search → context injection → answer works live.
 - Verification only (no code change).
+
+## M87 — HON-7: larger, honest eval batteries (2026-06-30)  [P1 Outcome]
+
+- **Agent battery 5→9 goals** (added harder multi-step/reasoning: two-file create, write→read→count
+  letters of BANANA, 3-number sum, date→year) → **9/9** with qwen2.5:14b. `docs/agent-baseline.md`.
+- **RAG 5→12-doc OVERLAPPING corpus** (entities like GPU/ports/models repeat across docs, so retrieval
+  must disambiguate, not keyword-match) → **precision@1 11/12 (92%), MRR 0.958** — one honest miss.
+  `docs/rag-baseline.md`.
+- These replace the earlier toy 5/5 smoke baselines with credibly harder ones (RAG now shows a real
+  failure). Still open (kept honest): 50+ goals / multi-app, Arabic STT WER, DeepThink A/B → HON-7 stays 🟧.
+- **Verified:** gate green; batteries run live.

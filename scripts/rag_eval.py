@@ -20,21 +20,36 @@ if str(ROOT) not in sys.path:
 
 import nova.core.db as dbm  # noqa: E402
 
-# distinct, single-topic documents (filename == doc id in results)
+# A larger, deliberately OVERLAPPING corpus (many docs mention the same entities — GPU, ports, models,
+# the control center — so retrieval must distinguish them, not just keyword-match). Harder than the toy set.
 DOCS = {
-    "gpu.txt": "The workstation has an NVIDIA RTX 5090 with 32 GB of VRAM dedicated to local AI inference.",
-    "backup.txt": "Database snapshots are taken automatically every day and the most recent 14 are kept in the backups folder.",
-    "auth.txt": "Login tokens are hashed with SHA-256 and the cloud API key is encrypted at rest using Fernet.",
-    "training.txt": "LoRA fine-tuning harvests the user's chat logs and produces a personalized model named nova-local.",
-    "ports.txt": "The control center dashboard listens on port 8900 while Open WebUI runs on port 3000.",
+    "gpu.txt": "The workstation has an NVIDIA RTX 5090 with 32 GB of VRAM dedicated to local AI inference and model training.",
+    "backup.txt": "Database snapshots are taken automatically every day and the most recent 14 are kept in the backups folder; generated media is mirrored too.",
+    "auth.txt": "Login tokens are hashed with SHA-256 and the cloud API key is encrypted at rest using Fernet; localhost is trusted.",
+    "training.txt": "LoRA fine-tuning on the RTX 5090 harvests the user's chat logs and produces a personalized model named nova-local.",
+    "ports.txt": "The control center dashboard listens on port 8900 while Open WebUI runs on port 3000 and Ollama on 11434.",
+    "stt.txt": "Speech-to-text uses faster-whisper on the GPU; the default model is 'small' and Arabic is supported.",
+    "tts.txt": "Text-to-speech uses Piper with an Arabic voice (kareem) and an English voice (lessac); speed is adjustable.",
+    "vision.txt": "AI Screen Vision streams the screen as throttled JPEG frames and describes it with qwen2.5-VL; everything is opt-in.",
+    "control.txt": "Precise control moves the mouse to exact coordinates and types text; a panic stop pauses all control instantly.",
+    "rag.txt": "The knowledge base embeds documents with nomic-embed-text into SQLite and retrieves by cosine similarity.",
+    "agent.txt": "The autonomous agent plans step by step, uses tools, and can be stopped at any time; web results are treated as untrusted data.",
+    "comfy.txt": "Image and video generation run locally through ComfyUI using SDXL, Flux, and LTX-Video models.",
 }
-# query -> the single document that answers it
+# query -> the single document that BEST answers it (paraphrased, minimal lexical overlap)
 QUERIES = [
     ("How much video memory does the graphics card have?", "gpu.txt"),
-    ("How many days of database backups are retained?", "backup.txt"),
+    ("How many days of database backups are kept?", "backup.txt"),
     ("How are passwords and secrets protected?", "auth.txt"),
-    ("What is the name of the model produced by fine-tuning?", "training.txt"),
-    ("Which network port serves the dashboard?", "ports.txt"),
+    ("What is the name of the personalized fine-tuned model?", "training.txt"),
+    ("Which network port serves the main dashboard?", "ports.txt"),
+    ("What does the system use to transcribe speech?", "stt.txt"),
+    ("How is text read aloud, and can the speed change?", "tts.txt"),
+    ("How does the AI watch my screen in real time?", "vision.txt"),
+    ("How do I immediately stop the AI from controlling the mouse?", "control.txt"),
+    ("How are documents searched semantically?", "rag.txt"),
+    ("How does the assistant handle untrusted information from the internet?", "agent.txt"),
+    ("What runs picture and movie generation?", "comfy.txt"),
 ]
 
 
