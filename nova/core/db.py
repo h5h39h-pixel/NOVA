@@ -24,7 +24,7 @@ DEFAULT_SETTINGS = {
     "lan_access": False,          # bind 0.0.0.0 instead of localhost (ONLY meaningful with auth on)
     "allow_remote_exec": False,   # permit /api/exec + agent run_command when exposed on LAN (off by default)
     "lite_visuals": False,        # reduce background animations (particles/aurora/tilt) for low-end GPUs
-    "stt_model": "base",          # local Whisper size: tiny | base | small | medium | large-v3
+    "stt_model": "small",         # local Whisper size: tiny | base | small | medium | large-v3 (small = good Arabic, GPU-fast)
     "confirm_exit": True,         # warn before closing the tab/window ("Nova is still running")
     # ---- AI Screen Vision (Phase 7) — ALL opt-in, local-only, non-persistent by default ----
     "screen_vision_enabled": False,  # master switch for the live screen stream + vision loop

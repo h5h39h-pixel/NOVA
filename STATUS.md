@@ -53,7 +53,7 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 | **Image/video generation** | **Image verified (OUT‑3, M67):** SDXL produced a correct 1024×1024 image in 9.1s via the live API+ComfyUI (visually confirmed; `scripts/gen_eval.py`). Video (LTX) uses the same path but is not yet auto‑verified (slower). |
 | **Training pipeline** | The fine‑tune scripts live **outside the repo** in `C:\AI\training` (`learn.ps1`, `train_lora.py`, `harvest_chats.py`). We only orchestrate + parse logs — never verified they produce a good model. |
 | **Click‑to‑act** | **Improved (FEA‑1, M70):** `act_on_screen` tries precise UI‑Automation element detection first (exact center) → vision only as fallback. Reliable where apps expose UIA names; vision fallback still imprecise at 4K for custom‑drawn UIs. |
-| **STT (Arabic/noisy)** | base/CPU Whisper; weak on Arabic. Size now configurable. |
+| **STT (Arabic/noisy)** | **Improved (FEA‑2, M73):** runs on **GPU (CUDA/float16)** with CPU fallback; default `small` (good Arabic), up to `large-v3` in Settings. GPU path verified. |
 | **CI** | The CI *commands* now **actually run** locally via `scripts/ci_local.py` (clean‑venv install → gate → PASS, M52). GitHub‑hosted execution still needs a Git remote the owner must create (`act` can't emulate `windows-latest`). |
 | **Pinned deps** | **Proven to clean‑install** from a fresh venv (M52, all wheels, no conflicts). Caveat: only *direct* deps are pinned — transitive deps resolve to latest‑compatible at install time (not a full lockfile). |
 | **Secrets** | `cloud_api_key` now **encrypted at rest** (SEC‑4, Fernet; key in `.nova_key`); tokens hashed; config.json git‑ignored. (Resolved.) |

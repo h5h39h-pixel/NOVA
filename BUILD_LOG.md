@@ -886,3 +886,12 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   `/api/control/*`; chat commands ("where am i", "move mouse to X,Y", "read this"); chat DeepThink/Web.
 - **Verified:** 2 new tests (agent web_search + deepthink prompt); full gate green; restarted; live
   suite 42/42; Agent page render-verified (DeepThink+Web toggles + all 19 tools in the grid).
+
+## M73 — FEA-2: GPU Whisper STT + better Arabic default (2026-06-30)  [P2 Features]
+
+- **What:** `get_whisper` loads faster-whisper on **CUDA/float16** (RTX 5090) with a CPU/int8 fallback;
+  default `stt_model` bumped `base`→`small` (markedly better Arabic, GPU keeps it fast). Larger sizes
+  (up to large-v3) selectable in Settings.
+- **Verified:** CUDA backend probe loaded a model on GPU successfully; gate green; server restarted.
+- **Why:** the box has a 5090 but STT was pinned to CPU/int8 + a weak model — poor Arabic. Now it uses
+  the GPU.
