@@ -142,8 +142,16 @@ function showLogin(){
 /* ============================ boot ============================ */
 async function boot(){
   window.__toast=toast;
-  // data-safety: warn before closing if a recording or training is in progress
-  window.addEventListener('beforeunload',e=>{if(State.recording||State.training){e.preventDefault();e.returnValue='Work in progress (recording/training). Leave anyway?';return e.returnValue}});
+  // Track "Nova is busy" globally via the event bus (works on every page, no per-page wiring).
+  bus.on('agent',m=>{if(m.ev==='start')State.agentBusy=true;else if(['done','final','stopped','error'].includes(m.ev))State.agentBusy=false});
+  bus.on('chat', m=>{if(m.ev==='start')State.chatBusy=true; else if(['end','error'].includes(m.ev))State.chatBusy=false});
+  // Confirm before leaving: always when work is in progress; otherwise per the confirm_exit setting.
+  // (Browsers show their own generic wording and only prompt after the user has interacted — by design.)
+  window.addEventListener('beforeunload',e=>{
+    const busy=State.recording||State.training||State.agentBusy||State.chatBusy;
+    const always=!State.settings||State.settings.confirm_exit!==false;
+    if(busy||always){e.preventDefault();e.returnValue='Nova is still running. Are you sure you want to close?';return e.returnValue}
+  });
   document.documentElement.dir='ltr';document.documentElement.lang=State.lang;
   const auth=await api('/auth/status').catch(()=>({required:false,authed:true}));
   if(auth.required && !auth.authed){ showLogin(); return; }

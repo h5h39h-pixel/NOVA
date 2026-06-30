@@ -384,3 +384,16 @@ console errors on all routes).
   avatar + live reasoning area + composer + example goals as the focus; gear toggle works.
 - **T-034:** `docs/32b-throughput.md` — baseline (14b ~120 tok/s default; 32b ~5 shared/~11 isolated),
   watch-list (Ollama/llama.cpp Blackwell, new quants, drivers), and re-benchmark steps. Monitoring.
+
+## M40 — Close-tab confirmation ("Nova is still running")
+
+Global `beforeunload` guard (in `shell.js boot`, so it applies to **every** page of the SPA):
+- **Always warns** when work is in progress — recording, training, agent run, or chat streaming
+  (busy state tracked centrally via the event bus, no per-page wiring).
+- Otherwise warns per the new **`confirm_exit`** setting (default **on**) with a Settings toggle
+  ("Confirm before closing the tab").
+- Fires on tab close, window close, and refresh (browsers can't distinguish these).
+- _Honest limitation_: modern browsers replace the custom text with their own generic wording and
+  only prompt after the user has interacted with the page — both are browser security rules.
+- _Verified_ with Playwright: handler cancels the event (`defaultPrevented=true`) and a native
+  `beforeunload` dialog fires on close. Gate green (pytest 24, live 42/42).

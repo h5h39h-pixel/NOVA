@@ -1273,6 +1273,7 @@ function Settings(){
       <label class="f mt">Theme</label>
       <div class="flex"><button class="btn" id="thd">🌙 Dark</button><button class="btn" id="thl">☀️ Light</button><button class="btn" id="tha">🌗 Auto</button></div>
       <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${localStorage.getItem('lite')?'on':''}" id="slite"></button> Lite visuals — reduce background animations (low-end GPUs)</label>
+      <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${s.confirm_exit!==false?'on':''}" id="sconfirm"></button> Confirm before closing the tab (warn while Nova is running)</label>
       <label class="f mt">Backup &amp; Restore</label>
       <div class="flex wrap"><button class="btn" id="expset">⤓ Export settings</button><button class="btn" id="impset">⤒ Import settings</button><input type="file" id="impfile" accept=".json" style="display:none"></div>
       <div class="flex wrap" style="margin-top:7px"><button class="btn p" id="backupall">💾 Backup everything</button><button class="btn" id="restoreall">♻ Restore everything</button><input type="file" id="restorefile" accept=".json" style="display:none"></div>
@@ -1291,6 +1292,8 @@ function Settings(){
     (async()=>{const list=await api('/models');$('#sl').innerHTML=list.map(m=>`<option ${m.name===s.default_local_model?'selected':''}>${esc(m.name)}</option>`).join('')})();
     const slite=$('#slite');if(slite)slite.onclick=function(){const on=!this.classList.contains('on');
       if(on)localStorage.setItem('lite','1');else localStorage.removeItem('lite');location.reload()};
+    const sconfirm=$('#sconfirm');if(sconfirm)sconfirm.onclick=function(){const on=!this.classList.contains('on');this.classList.toggle('on',on);
+      post('/settings',{confirm_exit:on}).then(x=>{State.settings=x});toast('info',on?'Exit confirmation enabled':'Exit confirmation disabled','')};
     $('#thd').onclick=()=>{localStorage.setItem('theme','dark');applyTheme()};
     $('#thl').onclick=()=>{localStorage.setItem('theme','light');applyTheme()};
     $('#tha').onclick=()=>{localStorage.setItem('theme','auto');applyTheme();toast('info','Auto theme','light by day, dark by night')};
