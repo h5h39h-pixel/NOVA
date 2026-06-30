@@ -61,8 +61,14 @@ _**P0 Security + P0 Tests COMPLETE** ✅. **P1 in progress:** OUT‑1 ✅ (agent
 | **Watchdog** | **Fixed (STB‑1, M55):** `watchdog.ps1` now resolves a real python (was the WindowsApps stub → restarts silently failed), logs, and uses a fail threshold. Still: a server restart kills running training/recording (Job Object) — STB‑2 will address resume. |
 | **beforeunload text** | Browser shows generic wording + only after interaction (browser limitation, not fixable). |
 
+## 🆕 New core feature — AI Screen Vision (Phase 7, P1)
+Added 2026‑06‑30 by owner request. Real‑time screen stream + mouse/keyboard tracking + a continuous
+AI vision loop, fused into a live "see‑what‑I‑see & act" session — builds on the existing Screen
+Studio. **Privacy‑first:** opt‑in, local‑only, non‑persistent by default. Tracked as **SV‑1…7** in
+`TASKS.md`; design in `PROJECT_PLAN.md` Phase 7. Status: ⬜ TODO (not started).
+
 ## In progress 🟦
-- _(none active — pick the next from TASKS.md P1)_
+- _(none active — pick the next from TASKS.md P1: SV‑1 or STB‑2)_
 
 See **`TASKS.md`** for the full prioritized, actionable backlog, **`PROJECT_PLAN.md`** for the phase
 plan, and **`WORKFLOW.md`** for how we work.

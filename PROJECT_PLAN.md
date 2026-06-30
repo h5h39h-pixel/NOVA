@@ -24,6 +24,7 @@ The active plan:
 | **P‑4 Stability** | P1 — resilience | watchdog auto‑restart; jobs survive restart; loops recover + surface errors; media backup; WAL | ⬜ |
 | **P‑5 Docs** | P2 — upkeep | six files always current; README/SETUP refreshed; training pipeline documented | 🟦 ongoing |
 | **P‑6 Features/Polish** | P2/P3 | click‑to‑act reliability, STT, voice; perf budget, a11y, mobile | ⬜ |
+| **P‑7 AI Screen Vision** | P1 — core feature | real‑time screen stream + mouse/keyboard tracking + continuous VLM loop, fused into a live "see‑what‑I‑see & act" session; privacy‑first (opt‑in, local, non‑persistent) | ⬜ new (SV‑1…7) |
 
 Estimates are deliberately omitted — work proceeds **one task at a time, highest priority first,
 fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each phase.
@@ -58,5 +59,23 @@ fully verified** before the next (see `WORKFLOW.md`). Re‑baseline after each p
 - **Top risks:** (1) command‑exec surface = effectively RCE if exposed → Phase 1; (2) shallow tests
   hide real bugs → Phase 2; (3) unverified outcomes (agent/training/generation) → Phase 3;
   (4) no watchdog → Phase 4. Each is the explicit goal of its phase.
+
+## 6. Phase 7 — AI Screen Vision (design)
+A core feature added 2026‑06‑30. Goal: the AI perceives the live screen + input in real time and can
+act on it — "it sees exactly what I see."
+- **Architecture fit:** a new `nova/services/screen_vision.py` (or extend `screen.py`) owns the
+  capture/encode/track loop; routes in a new `nova/api/screen_vision.py`; a new SPA "Live" page.
+  Reuses `mss` (grab), `pillow` (downscale+JPEG), qwen2.5‑VL (`describe_screen`), and the existing
+  `act_on_screen` for control. Frames stream over the existing WS bus (or a dedicated MJPEG route).
+- **Performance:** the live stream and the VLM loop run at **independent, throttled rates** (stream
+  ~2–10 FPS; VLM ~1 frame / N sec) so slow vision never stalls the preview. Server‑side downscale +
+  JPEG keeps bandwidth/CPU bounded; drop frames under backpressure.
+- **Privacy & safety (load‑bearing):** every capability is **opt‑in and OFF by default**, local‑only,
+  pausable, with an on‑screen indicator and **no persistence** unless the user explicitly records.
+  Keyboard tracking is the most sensitive — extra gating, redaction near password fields, never logged
+  to disk. This is consistent with the private, single‑user posture (and the existing credential
+  deny‑list). Enable/disable is audited.
+- **Risks:** keylogging is sensitive even on a personal box (treat config like a secret); VLM latency;
+  CPU under continuous capture. Each is addressed by the gating + throttling above.
 
 ## 🚫 Out of scope (permanent): multi‑user/RBAC, RTL mirroring, cloud/scaling.

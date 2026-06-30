@@ -53,6 +53,26 @@ Update on every session (see `WORKFLOW.md`). Personal system — **no multi‑us
 | STB‑5 | SQLite WAL mode + concurrency review | ✅ | M57. `db()` now opens with `timeout=5s` + `PRAGMA busy_timeout=5000` + `synchronous=NORMAL`; `init_db` sets persistent `journal_mode=WAL` (readers no longer block the writer; fewer "database is locked" under the concurrent loops). Backup uses the online `src.backup()` API → WAL‑safe. WAL sidecars git‑ignored. Test: `test_db_wal_and_busy_timeout`. |
 | STB‑E | Daily DB snapshots (rotate 14) + migration framework + `/api/health` + error aggregation | ✅ | M‑B/M‑D. |
 
+## P1 — AI Screen Vision (Phase 7 · NEW core feature)
+
+Real‑time perception + control: the AI sees exactly what the user sees and can act on it. Builds on
+the existing Screen Studio service (`nova/services/screen.py`: `capture_screenshot`, `read_screen`,
+`describe_screen`, `act_on_screen`, `RECORDER`) — extend, don't duplicate. **Privacy‑first:** every
+capture/track path is opt‑in, local‑only, pausable, and non‑persistent by default.
+
+| ID | Task | Status | Notes / design |
+|---|---|---|---|
+| SV‑1 | **Live screen stream** to the dashboard — throttled frames (JPEG over WS or MJPEG endpoint), adjustable FPS/quality, start/stop | ⬜ | Reuse `mss` grab; downscale + JPEG‑encode (pillow) server‑side; push to a new "Live" view. Cap FPS (e.g. 2–10) to bound CPU. Backpressure: skip frames if a client is slow. |
+| SV‑2 | **Continuous AI vision loop** — periodically feed frames to qwen2.5‑VL and stream a running description; on‑demand "what's on my screen now?" | ⬜ | Throttle to ~1 frame / N sec (VLM is slow); reuse `describe_screen`. Stream narration over WS. Must not block the live stream. |
+| SV‑3 | **Mouse tracking** — global cursor position + click events, streamed to the UI + exposed to the agent | ⬜ | Cursor pos via `ctypes GetCursorPos` (cheap poll) or `pynput`. Overlay a marker on the live preview. Expose latest pos to agent context. |
+| SV‑4 | **Keyboard tracking** (opt‑in, privacy‑gated) — keystroke / active‑window context for the AI | ⬜ | Sensitive (keylogging). Default OFF, explicit toggle + on‑screen indicator; redact when a password field is focused if detectable; never persist; local‑only. `pynput.keyboard` listener. |
+| SV‑5 | **Unified live session** — one view fusing live screen + input + AI vision, wired to `act_on_screen` so the AI can interact with what it sees | ⬜ | Ties SV‑1…4 + existing act/click path into a single "AI is watching & can act" mode. |
+| SV‑6 | **Privacy & safety controls** — master opt‑in, per‑capability toggles, pause/redact, status indicator, zero‑persistence default | ⬜ | Gate ALL of SV‑1…5. Settings keys (`screen_vision_enabled`, `track_mouse`, `track_keyboard`, `vision_fps`). Audit when enabled/disabled. |
+| SV‑7 | **Tests + outcome verification** — stream lifecycle, throttling, privacy gates default‑off, tracking accuracy | ⬜ | Hermetic where possible (mock capture/VLM); a live smoke for the stream endpoint. |
+
+**Rollup:** P1, builds on Screen Studio. Core stream + vision + privacy (SV‑1/2/6) first; input
+tracking (SV‑3/4) and the unified session (SV‑5) next; tests (SV‑7) alongside each.
+
 ## P2 — Documentation (keep the six files current)
 
 | ID | Task | Status | Notes |

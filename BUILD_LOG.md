@@ -691,3 +691,25 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   this edits server.py + a service -> active after the next restart (loop), but the manual endpoint
   uses the live service immediately on restart.
 - **Next:** STB-2 (jobs survive restart), then P2 docs/features.
+
+## M60 — NEW core feature: AI Screen Vision (Phase 7) added to the plan (2026-06-30)  [Planning]
+
+- **Owner request:** add "AI Screen Vision - real-time screen capture, mouse tracking, keyboard
+  tracking, and AI vision integration so the AI can see exactly what I see and interact with my
+  screen" as a core feature.
+- **Documented across all source-of-truth files:**
+  * ROADMAP.md - new Phase 7; added to the Remaining table; dedicated feature section; refreshed the
+    now-stale phase statuses + caveats (Security/Tests done; watchdog/secrets/WAL/etc. fixed).
+  * TASKS.md - new "P1 - AI Screen Vision (Phase 7)" section with SV-1..7 (live stream, continuous
+    VLM loop, mouse tracking, keyboard tracking [privacy-gated], unified live session, privacy
+    controls, tests) + design notes + rollup.
+  * PROJECT_PLAN.md - P-7 row in the campaign table + a full "Phase 7 design" section (architecture
+    fit, performance, privacy/safety, risks).
+  * STATUS.md - new-feature callout (TODO, not started).
+  * WORKFLOW.md - added to priority order; a privacy hard-rule (opt-in/local/non-persistent;
+    keyboard extra-gated); cheat-sheet updated with the new eval/CI/watchdog commands.
+- **Design stance:** extend the existing Screen Studio (mss/pillow/qwen2.5-VL/act_on_screen), stream
+  over WS at throttled FPS independent of the slow VLM loop, and gate everything behind opt-in
+  privacy controls (keyboard capture is the most sensitive). New `screen_vision` service + api + a
+  "Live" SPA page when implemented.
+- **Verified:** quality gate green (docs-only change). Status: planned (SV-1..7 = TODO).

@@ -58,6 +58,7 @@ Anything that "works but has a known issue" is **🟧 FRAGILE**, not DONE — re
 - **P0** Real test coverage (unit + integration + smoke)
 - **P1** Outcome verification (does the agent actually complete goals?)
 - **P1** Stability (watchdog, error recovery, graceful shutdown)
+- **P1** AI Screen Vision (Phase 7 — real‑time capture, mouse/keyboard tracking, continuous VLM loop; SV‑1…7)
 - **P2** Documentation (keep these six files current)
 - **P2** Feature improvements (voice, click‑to‑act, …)
 - **P3** Polish (UI, performance, optimization)
@@ -68,6 +69,10 @@ Anything that "works but has a known issue" is **🟧 FRAGILE**, not DONE — re
 - Back up `webui.db` / `control.db` before any irreversible data/schema change.
 - Don't delete/recreate things you didn't create (e.g. the OWUI container) without surfacing it first.
 - The training scripts in `C:\AI\training` are an **external dependency** — we orchestrate, not own them.
+- **AI Screen Vision (SV‑*) is privacy‑sensitive.** Every capture/track path must be **opt‑in and OFF
+  by default**, local‑only, pausable, with an on‑screen indicator, and **non‑persistent** unless the
+  user explicitly records. Keyboard tracking gets extra gating (redact near password fields, never log
+  to disk). Treat its config like a secret; audit enable/disable.
 
 ## Commands cheat‑sheet
 ```
@@ -75,4 +80,8 @@ python preflight.py            # first-run / environment check
 python scripts/check.py        # quality gate: pyflakes + node --check + pytest
 python run_tests.py            # live smoke suite (needs server + Ollama running) → 42/42
 python server.py               # run the control center (http://localhost:8900)
+python scripts/ci_local.py     # local CI: clean-venv install + gate (proves the lock installs)
+python scripts/agent_eval.py --write-doc   # OUT-1 agent goal battery → docs/agent-baseline.md
+python scripts/rag_eval.py --write-doc     # OUT-5 RAG retrieval quality → docs/rag-baseline.md
+powershell -File watchdog.ps1 -Once        # watchdog self-check (resolves real python + probes)
 ```

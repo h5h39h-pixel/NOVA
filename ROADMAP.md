@@ -17,12 +17,14 @@ continuous learning — private, offline‑capable, and owned end‑to‑end. Th
 **trustworthy** (secure, tested, verified, resilient), not bigger.
 
 ## Phases (the campaign — see PROJECT_PLAN.md)
-1. **Phase 1 — Security** (P0): lock down the command‑execution surface, auth, HTTPS. 🟦 next
-2. **Phase 2 — Real tests** (P0): deep unit/integration + hermetic + working CI.
-3. **Phase 3 — Outcome verification** (P1): prove the agent/training/generation actually work.
-4. **Phase 4 — Stability** (P1): watchdog, error recovery, job persistence, graceful shutdown.
+1. **Phase 1 — Security** (P0): lock down the command‑execution surface, auth, HTTPS. ✅ done (M43–M48)
+2. **Phase 2 — Real tests** (P0): deep unit/integration + hermetic + working CI. ✅ done (M49–M53)
+3. **Phase 3 — Outcome verification** (P1): prove the agent/training/generation actually work. 🟦 in progress (OUT‑1 ✅, OUT‑5 ✅)
+4. **Phase 4 — Stability** (P1): watchdog, error recovery, job persistence, graceful shutdown. 🟦 in progress (STB‑1/3/4/5 ✅)
 5. **Phase 5 — Documentation** (P2): keep the six files + repo docs current.
 6. **Phase 6 — Features & polish** (P2/P3): click‑to‑act, voice, accessibility, performance.
+7. **Phase 7 — AI Screen Vision** (P1): real‑time screen streaming, mouse/keyboard tracking, and a
+   continuous AI vision loop so the AI sees exactly what the user sees and can act on it. ⬜ new (SV‑1…7)
 
 Foundation phases **0 (Safety Net)**, **modular refactor**, **UI**, and the **OWUI 0.10.1 upgrade**
 are ✅ complete (see BUILD_LOG M28–M41).
@@ -60,17 +62,34 @@ are ✅ complete (see BUILD_LOG M28–M41).
 | **P0** | Security: exec confirm‑guard, denylist, CSP, key encryption, HTTPS turnkey, audit | ⬜ (SEC‑1…6) |
 | **P0** | Real test coverage: deep units, hermetic mode, agent tests, clean install, run CI | ⬜/🟧 (TST‑1…6) |
 | **P1** | Outcome verification: agent battery, training, generation, `screen_if`, RAG quality | ⬜/🟧 (OUT‑1…5) |
-| **P1** | Stability: watchdog, job persistence, loop error recovery, media backup, WAL | ⬜/🟧 (STB‑1…5) |
+| **P1** | Stability: watchdog, job persistence, loop error recovery, media backup, WAL | 🟦 STB‑1/3/4/5 ✅; STB‑2 ⬜ |
+| **P1** | **AI Screen Vision** (Phase 7): real‑time capture, mouse/keyboard tracking, continuous AI vision loop, live "see‑what‑I‑see" + act | ⬜ **NEW** (SV‑1…7) |
 | **P2** | Docs upkeep + README/SETUP refresh + training‑pipeline docs | 🟦/⬜ (DOC‑1…3) |
 | **P2** | Features: click‑to‑act reliability, STT Arabic, voice, screen_if UI | 🟧/⬜ (FEA‑1…4) |
 | **P3** | Polish: perf budget, accessibility, mobile testing, 32B re‑bench | ⬜/🟧 (POL‑1…4) |
 
+## 🆕 Core feature — AI Screen Vision (Phase 7, P1)
+Real‑time perception + control so the AI sees exactly what the user sees and can act on it. Builds on
+the existing Screen Studio (capture / OCR / `describe_screen` / `act_on_screen` / recording) rather
+than replacing it. Scope:
+- **Live screen stream** to the dashboard (throttled WebSocket/MJPEG frames) — a real‑time preview.
+- **Continuous AI vision loop** — periodically feed frames to qwen2.5‑VL and stream a running
+  understanding ("narrate / watch my screen"); on‑demand Q&A about the live screen.
+- **Mouse tracking** — global cursor position + clicks, streamed to the UI and exposed to the agent.
+- **Keyboard tracking** — keystroke / active‑window context (privacy‑gated, opt‑in only).
+- **Unified live session** — one view fusing live screen + input + AI vision, wired to `act_on_screen`
+  so the AI can interact with what it sees.
+- **Privacy & safety first** — all opt‑in, local‑only, pause/redact, no persistence by default
+  (keyboard/mouse capture is sensitive; consistent with the single‑user, private‑by‑design posture).
+
+See `TASKS.md` → "AI Screen Vision (SV)" for SV‑1…7 and `PROJECT_PLAN.md` Phase 7 for the design.
+
 ## 🟧 Known fragile / caveats (see STATUS.md for the live list)
-- Command‑exec surface unguarded on localhost (by design, but no confirm/kill‑switch).
-- Tests shallow + environment‑coupled; CI never executed.
-- Agent success rate, training output, media generation — **unverified**.
+- Command‑exec surface unguarded on localhost (by design; now has a destructive confirm‑guard + denylist).
+- ~~Tests shallow + CI never executed~~ → **fixed**: deep + hermetic suite, agent‑loop tests, local CI proven (M49–M53).
+- Agent success rate ✅ baselined (5/5, M54) + RAG quality ✅ (5/5, M58); **training output + media generation still unverified** (OUT‑2/3).
 - `screen_if`, click‑to‑act — best‑effort / mocked‑only.
-- No watchdog; background loops swallow errors; secrets plaintext; deps not clean‑installed.
+- ~~No watchdog; loops swallow errors; secrets plaintext; deps not clean‑installed~~ → **fixed**: watchdog (M55), loops surface errors (M56), secrets encrypted (M46), clean‑install proven (M52), WAL (M57), media backup (M59).
 
 ## 🚫 Excluded (owner decision — never build)
 - Multi‑user / accounts / roles / RBAC.
