@@ -1093,3 +1093,18 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   fix for reliable GUI typing — filed as HON-2c (P1).
 - HON-2/2b → 🟧 (awareness/mouse verified; typing unreliable, root cause identified). Not thrashing
   further — the finding is the deliverable. Gate green.
+
+## M91 — HON-2c root cause: Win11 foreground-focus lock (2026-06-30)  [finding]
+
+- Tried three text-injection methods against the isolated app: pyautogui typewrite (drops most chars),
+  synthetic Ctrl+V (tkinter rejects), ctypes SendInput KEYEVENTF_UNICODE (landed nothing some runs).
+  Inconsistent results → the real root cause is **Win11's foreground-focus lock**: a background-launched
+  process can't reliably acquire keyboard focus, so injected keys go to the previously-focused window.
+  `keysender` is Node-only (not pip-installable).
+- **Conclusion:** reliable GUI text injection needs an activate→verify-foreground→input routine (real
+  click to activate, poll GetForegroundWindow until it's the target, retry) or the mcp-control path.
+  Non-trivial + environment-bound — deliberately NOT shipped unverified (would risk more desktop
+  disruption). HON-2c stays open with the precise root cause. Awareness + mouse are reliable; text
+  injection is not.
+- No code change (control.py left as-is — swapping the input method wouldn't fix a focus problem).
+  Gate green.
