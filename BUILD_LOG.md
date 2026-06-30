@@ -1218,3 +1218,14 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
 - **Honest re-audit** appended to docs/honest-state.md (incomplete/fragile: MED-1 media-in-chat building;
   AVL-1 game-play best-effort; no conversation history in workspace; file-write breadth; coverage 49%).
 - Next: build MED-1 (media in chat), smarter Auto, agent vision loop, innovative goals.
+
+## M101 — MED-1: image capture / image-gen / video-gen inside the unified chat (2026-06-30)  [Feature]
+
+- Workspace composer gains 📸 (capture screen) / 🎨 (generate image) / 🎬 (generate video) buttons, plus
+  natural chat commands (EN+AR): "screenshot", "what's on my screen/desktop" (capture+VLM describe),
+  "generate an image of …", "make a video of …". Results render INLINE in the thread via `showMedia()`
+  which polls the output file until ready (image/video/screenshot). Wired to /api/screen/shot,
+  /api/screen/describe, /api/toolkit/image, /api/toolkit/video.
+- Fixed a placeholder bug that polled a non-existent /files/pending. Remaining: polling shows benign
+  404s only while the async file generates (not on page load → frontend gate stays clean).
+- **Verified:** gate green; live render — 📸 and an image-gen command both rendered images in chat.

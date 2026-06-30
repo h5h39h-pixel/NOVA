@@ -44,6 +44,9 @@ function Workspace(){
         <button class="tgl agentonly" id="tg-full" data-tip="${AR?'يسمح للوكيل بتشغيل أي أمر/تحكم':'Let the agent run any command / control the PC'}">🔓 ${L.full}</button>
         <button class="tgl" id="tg-attach" data-tip="${AR?'أرفق صوراً/مستندات/أي ملف':'Attach images, documents, any file'}">📎 ${L.attach}</button>
         <button class="tgl" id="tg-open" data-tip="${AR?'افتح ملفاً على القرص واعمل عليه':'Open a file on disk and work on it'}">📂 ${AR?'فتح ملف':'Open file'}</button>
+        <button class="tgl" id="tg-shot" data-tip="${AR?'التقط الشاشة في المحادثة':'Capture the screen into the chat'}">📸</button>
+        <button class="tgl" id="tg-img" data-tip="${AR?'ولّد صورة':'Generate an image'}">🎨</button>
+        <button class="tgl" id="tg-vid" data-tip="${AR?'ولّد فيديو':'Generate a video'}">🎬</button>
         <span class="spacer"></span>
         <button class="btn" id="wsmic" data-tip="${AR?'إدخال صوتي':'Voice input'}">🎤</button>
         <button class="btn p" id="wssend">${L.send}</button>
@@ -155,6 +158,13 @@ function Workspace(){
       aiEl.d.appendChild(b);
     }
     $('#tg-attach').onclick = () => $('#wsfile').click();
+    // ---- media buttons (capture / image / video) → render in the chat ----
+    $('#tg-shot').onclick = async () => { clearEmpty(); addMsg('user', AR?'📸 التقط الشاشة':'📸 Capture screen');
+      const r = await post('/screen/shot'); if(r&&r.file) showMedia(r.file, AR?'لقطة الشاشة':'screenshot','shot'); else toast('error','Capture failed',''); };
+    $('#tg-img').onclick = async () => { const p = prompt(AR?'صف الصورة المطلوبة:':'Describe the image to generate:'); if(!p) return;
+      addMsg('user', '🎨 '+p); const r = await post('/toolkit/image',{prompt:p,model:'sdxl'}); if(r&&r.file) showMedia(r.file, p, 'img'); else toast('error','Image gen failed',''); };
+    $('#tg-vid').onclick = async () => { const p = prompt(AR?'صف الفيديو المطلوب:':'Describe the video to generate:'); if(!p) return;
+      addMsg('user', '🎬 '+p); const r = await post('/toolkit/video',{prompt:p}); if(r&&r.file){ showMedia(r.file, p, 'video'); toast('info',AR?'توليد فيديو (قد يستغرق دقائق)':'Generating video (may take minutes)',''); } };
     $('#wsfile').onchange = e => { [...e.target.files].forEach(uploadFile); e.target.value=''; };
     thread.addEventListener('dragover', e=>{e.preventDefault();thread.classList.add('over');});
     thread.addEventListener('dragleave', ()=>thread.classList.remove('over'));
@@ -163,10 +173,49 @@ function Workspace(){
     // ---- busy state ----
     function setBusy(b){ busy=b; $('#wssend').style.display=b?'none':''; $('#wsstop').style.display=(b&&mode==='agent')?'':'none'; }
 
+    // ---- media: render a generated/captured image or video (polls until the file is ready) ----
+    function showMedia(file, label, kind){
+      const m = addMsg('ai',''); m.span.innerHTML = `<div class="muted">${kind==='video'?'🎬':kind==='shot'?'📸':'🎨'} ${esc(label)} — ${AR?'جارٍ التحضير…':'generating…'}</div>`;
+      let tries=0; const max = kind==='video'?160:50;
+      (function load(){
+        if(kind==='video'){ const vid=document.createElement('video'); vid.controls=true; vid.className='genvid';
+          vid.onloadeddata=()=>{ m.span.innerHTML=''; m.span.appendChild(vid); const c=document.createElement('div'); c.className='muted'; c.style.fontSize='11px'; c.textContent=label; m.span.appendChild(c); scroll(); };
+          vid.onerror=()=>{ if(tries++<max) setTimeout(load,2000); else m.span.innerHTML='<span class="muted">⚠️ '+(AR?'انتهى وقت التوليد':'timed out')+'</span>'; };
+          vid.src=file+'?t='+Date.now(); return; }
+        const img=new Image();
+        img.onload=()=>{ m.span.innerHTML=`<a href="${file}" target="_blank"><img class="genimg" src="${file}"></a><div class="muted" style="font-size:11px">${esc(label)}</div>`; scroll(); };
+        img.onerror=()=>{ if(tries++<max) setTimeout(load,1200); else m.span.innerHTML='<span class="muted">⚠️ '+(AR?'انتهى وقت التوليد':'timed out / failed')+'</span>'; };
+        img.src=file+'?t='+Date.now();
+      })();
+    }
+    async function tryMediaCommand(v){
+      const s=v.trim();
+      // screenshot / what's on screen (chat mode → capture + optionally describe)
+      if(/^(take|grab|capture)?\s*(a\s+)?(screenshot|screen ?shot|capture (my )?screen)\b/i.test(s) || /^(خذ |التقط )?(لقطة شاشة|صورة الشاشة)/.test(s)){
+        addMsg('user', v); const r=await post('/screen/shot'); if(r&&r.file) showMedia(r.file, AR?'لقطة الشاشة':'screenshot','shot'); else toast('error','Capture failed',''); return true;
+      }
+      if(/^(what'?s| what is)\b.*\b(on (my )?(screen|desktop))/i.test(s) || /(ما(ذا)?|شو)\s+(على|في)\s+(شاشتي|الشاشة|سطح المكتب)/.test(s)){
+        addMsg('user', v); const out=addMsg('ai', AR?'⏳ أنظر إلى شاشتك…':'⏳ looking at your screen…');
+        const r=await post('/screen/describe',{}); out.span.innerHTML = mdRender(r.description||('error: '+(r.error||''))); if(r.file){const im=document.createElement('img');im.className='genimg';im.src=r.file+'?t='+Date.now();im.style.marginTop='8px';out.d.appendChild(im);} return true;
+      }
+      // image generation
+      let m=s.match(/^(?:generate|create|make|draw|render|اصنع|ارسم|ولّ?د)\s+(?:an?\s+|me\s+|صورة\s+)?(?:image|picture|photo|drawing|art|صورة|رسم)(?:\s+of)?[:\s]+(.+)/i);
+      if(m){ addMsg('user', v);
+        const r=await post('/toolkit/image',{prompt:m[1],model:'sdxl'});
+        if(r&&r.file) showMedia(r.file, m[1], 'img'); else toast('error','Image gen failed',''); return true; }
+      // video generation
+      m=s.match(/^(?:generate|create|make|ولّ?د|اصنع)\s+(?:an?\s+|me\s+)?(?:video|clip|animation|movie|فيديو|مقطع)(?:\s+of)?[:\s]+(.+)/i);
+      if(m){ addMsg('user', v); const r=await post('/toolkit/video',{prompt:m[1]});
+        if(r&&r.file) showMedia(r.file, m[1], 'video'); else { addMsg('ai', AR?'🎬 بدأ توليد الفيديو في الخلفية — سيظهر في الملفات.':'🎬 video generation started in the background — it will appear in /files.'); }
+        toast('info', AR?'توليد فيديو':'Generating video', m[1].slice(0,40)); return true; }
+      return false;
+    }
+
     // ---- send ----
     async function send(){
       const v = $('#wsinput').value.trim();
       if((!v && !attached.length) || busy) return;
+      if(mode==='chat' && v && !v.startsWith('!') && await tryMediaCommand(v)){ $('#wsinput').value=''; $('#wsinput').style.height='auto'; return; }
       const model = $('#wsmodel').value || 'auto';
       // chat: !cmd quick exec
       if(mode==='chat' && v.startsWith('!')){

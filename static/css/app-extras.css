@@ -92,3 +92,7 @@ textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #22d3ee;outlin
 .wsfilecard .wsfh .x{margin-left:auto;cursor:pointer;color:var(--err);font-weight:700}
 .wsfilecard pre.code{max-height:160px;overflow:auto;margin:0;font-size:11.5px}
 .wssave{margin-top:8px}
+
+/* ---- Workspace: generated/captured media in chat ---- */
+.wsmsg .genimg{max-width:100%;max-height:380px;border-radius:12px;border:1px solid var(--bd);display:block}
+.wsmsg .genvid{max-width:100%;max-height:380px;border-radius:12px;border:1px solid var(--bd);display:block}

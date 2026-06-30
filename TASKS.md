@@ -106,7 +106,7 @@ Mutating control is gated by `exec_allowed()` (localhost ok; LAN needs opt‑in)
 
 | ID | Task | Status | Notes |
 |---|---|---|---|
-| MED‑1 | **Image capture / image‑gen / video‑gen from the unified chat** | 🟦 | Building: chat commands + a ＋ media menu → `/api/toolkit/{image,video}` + `/api/screen/shot`; results render inline (image/video/screenshot). |
+| MED‑1 | **Image capture / image‑gen / video‑gen from the unified chat** | ✅ | M101. Composer buttons 📸 (capture)/🎨 (image)/🎬 (video) + natural chat commands ("screenshot", "what's on my screen", "generate an image of …", "make a video of …", Arabic too). Results render **inline** in the thread (image/video/screenshot poll until ready). Verified: 📸 + a "generate an image of a red circle" command both rendered in chat. (Polling shows benign 404s only while the async file is being generated.) |
 | AVL‑1 | **Agent vision tasks** — "what's on my desktop?" + autonomous game play | 🟧 | "What's on my desktop?" ✅ verified (see_screen → VLM described the live desktop). Full autonomous "Play Solitaire" (watch→strategize→drag→self‑improve) is **best‑effort**: mouse move/click work, but synthetic keyboard is suppressed (UIA SetValue only) and drag‑and‑drop + a sustained strategy loop are unverified. Building blocks shipped; full game‑play documented as aspirational. |
 | AVL‑2 | Agent screen‑driven control loop helper (perceive→act→observe) | ⬜ | A tool/loop so the agent can iterate see_screen → control → re‑observe for visual tasks. |
 | CORE‑P | **Enforce the single‑user/local‑only CORE PRINCIPLE everywhere** | ✅ | M100. `docs/PRINCIPLES.md` + referenced in CLAUDE/STATUS/ROADMAP/PROJECT_PLAN/WORKFLOW. Permanent discovery‑log rule added to WORKFLOW. |
