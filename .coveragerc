@@ -1,0 +1,6 @@
+[run]
+source = nova,server
+omit = tests/*, scenarios/*
+[report]
+skip_empty = True
+exclude_lines = pragma: no cover, if __name__ == .__main__., except Exception: pass

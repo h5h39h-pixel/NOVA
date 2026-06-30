@@ -3,3 +3,4 @@
 # runtime dep already; pyflakes is used by the quality gate.
 pytest==9.1.1
 pyflakes>=3.2
+coverage>=7

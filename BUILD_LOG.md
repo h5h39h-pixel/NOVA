@@ -1016,3 +1016,13 @@ encryption · SEC-5 HTTPS turnkey · SEC-6 exec audit + injection fix. **Next ph
   service only — does not loosen anything else).
 - **Verified:** `#/owui` renders with no CSP/frame errors (the cross-origin localStorage error cleared
   too); gate green; restarted.
+
+## M84 — HON-3: test coverage measurement (2026-06-30)  [P1 Tests]
+
+- Added `coverage` (requirements-dev) + `.coveragerc` (source nova,server; omit tests/scenarios).
+- **Baseline 49%** over nova/ + server.py from the hermetic suite. Honest per-module breakdown +
+  how-to-run in `docs/coverage.md` (core/safety 100%, db 88%, metrics 92%, ollama 88% … vs browser 17%,
+  screen 21%, jobs 30%, server 47% — the GUI/process/live-only paths).
+- Not added to the gate (would need a threshold + live deps); run manually after changes. `.coverage`
+  git-ignored.
+- **Verified:** gate green.
