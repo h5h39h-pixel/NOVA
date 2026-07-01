@@ -177,6 +177,42 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## M105.8b (2026‑07‑01) — VLM soak: found + fixed an event‑loop stall; memory is bounded
+**SOAK‑2 (`soak_test.py --minutes 12 --vlm`, screen vision on):**
+- **🔴 Bug the VLM soak caught & I fixed:** `POST /api/vision/describe` ran the blocking ~30 s VLM call
+  **on the asyncio event loop**. During a describe, `metrics_loop_alive` went **False** and every
+  background loop stalled. Fixed with `await asyncio.to_thread(...)`. **Re‑run on the fixed server:
+  metrics loop alive in 19/19 samples across 26 VLM calls (0 dead)** — before the fix it died on call #1.
+- **26 VLM describes, 0 errors.** Latency **p50 28.8 s, max 34.3 s under load** (vs ~11 s idle). So VLM
+  describe is fine for on‑demand + the serialized narration loop, but it is NOT real‑time; keep
+  `vision_narrate_interval` ≥ ~40 s.
+- **Memory: bounded oscillation, no leak.** RSS sawtooths **~78 MB ↔ ~153 MB** — each describe allocates a
+  ~73 MB decoded 4K screenshot buffer, then releases it (RSS returns to ~80 repeatedly). The verdict's
+  "+366 MB/h slope" is a **sawtooth artifact over a 12‑min window, NOT real growth** — honest limitation of
+  a linear‑slope detector on a short, spiky signal. The 24h run averages the sawtooth out and reveals the
+  true trend (that's why it's the real test). **Honest takeaway:** heavy per‑describe transient (~73 MB);
+  no unbounded growth observed; loop stays alive with the fix.
+
+## M105.8 (2026‑07‑01) — activated the FULL screen‑vision stack + tested it live
+Turned on every (opt‑in) vision feature and exercised the whole pipeline against the live server, then
+restored privacy defaults (all OFF) + cleaned up the test artifacts. **All green, 0 runtime errors.**
+
+| Vision feature | Test | Result |
+|---|---|---|
+| `screen_vision_enabled` state | `GET /api/vision/state` | ✅ enabled, all sub‑flags reported |
+| Single frame | `GET /api/vision/frame` | ✅ HTTP 200, **117 KB valid JPEG** (FF D8) |
+| MJPEG live stream | `GET /api/vision/stream` | ✅ **8 chunks / 428 KB** multipart frames flowing |
+| Mouse tracking | `GET /api/vision/mouse` | ✅ live cursor (x=487, y=444) |
+| Keystroke context (SV‑4) | `GET /api/vision/context` | ✅ focused‑window title + keystroke buffer (gated by `allow_input_capture`) |
+| VLM describe | `POST /api/vision/describe` | ✅ **qwen2.5‑VL correctly described the live desktop in ~11 s** |
+| Continuous narration (SV‑2) | `vision_narrate` loop 15 s | ✅ ran a cycle, **0 errors** |
+| Screen memory (IDEA‑2) | `POST /api/vision/remember-screen` | ✅ OCR'd **2761 chars → 4 KB chunks** |
+| Cleanup + privacy restore | delete test docs + all flags→OFF | ✅ screen‑memory docs removed, vision/keylogger OFF |
+
+Honest note: this proves the *pipeline* works end‑to‑end on the live desktop. It doesn't prove VLM
+*accuracy* over many diverse screens (one description, judged by eye) — that's a quality question, not a
+plumbing one.
+
 ## M105.7 (2026‑07‑01) — soak/longevity + browser/screen coverage (disposable target app)
 **SOAK‑1 result (30‑min accelerated soak, `scripts/soak_test.py --minutes 30`):**
 - **12,520 requests, 0 errors.** RSS **min 93.9 / max 102.1 MB, slope −11.4 MB/hour** (i.e. memory drifted

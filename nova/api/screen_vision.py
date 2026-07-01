@@ -2,6 +2,7 @@
 """AI Screen Vision routes (Phase 7). Live MJPEG stream, single frame, cursor position, focused-window
 context, and on-demand VLM understanding. Every capture path is gated on the opt-in privacy settings;
 logic lives in nova.services.screen_vision."""
+import asyncio
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse, Response, JSONResponse
 from nova.services import screen_vision as sv
@@ -83,4 +84,6 @@ async def api_vision_describe(req: Request):
     try: body = await req.json()
     except Exception: pass
     audit("vision", "describe", (body.get("question") or "what's on screen")[:80])
-    return sv.describe_now(body.get("question"))
+    # offload the blocking VLM call to a thread — otherwise a ~10-30s describe stalls the event loop
+    # and every background loop with it (found by the VLM soak: metrics_loop_alive went False).
+    return await asyncio.to_thread(sv.describe_now, body.get("question"))

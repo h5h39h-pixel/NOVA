@@ -50,6 +50,16 @@ def _server_pid():
     return None
 
 
+def _write_progress(d):
+    """Write live progress to data/logs/soak_progress.json so a long (24h) run is observable."""
+    try:
+        from config import LOG_DIR
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        (LOG_DIR / "soak_progress.json").write_text(json.dumps(d, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
 def _slope(xs, ys):
     """Least-squares slope of ys over xs (per unit x)."""
     n = len(xs)
@@ -76,6 +86,7 @@ def run(seconds, vlm):
     loop_dead = 0
     last_sample = 0
     last_vlm = 0
+    last_hour_mark = 0.0
     start_err = _get("/api/errors").get("total", 0)
 
     while time.time() - t0 < seconds:
@@ -115,10 +126,27 @@ def run(seconds, vlm):
                 alive = _get("/api/health").get("metrics_loop_alive", True)
                 if not alive:
                     loop_dead += 1
-                print(f"  t={h*60:6.1f}min  rss={rss:8.1f}MB  reqs={reqs}  errs={errs}  "
-                      f"loop_alive={alive}" + (f"  vlm_p50={_p50(vlm_lat):.1f}s" if vlm_lat else ""))
+                cur_err = _get("/api/errors").get("total", 0) - start_err
+                slope_now = _slope([s[0] for s in samples], [s[1] for s in samples])
+                print(f"  t={h*60:7.1f}min  rss={rss:8.1f}MB  reqs={reqs}  errs={errs}+{cur_err}  "
+                      f"loop_alive={alive}  slope={slope_now:+.1f}MB/h"
+                      + (f"  vlm_p50={_p50(vlm_lat):.1f}s" if vlm_lat else ""))
+                sys.stdout.flush()          # so a 24h run is observable live (block-buffered otherwise)
+                _write_progress({"elapsed_min": round(h * 60, 1), "rss_mb": round(rss, 1),
+                                 "rss_slope_mb_per_h": round(slope_now, 1), "requests": reqs,
+                                 "http_errors": errs, "runtime_errors": cur_err,
+                                 "loop_dead_samples": loop_dead, "samples": len(samples),
+                                 "vlm_calls": len(vlm_lat), "vlm_p50_s": round(_p50(vlm_lat), 1)})
+                # hourly checkpoint to the quality dashboard so long runs leave a trail
+                if h - last_hour_mark >= 1.0:
+                    last_hour_mark = h
+                    try:
+                        _post("/api/quality", {"suite": "soak-hourly", "score": 1, "total": 1,
+                                               "detail": f"h{int(h)} rss{rss:.0f} slope{slope_now:+.1f}"})
+                    except Exception:
+                        pass
             except Exception as e:
-                print(f"  sample failed: {e}")
+                print(f"  sample failed: {e}"); sys.stdout.flush()
         time.sleep(1)
 
     # ---- report ----

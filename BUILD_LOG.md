@@ -1566,3 +1566,17 @@ The last two honest-report gaps: no soak test, and `browser`/`screen` barely cov
   visible-browser threading is covered hermetically (`test_visible_browser_submit`, fake page).
 - Live tests are **skipped in the gate** (they pop windows / grab the screen). Full-suite coverage with
   them = **~59%**. Gate stays hermetic + clean. Documented in `docs/testing.md`.
+
+## M105.8 — activated the full screen-vision stack + VLM soak (found & fixed an event-loop bug)
+- **Full vision stack activated + tested live** (then restored to privacy‑OFF): state, single JPEG frame
+  (117 KB), MJPEG stream (8 chunks/428 KB), mouse, keystroke context, **VLM describe (~11 s, correct
+  desktop description)**, narration loop (0 errors), screen memory (2761 chars→4 chunks). Table in
+  `docs/honest-state.md` M105.8.
+- **🔴 Real bug the VLM soak caught:** `POST /api/vision/describe` ran the blocking ~11–34 s VLM call
+  **directly on the asyncio event loop** — during a describe, `metrics_loop_alive` went **False** and all
+  background loops stalled. Fixed: `await asyncio.to_thread(sv.describe_now, …)`. Re‑ran the VLM soak on
+  the fixed server → **`loop_dead_samples: 0` across VLM calls** (was dead on the first call before).
+- **Perf finding (honest):** VLM describe is **~34 s p50 under repeated load** (vs ~11 s idle) — fine for
+  on‑demand + the serialized narration loop, but not real‑time; keep `vision_narrate_interval` ≥ ~40 s.
+- **24h + VLM soaks:** VLM soak result = SOAK‑2 in `docs/honest-state.md`; the 24h general soak is
+  launched in the background (observable via `data/logs/soak_progress.json`).
