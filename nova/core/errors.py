@@ -59,6 +59,12 @@ def record(where, exc):
         _save()   # HON-4: persist so it survives restart
     except Exception:
         pass
+    # bridge into the unified event log with the full stack trace (throttled there per-signature)
+    try:
+        from nova.core import eventlog
+        eventlog.record_exception(where, exc)
+    except Exception:
+        pass
 
 
 def snapshot(limit=50):

@@ -3,15 +3,31 @@
 // Split from the original monolithic pages.js (HON-11). Loaded after core.js, before shell.js.
 
 function Diagnostics(){
+  const AR=State.lang==='ar';
   const html=`<div class="grid g2">
     ${card('💓 Server Health',`<div id="dghealth"><span class="spin"></span> loading…</div>`)}
     ${card('🐞 Recent Errors <span class="tag" id="dgerrtot"></span>',`<div id="dgerrors"><span class="spin"></span></div>
        <button class="btn sm danger mt" id="dgerrclear">Clear errors</button>`)}
    </div>
+   ${card('🔎 '+(AR?'مشاكل مكتشفة تلقائياً':'Discovered Issues')+' <span class="tag" id="dgisstag"></span>',`
+     <p class="muted" style="font-size:12.5px">${AR?'يفحص السجل الموحّد ويكتشف المشاكل تلقائياً: أخطاء متكررة، عمليات فاشلة، خدمات متوقفة. حوّل أياً منها إلى تقرير خطأ بنقرة.':'Auto-scans the unified log for recurring errors, failing operations, and services down. Turn any into a tracked bug with one click.'}</p>
+     <button class="btn p mt" id="dgissscan">🔎 ${AR?'افحص الآن':'Scan now'}</button>
+     <div id="dgissues" class="mt"></div>`)}
    ${card('🩺 System Self-Test <span class="tag" id="dgsum"></span>',`
      <p class="muted" style="font-size:12.5px">Runs a full health check across every subsystem — services, database, embeddings, GPU, safety guards, and more.</p>
      <button class="btn p mt" id="dgrun">▶ Run self-test</button>
      <div id="dglist" class="mt"></div>`)}
+   <div class="grid g2">
+   ${card('🧾 '+(AR?'سجل الأحداث الموحّد':'Unified Event Log')+' <span class="tag" id="dgevtag"></span>',`
+     <p class="muted" style="font-size:12.5px">${AR?'الأخطاء والعمليات وأحداث النظام والتنبيهات في مكان واحد.':'Errors, operations, system events & alerts in one searchable place.'}</p>
+     <div id="dgevcats" class="ev-cats mt"></div>
+     <div class="flex wrap" style="gap:8px;margin-top:8px"><a class="btn p" href="#/events">🔭 ${AR?'افتح المستكشف':'Open explorer'}</a>
+       <button class="btn" id="dgevjson">⤓ JSON</button><button class="btn" id="dgevcsv">⤓ CSV</button>
+       <button class="btn" id="dgreport">📋 ${AR?'تقرير كامل':'Full report'}</button></div>`)}
+   ${card('🐞 '+(AR?'تقارير الأخطاء':'Bug Reports')+' <span class="tag" id="dgbugtag"></span>',`
+     <div class="flex" style="gap:7px"><input class="t" id="dgbugtitle" placeholder="${AR?'عنوان مشكلة…':'Bug title…'}"><select class="t" id="dgbugsev" style="width:auto"><option>low</option><option selected>normal</option><option>high</option><option>critical</option></select><button class="btn p" id="dgbugadd">＋</button></div>
+     <div id="dgbugs" class="mt"></div>`)}
+   </div>
    ${card('📈 Quality Trend <span class="tag" id="dgqtag"></span>',`
      <p class="muted" style="font-size:12.5px">Scored eval/health runs over time — watch for regressions after model, dependency, or prompt changes. Eval scripts can POST results to <code>/api/quality</code>; schedule the <code>quality_check</code> automation for periodic health snapshots.</p>
      <button class="btn p mt" id="dgqsnap">📸 Take a health snapshot now</button>
@@ -31,11 +47,38 @@ function Diagnostics(){
     if(!sum.length){el.innerHTML='<div class="empty">no quality runs yet — take a snapshot or run an eval script</div>';return}
     el.innerHTML=sum.map(s=>{const d=s.delta;const arrow=d==null?'':(d>0?`<span style="color:var(--ok)">▲ +${d}</span>`:(d<0?`<span style="color:var(--err)">▼ ${d}</span>`:'<span class="mut">→ 0</span>'));
       return `<div class="metarow"><span>${esc(s.suite)}</span><span><b>${s.latest}%</b> ${arrow}</span></div>`}).join('')}
-  function mount(){run();loadHealth();loadErrors();loadQuality();$('#dgrun').onclick=run;
+  const SEVC={critical:'err',high:'err',medium:'warn',low:'mut'};
+  async function loadIssues(){const el=$('#dgissues');if(!el)return;el.innerHTML='<span class="spin"></span>';
+    let r; try{r=await api('/issues')}catch(e){el.innerHTML='<div class="empty">scan failed</div>';return}
+    const iss=(r&&r.issues)||[];const tag=$('#dgisstag');if(tag){tag.className='tag '+(iss.length?'warn':'on');tag.textContent=iss.length?iss.length+' found':'clean ✓'}
+    if(!iss.length){el.innerHTML='<div class="empty">✅ '+(AR?'لا مشاكل مكتشفة':'no issues discovered')+'</div>';return}
+    el.innerHTML=iss.map((i,ix)=>`<div class="row"><span class="tag ${SEVC[i.severity]||'mut'}">${esc(i.severity)}</span>
+      <span class="name" title="${esc(i.detail)}">${esc(i.title)}<div class="muted" style="font-size:11px">${esc(i.suggestion||'')}</div></span>
+      <button class="btn sm" data-file="${ix}">🐞 file</button></div>`).join('');
+    $$('#dgissues [data-file]').forEach(b=>b.onclick=async()=>{const i=iss[+b.dataset.file];
+      const x=await post('/issues/file',i);if(x&&x.ok){toast('success','Filed as bug #'+x.bug_id,'');b.disabled=true;loadBugs()}})}
+  async function loadEvSummary(){const bar=$('#dgevcats');if(!bar)return;
+    try{const s=await api('/events/stats?hours=24');const cats=s.by_category||{};const tag=$('#dgevtag');
+      const tot=Object.values(cats).reduce((a,b)=>a+b,0);if(tag)tag.textContent=tot+' /24h';
+      bar.innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<a class="ev-chip" href="#/events">${esc(c)} <b>${n}</b></a>`).join('')||'<span class="muted" style="font-size:12px">no events yet</span>';
+    }catch(e){}}
+  async function loadBugs(){const el=$('#dgbugs');if(!el)return;const r=await api('/bugs');const tag=$('#dgbugtag');
+    if(tag)tag.textContent=(r.open||0)+' open';
+    el.innerHTML=(r.items&&r.items.length)?r.items.slice(0,12).map(b=>`<div class="row"><span class="tag ${b.status==='open'?'warn':'on'}">${esc(b.status)}</span><span class="name" title="${esc(b.detail||'')}">${esc(b.title)} <span class="muted" style="font-size:11px">· ${esc(b.severity)}</span></span><button class="btn sm" data-done="${b.id}">${b.status==='open'?'resolve':'reopen'}</button><button class="btn sm danger" data-del="${b.id}">✕</button></div>`).join(''):'<div class="empty">no bugs 🎉</div>';
+    $$('#dgbugs [data-done]').forEach(x=>x.onclick=async()=>{const b=(r.items||[]).find(i=>i.id==x.dataset.done);await post('/bugs/'+x.dataset.done+'/status',{status:(b&&b.status==='open')?'resolved':'open'});loadBugs()});
+    $$('#dgbugs [data-del]').forEach(x=>x.onclick=async()=>{if(confirm('Delete report?')){await del('/bugs/'+x.dataset.del);loadBugs()}})}
+  function mount(){run();loadHealth();loadErrors();loadQuality();loadIssues();loadEvSummary();loadBugs();$('#dgrun').onclick=run;
     const hv=setInterval(loadHealth,5000);
     const ce=$('#dgerrclear');if(ce)ce.onclick=()=>del('/errors').then(loadErrors);
     const qs=$('#dgqsnap');if(qs)qs.onclick=async()=>{qs.disabled=true;const r=await post('/quality/snapshot',{});
       toast('info','Health snapshot',r&&r.run?`${r.run.score}/${r.run.total} (${r.run.pct}%)`:'recorded');qs.disabled=false;loadQuality()};
+    $('#dgissscan').onclick=loadIssues;
+    $('#dgevjson').onclick=()=>window.open('/api/events/export?format=json&limit=5000','_blank');
+    $('#dgevcsv').onclick=()=>window.open('/api/events/export?format=csv&limit=5000','_blank');
+    $('#dgreport').onclick=()=>window.open('/api/ops/report','_blank');
+    $('#dgbugadd').onclick=async()=>{const t=$('#dgbugtitle').value.trim();if(!t){toast('error','Title required','');return}
+      const r=await post('/bugs',{title:t,detail:'',severity:$('#dgbugsev').value,page:'ops-center'});
+      if(r.ok){$('#dgbugtitle').value='';toast('success','Bug filed','');loadBugs()}};
     return [()=>clearInterval(hv)]}
   return {html,mount};
 }

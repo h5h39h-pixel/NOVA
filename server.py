@@ -88,6 +88,10 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         log.warning(f"job reconcile failed: {e}")
     log.info("AI Control Center starting up")
+    try:
+        from nova.core import eventlog
+        eventlog.log("system", "server started", level="info", source="server.lifespan", actor="system")
+    except Exception: pass
     psutil.cpu_percent(interval=None)  # prime
     # IDEA-10: every background loop runs under _supervise so a hard crash (an exception that
     # escapes the loop's own try, or an unexpected return) auto-restarts it instead of silently
@@ -107,6 +111,10 @@ async def lifespan(app: FastAPI):
             if j.kind == "training" and j.status in ("running", "starting", "paused"):
                 log.info(f"shutdown: training job {j.id} still active (children owned by Job Object)")
     except Exception as e: log.warning(f"shutdown: training-job check failed: {e}")
+    try:
+        from nova.core import eventlog
+        eventlog.log("system", "server shutting down", level="info", source="server.lifespan", actor="system")
+    except Exception: pass
     log.info("AI Control Center shutting down cleanly")
 
 app = FastAPI(title="AI Control Center", lifespan=lifespan)
@@ -143,6 +151,8 @@ from nova.api.insights import router as insights_router
 from nova.api.memory import router as memory_router
 from nova.api.quality import router as quality_router
 from nova.api.macro import router as macro_router
+from nova.api.events import router as events_router
+from nova.api.ops import router as ops_router
 # tags group the routes in the auto-generated API docs at /docs
 app.include_router(bugs_router, tags=["bugs"])
 app.include_router(notifications_router, tags=["notifications"])
@@ -175,6 +185,8 @@ app.include_router(insights_router, tags=["insights"])
 app.include_router(memory_router, tags=["memory"])
 app.include_router(quality_router, tags=["quality"])
 app.include_router(macro_router, tags=["macro"])
+app.include_router(ops_router, tags=["ops"])
+app.include_router(events_router, tags=["events"])
 
 # auth gate (token_ok) + AUTH_EXEMPT live in nova/services/settings.py; used by the middleware below
 from nova.services.settings import token_ok, AUTH_EXEMPT
@@ -237,6 +249,11 @@ async def gate(request: Request, call_next):
         dt = (time.time() - t0) * 1000
         if resp.status_code >= 400 or dt > 1500:
             log.info(f"{request.method} {path} -> {resp.status_code} ({dt:.0f}ms)")
+        try:                                   # unified event log: complete API access record
+            from nova.core import eventlog
+            eventlog.log_request(request.method, path, resp.status_code, dt)
+        except Exception:
+            pass
     for k, v in SECURITY_HEADERS.items():
         resp.headers[k] = v
     if path == "/" or path.endswith(".html"):
@@ -327,6 +344,13 @@ async def backup_loop():
                 log.info(f"uploads prune: removed {pr['removed']} ephemeral files ({pr['freed_mb']} MB)")
         except Exception as e:
             log.warning(f"uploads prune failed: {e}"); record_error("backup_loop", e)
+        try:
+            from nova.core import eventlog
+            n = await asyncio.to_thread(eventlog.prune)   # cap the event log so it can't fill the disk
+            if n:
+                log.info(f"event log prune: removed {n} old rows")
+        except Exception as e:
+            log.warning(f"event log prune failed: {e}"); record_error("backup_loop", e)
         try:
             m = await asyncio.to_thread(backup_media)
             if m["copied"]:

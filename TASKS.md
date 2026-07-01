@@ -36,6 +36,16 @@ imprecise) · SV‑1 (stream unwatched) · STB‑2 (survival‑as‑record, not 
 FEA‑2 (now measured — STT WER EN ~93% / AR ~74%, M105.4). They are "done to a smoke‑test bar," not proven
 robust — see `docs/honest-state.md`.
 
+### M106 — Unified Event Log + Ops Center (observability)
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| OBS‑1 | **Unified event log** — one store for errors/ops/system/alerts/API | ✅ | `nova/core/eventlog.py`: `event_log` table + indexes, retention‑capped (50k, auto‑prune) + per‑signature error throttle. `log/record_exception/log_request/query/get/stats/prune/clear`. Full design in `docs/observability.md`. |
+| OBS‑2 | **Bridge every source into the one store** | ✅ | exceptions (with stack trace via `errors.record`), audit trail (`audit()` category‑mapped), notifications (`alert`), system events (server start/stop, config change), and **all API requests** via the HTTP middleware (`log_request`, polls excluded). Nothing is a separate silo. |
+| OBS‑3 | **Event Log explorer UI** | ✅ | `#/events` (`pages-events.js`): full‑text search, category/level/time filters, category chips, **timeline** (errors red), expandable rows with stack trace + context, JSON/CSV export, live updates. |
+| OBS‑4 | **Auto issue discovery** | ✅ | `nova/services/issues.py` scans the log + services → recurring errors / failing ops / services‑down as actionable issues (severity + suggestion + deep‑link); `file_issue_as_bug` wires diagnostics → the bug tracker. `/api/issues`, `/api/issues/file`. |
+| OBS‑5 | **Merge Bugs + Audit + Diagnostics → Ops Center** | ✅ | `#/diagnostics` is now the hub: Health · Recent Errors · **Discovered Issues** (file‑as‑bug) · Self‑Test · **Event summary + export/report** · **Bug Reports** · Quality Trend. `#/audit` → Event Log, `#/bugs` → Ops Center. |
+| OBS‑6 | **Export + full report** | ✅ | `/api/events/export?format=json\|csv` (filtered) + `/api/ops/report` (health + issues + event stats + top errors) — downloadable for external audit/analysis. Tests: `test_eventlog.py` (store, filters, timeline, retention, throttle, request logging, all bridges). |
+
 ### M105.6 — deep tests + safety hardening (from the honest report)
 | ID | Task | Status | Notes |
 |---|---|---|---|

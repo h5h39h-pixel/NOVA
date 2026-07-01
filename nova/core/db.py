@@ -94,6 +94,12 @@ def init_db():
         ts REAL, kind TEXT DEFAULT 'fact', text TEXT, tags TEXT, source TEXT, pinned INTEGER DEFAULT 0, emb TEXT);
     CREATE TABLE IF NOT EXISTS quality_runs (id INTEGER PRIMARY KEY AUTOINCREMENT,
         ts REAL, suite TEXT, score REAL, total REAL, pct REAL, detail TEXT);
+    CREATE TABLE IF NOT EXISTS event_log (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts REAL, level TEXT, category TEXT, source TEXT, message TEXT,
+        detail TEXT, trace TEXT, actor TEXT, status TEXT, context TEXT);
+    CREATE INDEX IF NOT EXISTS ix_event_ts ON event_log(ts);
+    CREATE INDEX IF NOT EXISTS ix_event_cat ON event_log(category);
+    CREATE INDEX IF NOT EXISTS ix_event_level ON event_log(level);
     """)
     # migrate older chat tables to the richer schema
     chat_cols = [r[1] for r in c.execute("PRAGMA table_info(chat)")]

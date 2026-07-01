@@ -95,6 +95,7 @@ const I18N={
   nav_workflows:'Workflows',d_workflows:'Chain steps that run in sequence (task dependencies)',
   nav_abtest:'A/B Test',d_abtest:'Compare two models on the same prompts with an AI judge',
   nav_audit:'Audit Log',d_audit:'Every action recorded — commands, agent, automation, auth, config',
+  nav_events:'Event Log',d_events:'Unified log — errors, operations, system events & alerts in one place',
   nav_diagnostics:'Diagnostics',d_diagnostics:'One-click health check across every subsystem',
   nav_brain:'Nova Brain',d_brain:'A living map of what your knowledge base has learned',
   d_knowledge:'Your local document library — chat answers from it (RAG)',
@@ -128,6 +129,7 @@ const I18N={
   nav_workflows:'سير العمل',d_workflows:'ربط خطوات تعمل بالتسلسل (اعتماديات المهام)',
   nav_abtest:'مقارنة A/B',d_abtest:'قارن نموذجين على نفس الأسئلة مع حكم آلي',
   nav_audit:'سجل التدقيق',d_audit:'تسجيل كل إجراء — الأوامر والوكيل والأتمتة والدخول',
+  nav_events:'سجل الأحداث',d_events:'سجل موحّد — الأخطاء والعمليات وأحداث النظام والتنبيهات في مكان واحد',
   nav_diagnostics:'الفحص',d_diagnostics:'فحص صحة شامل لكل المكونات بنقرة واحدة',
   nav_brain:'دماغ نوفا',d_brain:'خريطة حية لما تعلّمته قاعدة المعرفة',
   d_knowledge:'مكتبة مستنداتك المحلية — المحادثة تجيب منها',
@@ -158,7 +160,6 @@ const ROUTES=[
  ['workspace','💬',()=>Workspace()],
  ['screen','🖥️',()=>ScreenStudio()],
  ['live','👁️',()=>LiveVision()],
- ['bugs','🐞',()=>Bugs()],
  ['models','🧩',()=>Models()],
  ['tools','🛠️',()=>Tools()],
  ['video','🎬',()=>Video()],
@@ -171,7 +172,7 @@ const ROUTES=[
  ['workflows','🔗',()=>Workflows()],
  ['batch','📋',()=>Batch()],
  ['owui','🌐',()=>Owui()],
- ['audit','🛡️',()=>AuditPage()],
+ ['events','🧾',()=>EventLog()],
  ['diagnostics','🩺',()=>Diagnostics()],
  ['settings','⚙️',()=>Settings()],
 ];
@@ -183,6 +184,8 @@ function renderNav(){
 function route(){
   let id=(location.hash.replace('#/','')||'dashboard');
   if(id==='chat'||id==='agent'){location.hash='#/workspace';return}  // merged into the unified Workspace
+  if(id==='audit'){location.hash='#/events';return}                  // audit is now part of the Event Log
+  if(id==='bugs'){location.hash='#/diagnostics';return}              // bug reports merged into the Ops Center
   const r=ROUTES.find(x=>x[0]===id)||ROUTES[0];
   cleanup.forEach(f=>{try{f()}catch(e){}});cleanup=[];
   $$('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.r===r[0]));

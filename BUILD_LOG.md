@@ -1580,3 +1580,30 @@ The last two honest-report gaps: no soak test, and `browser`/`screen` barely cov
   on‑demand + the serialized narration loop, but not real‑time; keep `vision_narrate_interval` ≥ ~40 s.
 - **24h + VLM soaks:** VLM soak result = SOAK‑2 in `docs/honest-state.md`; the 24h general soak is
   launched in the background (observable via `data/logs/soak_progress.json`).
+
+## M106 — Unified Event Log + Ops Center (observability overhaul)
+Built the project's single, professional record of everything that happens — errors, operations, system
+events, alerts, notifications, and API access — in ONE searchable/filterable/exportable store, with a
+smart Ops Center on top. Strictly single-user/local-only. Gate ✅ · live 42/42 ✅ · 22 routes clean ✅ ·
+coverage 63%. Full design: `docs/observability.md`.
+
+- **Store — `nova/core/eventlog.py`:** `event_log` table (ts/level/category/source/message/detail/
+  trace/actor/status/context) + indexes. Retention-capped (50k rows, auto-pruned) + per-signature error
+  throttle so it can never flood/fill the disk. Functions: `log`, `record_exception`, `log_request`,
+  `query` (filter/search/paginate), `get`, `stats` (category/level counts + timeline), `prune`, `clear`.
+- **Bridges (one store, no silos):** exceptions (`errors.record` → with stack trace), the audit trail
+  (`audit()` → category-mapped), notifications (`add_notification` → `alert`), system events (server
+  start/stop, config change), and **all API requests** via the HTTP middleware (`log_request`) — mutations
+  info / reads debug / 4xx warn / 5xx error, high-frequency polls excluded.
+- **Auto issue discovery — `nova/services/issues.py`:** scans the log + services for recurring errors,
+  failing operations, and services-down → actionable issues with severity + suggestion + a deep-link;
+  `file_issue_as_bug()` wires diagnostics → the bug tracker.
+- **API — `nova/api/events.py` + `nova/api/ops.py`:** `/api/events` (+ `/{id}`, `/stats`, `/meta`,
+  export JSON/CSV, clear), `/api/issues` (+ `/file`), `/api/ops/report`.
+- **UI:** new **Event Log explorer** (`#/events`, `pages-events.js`) — search + filters + timeline +
+  expandable stack traces. **Ops Center** = the merged hub (`#/diagnostics`): Health · Discovered Issues
+  (file-as-bug) · Self-Test · Event summary + export · Bug Reports · Quality Trend. **Audit** page now
+  redirects to the Event Log; **Bugs** page redirects into the Ops Center (three systems merged into one).
+- **Tests:** `test_eventlog.py` (store, filters, timeline, retention, throttle, request logging, and all
+  bridges: audit/errors/notifications). Isolated the error-bridge test's `_FILE` so it can't pollute the
+  live log.

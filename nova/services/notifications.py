@@ -47,6 +47,15 @@ def add_notification(level, title, body="", category=None, link=None):
     c.commit(); c.close()
     push({"type": "notification", "level": level, "title": title, "body": body,
           "category": category, "link": link, "ts": ts})
+    try:                                          # mirror every alert into the unified event log
+        from nova.core import eventlog
+        lvl = level if level in eventlog.LEVELS else ("warn" if level == "warning" else
+                                                      ("error" if level == "error" else "info"))
+        eventlog.log("alert", title, level=lvl, source="notification", detail=body,
+                     actor="system", status=("fail" if level == "error" else "ok"),
+                     context={"notif_category": category})
+    except Exception:
+        pass
     send_webhook(title, body, level)
     if get_settings().get("desktop_notifications"):
         try:

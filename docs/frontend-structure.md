@@ -15,7 +15,8 @@ after every file loads, so cross‑file function/`const` references resolve at c
 | `js/pages-create.js` | ~329 | Creation/media + screen: Models, Tools, Video, Training, Screen Studio, Live Vision, Bugs + the STT voice helpers (`dictate`, `_micUI`). |
 | `js/pages-data.js` | ~225 | Data pages: Learning, A/B Test, Knowledge (incl. folder Q&A), Automation (incl. `screen_if` region/absent), Workflows + **🎬 macro recorder**, Batch. |
 | `js/pages-brain.js` | ~192 | **Nova Brain** — the self-contained 3D force-directed knowledge map (+ `BRAIN_PALETTE`). Split out of `pages-system.js` (M105.2) since it shared nothing with the config pages. |
-| `js/pages-system.js` | ~177 | System/insight: Diagnostics (+ Quality Trend), Audit, Open WebUI, Settings (+ Persistent Memory, Screen memory). |
+| `js/pages-events.js` | ~130 | **Event Log explorer** (`#/events`) — the unified log UI: search, category/level/time filters, timeline, expandable stack traces, export. Reads `/api/events`. |
+| `js/pages-system.js` | ~230 | System/insight: **Ops Center** (Diagnostics hub = health · discovered issues · self-test · event summary+export · bug reports · quality), Open WebUI, Settings. (Audit → Event Log; Bugs → Ops Center.) |
 | `js/pages-workspace.js` | ~360 | **The unified "Nova" page** — Chat + Agent merged, pro toggles, ✨Auto model, attach/open files, media (capture/image/video + ✨refine) in chat, **🎙️ hands-free voice loop**. (Replaced the old separate Chat + `pages-agent.js`.) |
 | `js/shell.js` | ~213 | WebSocket bus, toasts, notifications, command palette, theme, auth gate, `autoLite`, `boot()` (calls `route()` last). |
 
@@ -40,7 +41,10 @@ Loaded after the fonts/FA in this order (later files override earlier — preser
 `nova/services/*` (now incl. `stt.py`, **`memory.py`**, **`quality.py`**, **`macro.py`** [pynput recorder]).
 `config.py` gained `toolkit_script(name)` — prefers a repo‑vendored `toolkit/` script (e.g. the img2img
 `generate.ps1`) over the external `WORKSPACE/toolkit`. `server.py` also gained `_supervise()`
-[IDEA‑10] which auto‑restarts any background loop that crashes hard. After the
+[IDEA‑10] which auto‑restarts any background loop that crashes hard.
+**Observability (M106):** `nova/core/eventlog.py` is the unified event store; `nova/api/events.py` +
+`nova/api/ops.py` expose it; `nova/services/issues.py` does auto issue‑discovery; `audit`/`errors`/
+`notifications` + the HTTP middleware all bridge into it. See `docs/observability.md`. After the
 M96 extraction, `server.py` is **~576 lines** — closer to a pure composition root (lifespan, loops,
 middleware, router includes + a small set of app‑state‑coupled routes: ws, health/errors, selftest,
 db‑status, chat‑export, kb/ingest).

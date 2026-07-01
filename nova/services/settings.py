@@ -54,7 +54,15 @@ def settings_save(patch):
         patch["cloud_api_key"] = encrypt_secret(patch["cloud_api_key"])
     s = set_settings(patch)
     sec = [k for k in patch if k in ("auth_enabled", "lan_access", "webhook_enabled", "webhook_url", "cloud_api_key")]
-    audit("settings", "update", ", ".join(k + "=" + str(patch[k] if k not in SECRET_KEYS else "***") for k in patch) if not sec else "security: " + ", ".join(sec))
+    changed = ", ".join(k + "=" + str(patch[k] if k not in SECRET_KEYS else "***") for k in patch)
+    audit("settings", "update", changed if not sec else "security: " + ", ".join(sec))
+    try:                                          # explicit config-change event with the changed keys
+        from nova.core import eventlog
+        eventlog.log("system", "config changed", level="warn" if sec else "info",
+                     source="settings.save", actor="user", detail=changed,
+                     context={"keys": list(patch.keys())})
+    except Exception:
+        pass
     push({"type": "settings", "settings": {k: v for k, v in _redact(s).items() if k in patch}})
     out = _redact(s)
     if new_token: out["new_token"] = new_token             # one-time reveal for the user to save
