@@ -43,6 +43,28 @@ async def api_agent_confirm(req: Request):
     audit("agent", "confirm", f"{cid}: {'approved' if approved else 'denied'}", "ok" if approved else "warn")
     return {"ok": ok, "approved": approved}
 
+@router.get("/api/agent/runs")
+def api_agent_runs(limit: int = 30):
+    """Session replay: list recent agent runs reconstructed from the event log."""
+    from nova.services.replay import list_runs
+    return {"runs": list_runs(limit)}
+
+@router.get("/api/agent/runs/{run_id}")
+def api_agent_run_detail(run_id: str):
+    """Session replay: the full step-by-step timeline of one run."""
+    from nova.services.replay import get_run
+    return get_run(run_id)
+
+@router.post("/api/agent/preview")
+async def api_agent_preview(req: Request):
+    """Dry-run diff: show what a dangerous action WOULD change, without executing it."""
+    from nova.services.preview import preview_action
+    b = await req.json()
+    name = (b.get("name") or "").strip()
+    if not name:
+        return JSONResponse({"error": "missing action name"}, status_code=400)
+    return preview_action(name, b.get("args") or {})
+
 @router.post("/api/agent/save-workflow")
 async def api_agent_save_workflow(req: Request):
     """IDEA-3: persist an agent run as a reusable one-step workflow. Re-running the workflow replays

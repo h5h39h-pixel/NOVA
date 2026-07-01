@@ -1628,3 +1628,38 @@ recover for http_ok, embeddings/KB, web search, the status snapshot, and the age
   reached" message.
 Gate green, live 42/42. The 24h longevity soak (`soak_test.py --hours 24`) runs separately, observable via
 `data/logs/soak_progress.json`.
+
+## M107 — five reliability features (replay · anomaly · dry-run diff · budget · restore drill)
+Built the five hardening features requested after the honest self-report, all layered on the unified
+event log (no new silos), all local/read-only-or-notify.
+
+1. **Session replay** — `nova/services/replay.py` + `GET /api/agent/runs[/{id}]` + Ops-Center card.
+   `agent_run` already tags each step with a `run_id` via `_rlog()`; replay reconstructs the full
+   `goal→thought→action→observation→final` timeline. **Verified live**: a real run recorded 8 ordered
+   steps, retrievable by id.
+   - *Bug found & fixed*: `_rlog("start", …, kind="goal")` passed `kind` positionally **and** as a
+     keyword → `TypeError` swallowed by `_rlog`'s try/except, so the goal step never logged. Fixed to
+     `_rlog("goal", …)`.
+2. **Anomaly alerts** — `nova/services/anomaly.py` + supervised `anomaly_loop` in `server.py` (60 s,
+   after a 60 s warm-up). Detects error_spike / loop_stall / rss_climb → notification + `alert` event,
+   throttled 15 min per kind. Read-only + notify-only.
+3. **Dry-run diff / preview** — `nova/services/preview.py` + `POST /api/agent/preview`, wired into
+   `confirm.gate(…, preview=…)` and rendered in the confirmation popup (`.confirm-diff`/`.confirm-will`).
+   write_file → unified diff; run_command → command + destructive flag. **Verified live** (destructive
+   command flagged, new-file create previewed).
+4. **Resource budget per run** — `agent_max_seconds` (default 300) / `agent_max_tokens` (default 0) in
+   DEFAULT_SETTINGS; `agent_run` checks both at the top of each step and ends cleanly with a clear
+   "time/token budget reached" message. Tested (`test_agent_time_budget_stops_run`,
+   `test_agent_token_budget_stops_run`).
+5. **Backup-restore drill** — `tests/test_backup_restore.py`: seed → backup → wipe → restore → assert;
+   plus bad-bundle rejection.
+
+**Tests**: `tests/test_features.py` (12 new: preview ×5, replay ×2, anomaly ×3, budget ×2) — all pass.
+Existing `test_confirm.py` updated for `gate(preview=…)`. Frontend sweep extended to
+`diagnostics` + `events` routes — **zero console errors**. `python scripts/check.py` **green**
+(pyflakes + node --check all JS + pytest).
+
+**Soak**: the 24h longevity soak ran **clean ~7h / 173,176 requests / 0 http+runtime errors /
+RSS slope −0.3 MB/h (no leak) / 0 dead-loop samples** before I restarted the server for the new
+endpoints (which orphaned the soak's target pid). Relaunched fresh against the new server; running
+clean, observable via `data/logs/soak_progress.json`. Feature soak (`--load 8`): all 16 components ✅.

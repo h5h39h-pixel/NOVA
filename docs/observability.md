@@ -73,3 +73,46 @@ The request middleware logs mutations (POST/PUT/DELETE) at `info`, non-poll read
   services/API/UI read from it. Issue discovery (`nova/services/issues.py`) is read-only analysis on top.
 - **Clean + modular** — short lines, one responsibility per module (`eventlog` store, `issues`
   discovery, `api/events` + `api/ops` routers, `pages-events.js` explorer).
+
+## Reliability features (built on the event log)
+
+Five features that turn the passive log into active safety + insight. All local, read-only-or-notify,
+and layered on top of `event_log` — no new silos.
+
+### 1 · Agent session replay — `nova/services/replay.py`
+Every agent step is tagged with a `run_id` and written to the event log by `_rlog()` in
+`nova/services/agent.py` (`goal → thought → action → observation → final`). Replay reads them back:
+- `list_runs(limit)` — recent runs (goal, final, step count, duration).
+- `get_run(run_id)` — the full step-by-step timeline, chronological.
+- API: `GET /api/agent/runs`, `GET /api/agent/runs/{run_id}`.
+- UI: **Ops Center → 🎬 Agent Session Replay** — click a run to expand its steps.
+Purpose: after-the-fact debugging of exactly what the agent did, with no extra storage.
+
+### 2 · Anomaly alerts — `nova/services/anomaly.py`
+A supervised background loop (`anomaly_loop` in `server.py`, every 60 s after a 60 s warm-up) that
+watches for trouble and raises a **notification + `alert` event** when a signal trips:
+- **error_spike** — ≥15 error/critical events in 10 min (something started failing).
+- **loop_stall** — the metrics loop stopped writing samples for >180 s (a background loop died).
+- **rss_climb** — sustained memory growth >40 MB/h over ≥20 min of samples (suspected leak).
+Each finding is throttled (15-min cooldown per kind) so a persistent condition alerts once, not every
+tick. Read-only + notify-only — never changes state. All thresholds are constants at the top of the file.
+
+### 3 · Dry-run diff / action preview — `nova/services/preview.py`
+Shows **what a dangerous action would change before it runs**, so Confirm/Full-Access isn't a black box:
+- `write_file` → a unified diff vs the file on disk (or "CREATE … N bytes" for a new file).
+- `run_command` → the command + whether it matches a destructive pattern (`danger_reason`).
+- `delete_file` / `control` → a plain-language summary of the effect.
+Wired into the confirmation gate (`confirm.gate(..., preview=…)`) → shown in the confirmation popup
+(`.confirm-diff` / `.confirm-will` in `pages-workspace.js`). Also exposed as `POST /api/agent/preview`.
+Never touches disk.
+
+### 4 · Resource budget per agent run — `nova/services/agent.py`
+Per-run caps stop a runaway agent cleanly (settings, default off = 0/300):
+- `agent_max_seconds` (default 300) — wall-clock budget; the loop breaks with "time budget reached".
+- `agent_max_tokens` (default 0 = unlimited) — estimated-token budget; breaks with "token budget reached".
+Checked at the top of each step; the run ends with a clear final message (and the replay records it).
+
+### 5 · Backup-restore drill — `tests/test_backup_restore.py`
+A CI test that proves the backup path actually round-trips: seed conversations/chat/schedules/workflows
+→ `make_backup()` → wipe the tables → `restore_backup()` → assert the data returned; plus a test that a
+malformed bundle is rejected. Guards against "backups that never restore."

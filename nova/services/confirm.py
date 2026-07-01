@@ -45,14 +45,16 @@ def needs_confirm(action):
     return control_mode() == "confirm" and action in DANGEROUS
 
 
-def request_confirmation(action, detail="", timeout=120):
+def request_confirmation(action, detail="", timeout=120, preview=None):
     """Block the calling (agent) thread until the user approves/denies via the UI, or `timeout`
-    seconds pass (→ deny, fail-safe). Returns True if approved."""
+    seconds pass (→ deny, fail-safe). Returns True if approved. `preview` is a dry-run diff shown in
+    the confirmation popup so the user sees WHAT would change before approving."""
     cid = uuid.uuid4().hex[:12]
     ev = threading.Event()
     with _LOCK:
         _PENDING[cid] = {"event": ev, "approved": False}
-    push({"type": "confirm", "id": cid, "action": action, "detail": str(detail)[:300]})
+    push({"type": "confirm", "id": cid, "action": action, "detail": str(detail)[:300],
+          "preview": preview})
     approved_in_time = ev.wait(timeout)
     with _LOCK:
         rec = _PENDING.pop(cid, None)
@@ -78,10 +80,10 @@ def pending():
         return list(_PENDING.keys())
 
 
-def gate(action, detail=""):
-    """Convenience for the agent tool dispatch: if this action needs confirmation, ask and return
-    (ok, message). ok=False means the user denied (or timed out) → the caller should abort the action."""
+def gate(action, detail="", preview=None):
+    """Convenience for the agent tool dispatch: if this action needs confirmation, ask (showing a
+    dry-run preview) and return (ok, message). ok=False means denied/timed-out → abort the action."""
     if needs_confirm(action):
-        if not request_confirmation(action, detail):
+        if not request_confirmation(action, detail, preview=preview):
             return False, f"BLOCKED: you denied the '{action}' action (Confirm mode)."
     return True, None

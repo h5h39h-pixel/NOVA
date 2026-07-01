@@ -3,12 +3,31 @@
 **Read this first.** Live snapshot of what's done, what's fragile, and what's next.
 Personal single‑user system (not a product). Update this file on **every** work session.
 
-_Last updated: 2026-06-30_
+_Last updated: 2026-07-01_
 
 **Health gate (must stay green):** `python scripts/check.py` → pyflakes + node --check + pytest (~84 hermetic + 4 live frontend)
 · live suite `python run_tests.py` → 42/42 · self‑test 13/13 · local CI `python scripts/ci_local.py` · agent baseline `python scripts/agent_eval.py`.
 
 **Status legend:** ✅ DONE · 🟧 FRAGILE (works but has a known issue) · 🟦 IN PROGRESS · ⬜ TODO · 🚫 EXCLUDED (owner decision)
+
+---
+
+## 🛡️ M107 — five reliability features (2026‑07‑01) — all built, gated, live‑verified
+Layered on the unified event log (no new silos), all local/read‑only‑or‑notify:
+1. **Agent session replay** — `replay.py` + `/api/agent/runs[/{id}]` + Ops‑Center "🎬 Session Replay"
+   card. Reconstructs `goal→thought→action→observation→final`. Live: a real run recorded 8 ordered steps.
+2. **Anomaly alerts** — `anomaly.py` + supervised `anomaly_loop` (error_spike / loop_stall / rss_climb →
+   notification + `alert` event, throttled).
+3. **Dry‑run diff / preview** — `preview.py` + `/api/agent/preview`, shown in the confirmation popup
+   (unified diff for writes; destructive flag for commands). Live‑verified.
+4. **Resource budget per run** — `agent_max_seconds` (300) / `agent_max_tokens` (0); clean stop with a
+   clear message. Tested.
+5. **Backup‑restore drill** — `test_backup_restore.py` proves backup→wipe→restore round‑trips.
+
+Gate green (pyflakes + node --check + pytest); `test_features.py` +12 tests; frontend sweep now covers
+`diagnostics`+`events` (zero console errors). **24h soak ran clean ~7h / 173k reqs / 0 errors /
+−0.3 MB/h** before a planned restart for the new endpoints; relaunched fresh, running. Feature soak
+(`--load 8`): 16/16 ✅. See `BUILD_LOG.md` M107 and `docs/observability.md`.
 
 ---
 

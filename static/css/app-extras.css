@@ -103,6 +103,9 @@ textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #22d3ee;outlin
 .confirm-h{font-size:16px;font-weight:700;margin-bottom:10px}
 .confirm-act{font-family:var(--mono,monospace);font-size:13px;color:var(--accent3,#a5b4fc);text-transform:uppercase;letter-spacing:.05em}
 .confirm-detail{margin:8px 0 18px;font-size:13.5px;color:var(--txt2,#cbd5e1);word-break:break-word;max-height:160px;overflow:auto}
+.confirm-diff{font-family:var(--mono,monospace);font-size:12px;line-height:1.45;background:var(--bg,#0f1117);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin:0 0 16px;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;color:var(--txt2,#cbd5e1)}
+.confirm-will{font-family:var(--mono,monospace);font-size:12.5px;background:var(--bg,#0f1117);border:1px solid var(--bd);border-radius:8px;padding:9px 12px;margin:0 0 16px;word-break:break-word}
+.confirm-will.danger{border-color:#7f1d1d;color:#fca5a5}
 .confirm-btns{display:flex;gap:10px;justify-content:flex-end}
 
 /* ---- Event Log explorer ---- */

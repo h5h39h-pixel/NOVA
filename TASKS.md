@@ -49,6 +49,15 @@ robust — see `docs/honest-state.md`.
 | NET‑SIM | **Network‑failure simulation** (disconnect/reconnect) | ✅ | M106.1. `test_network_failure.py`: services down → graceful degradation (http_ok False, embeddings/KB empty, web search empty, status snapshot no‑raise, agent LLM‑down → clear message) → reconnect → recovery. |
 | AGENT‑RET | **`agent_run` return bug** (found by soak) | ✅ | M106.1. `agent_run` had no `return` (always None) → `run_action('agent')` never reported results; and returned None when the model was unreachable. Fixed: always returns the final answer / a clear error message. |
 
+### M107 — five reliability features (replay · anomaly · dry‑run diff · budget · restore drill)
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| REL‑1 | **Agent session replay** | ✅ | M107. `nova/services/replay.py` (`list_runs`/`get_run`) reads the `run_id`‑tagged steps `_rlog()` writes to the event log; `GET /api/agent/runs[/{id}]`; Ops‑Center "🎬 Agent Session Replay" card. **Live‑verified**: a real run recorded 8 ordered steps (goal→…→final), retrievable by id. *Fixed a `TypeError` in `_rlog("start", kind=…)` that had silently dropped the goal step.* |
+| REL‑2 | **Anomaly alerts from the event log** | ✅ | M107. `nova/services/anomaly.py` + supervised `anomaly_loop` (server.py, 60 s / 60 s warm‑up): error_spike (≥15 errors/10 min), loop_stall (metrics silent >180 s), rss_climb (>40 MB/h over ≥20 min) → notification + `alert` event, 15‑min per‑kind throttle. Read‑only + notify‑only. Tests ×3. |
+| REL‑3 | **Dry‑run diff before destructive actions** | ✅ | M107. `nova/services/preview.py` (unified diff for write_file; command + destructive flag for run_command; effect summary for delete/control) → wired into `confirm.gate(…, preview=…)`, shown in the confirmation popup (`.confirm-diff`/`.confirm-will`), and `POST /api/agent/preview`. Never touches disk. **Live‑verified**. Tests ×5. |
+| REL‑4 | **Resource budget per agent run** | ✅ | M107. `agent_max_seconds` (default 300) / `agent_max_tokens` (default 0=unlimited) in DEFAULT_SETTINGS; `agent_run` checks both at each step and ends cleanly with a clear "time/token budget reached" final. Tests ×2. |
+| REL‑5 | **Backup‑restore drill in CI** | ✅ | M107. `tests/test_backup_restore.py`: seed conversations/chat/schedules/workflows → `make_backup` → wipe → `restore_backup` → assert data returns; plus malformed‑bundle rejection. Guards against backups that never restore. |
+
 ### M105.6 — deep tests + safety hardening (from the honest report)
 | ID | Task | Status | Notes |
 |---|---|---|---|

@@ -7,7 +7,7 @@ import pytest
 
 BASE = "http://127.0.0.1:8900"
 ROUTES = ["dashboard", "monitor", "workspace", "knowledge", "brain", "models",
-          "training", "screen", "live", "automation", "settings"]
+          "training", "screen", "live", "automation", "settings", "diagnostics", "events"]
 
 
 def _server_up():

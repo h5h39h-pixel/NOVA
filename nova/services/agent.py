@@ -184,7 +184,12 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
         # in the UI. Skipped in dry-run (nothing executes). 'full' mode implies unrestricted below.
         if not dry_run and name in ("run_command", "control", "act_on_screen", "write_file"):
             from nova.services.confirm import gate, is_full_access
-            ok, msg = gate(name, _confirm_detail(name, a))
+            try:
+                from nova.services.preview import preview_action
+                prev = preview_action(name, a)
+            except Exception:
+                prev = None
+            ok, msg = gate(name, _confirm_detail(name, a), preview=prev)
             if not ok:
                 return msg
             if is_full_access():
@@ -383,6 +388,17 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
 
 AGENT_STOP = threading.Event()
 
+def _rlog(kind, text, run_id, step, category="agent"):
+    """Session-replay: record one agent step into the unified event log, tagged with run_id + step so a
+    whole run can be reconstructed later (see nova/services/replay.py). Best-effort."""
+    try:
+        from nova.core import eventlog
+        eventlog.log(category, (text or "")[:400], level="info", source=f"agent.{kind}",
+                     actor="agent", context={"run_id": run_id, "step": step, "kind": kind})
+    except Exception:
+        pass
+
+
 def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, max_steps=8, tools=None,
               deepthink=False):
     AGENT_STOP.clear()
@@ -391,9 +407,22 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
     try: temperature = max(0.0, min(float(temperature), 1.5))
     except Exception: temperature = 0.2
     allowed = set(tools) if tools else None
+    # resource budget (per-run caps) + a run_id used by the event-log session replay
+    import uuid as _uuid
+    run_id = _uuid.uuid4().hex[:12]
+    run_t0 = time.time()
+    tokens_est = 0
+    try:
+        from nova.core.db import get_settings as _gs
+        _s = _gs()
+        max_seconds = int(_s.get("agent_max_seconds", 0) or 0)
+        max_tokens = int(_s.get("agent_max_tokens", 0) or 0)
+    except Exception:
+        max_seconds = max_tokens = 0
     push({"type": "agent", "ev": "start", "goal": goal, "model": model, "dry_run": dry_run,
-          "unrestricted": unrestricted, "max_steps": max_steps})
+          "unrestricted": unrestricted, "max_steps": max_steps, "run_id": run_id})
     audit("agent", "goal", ("[dry-run] " if dry_run else "") + ("[full-access] " if unrestricted else "") + goal)
+    _rlog("goal", goal, run_id, 0)   # session-replay: record the run start (kind=goal)
     sys_prompt = build_agent_sys(allowed, max_steps)
     if unrestricted:
         sys_prompt += ("\nFULL-ACCESS mode: the user has granted you full permission to control this PC — "
@@ -417,11 +446,19 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
     for step in range(max_steps):
         if AGENT_STOP.is_set():
             push({"type": "agent", "ev": "stopped"}); final = "Stopped by user."; break
+        # resource budget: stop cleanly if the run exceeds its time/token cap
+        if max_seconds and (time.time() - run_t0) > max_seconds:
+            final = f"Agent stopped: time budget reached ({max_seconds}s)."
+            push({"type": "agent", "ev": "final", "text": final}); break
+        if max_tokens and tokens_est > max_tokens:
+            final = f"Agent stopped: token budget reached (~{max_tokens} tokens)."
+            push({"type": "agent", "ev": "final", "text": final}); break
         try: text = ollama_chat_once(model, msgs, temperature)
         except Exception as e:
             push({"type": "agent", "ev": "error", "text": str(e)})
             final = f"Agent stopped: the model could not be reached ({str(e)[:120]})."
             break
+        tokens_est += len(text) // 4 + sum(len(m.get("content", "")) for m in msgs[-2:]) // 4
         obj = parse_action(text)
         if not obj:
             msgs.append({"role": "assistant", "content": text})
@@ -429,6 +466,7 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
             push({"type": "agent", "ev": "thought", "step": step + 1, "text": "(reformatting…)"})
             continue
         push({"type": "agent", "ev": "thought", "step": step + 1, "text": obj.get("thought", "")})
+        _rlog("thought", obj.get("thought", ""), run_id, step + 1)   # session-replay
         if "final" in obj:
             final = obj["final"]; push({"type": "agent", "ev": "final", "text": final}); break
         action = obj.get("action", "?"); aargs = obj.get("args", {})
@@ -441,13 +479,16 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
             obs = f"the '{action}' tool is disabled for this run. Choose a different approach or finish."
         else:
             push({"type": "agent", "ev": "action", "action": action, "args": aargs})
+            _rlog("action", f"{action} {json.dumps(aargs)[:200]}", run_id, step + 1)   # session-replay
             obs = agent_tool(action, aargs, dry_run, unrestricted)
             push({"type": "agent", "ev": "observation", "text": obs[:1500]})
+            _rlog("observation", obs[:1500], run_id, step + 1)   # session-replay
         msgs.append({"role": "assistant", "content": text})
         msgs.append({"role": "user", "content": "Observation: " + obs[:1500] + "\nContinue with the next JSON step."})
     if final is None:
         final = "Reached the step limit. Partial progress shown above."
         push({"type": "agent", "ev": "final", "text": final})
+    _rlog("final", final, run_id, 999, category="agent")   # session-replay: record the outcome
     add_notification("success", "Agent finished", goal[:60])
     push({"type": "agent", "ev": "done"})
     return final          # the final answer/summary (always a string) — used by run_action('agent') etc.

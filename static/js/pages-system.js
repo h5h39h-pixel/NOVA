@@ -28,6 +28,9 @@ function Diagnostics(){
      <div class="flex" style="gap:7px"><input class="t" id="dgbugtitle" placeholder="${AR?'عنوان مشكلة…':'Bug title…'}"><select class="t" id="dgbugsev" style="width:auto"><option>low</option><option selected>normal</option><option>high</option><option>critical</option></select><button class="btn p" id="dgbugadd">＋</button></div>
      <div id="dgbugs" class="mt"></div>`)}
    </div>
+   ${card('🎬 '+(AR?'إعادة تشغيل جلسات الوكيل':'Agent Session Replay')+' <span class="tag" id="dgruntag"></span>',`
+     <p class="muted" style="font-size:12.5px">${AR?'كل تشغيل للوكيل مُسجَّل خطوة بخطوة (هدف ← تفكير ← إجراء ← ملاحظة ← نتيجة). انقر تشغيلاً لإعادة عرضه.':'Every agent run is recorded step-by-step (goal → thought → action → observation → final). Click a run to replay it.'}</p>
+     <div id="dgruns" class="mt"><span class="spin"></span></div>`)}
    ${card('📈 Quality Trend <span class="tag" id="dgqtag"></span>',`
      <p class="muted" style="font-size:12.5px">Scored eval/health runs over time — watch for regressions after model, dependency, or prompt changes. Eval scripts can POST results to <code>/api/quality</code>; schedule the <code>quality_check</code> automation for periodic health snapshots.</p>
      <button class="btn p mt" id="dgqsnap">📸 Take a health snapshot now</button>
@@ -67,7 +70,21 @@ function Diagnostics(){
     el.innerHTML=(r.items&&r.items.length)?r.items.slice(0,12).map(b=>`<div class="row"><span class="tag ${b.status==='open'?'warn':'on'}">${esc(b.status)}</span><span class="name" title="${esc(b.detail||'')}">${esc(b.title)} <span class="muted" style="font-size:11px">· ${esc(b.severity)}</span></span><button class="btn sm" data-done="${b.id}">${b.status==='open'?'resolve':'reopen'}</button><button class="btn sm danger" data-del="${b.id}">✕</button></div>`).join(''):'<div class="empty">no bugs 🎉</div>';
     $$('#dgbugs [data-done]').forEach(x=>x.onclick=async()=>{const b=(r.items||[]).find(i=>i.id==x.dataset.done);await post('/bugs/'+x.dataset.done+'/status',{status:(b&&b.status==='open')?'resolved':'open'});loadBugs()});
     $$('#dgbugs [data-del]').forEach(x=>x.onclick=async()=>{if(confirm('Delete report?')){await del('/bugs/'+x.dataset.del);loadBugs()}})}
-  function mount(){run();loadHealth();loadErrors();loadQuality();loadIssues();loadEvSummary();loadBugs();$('#dgrun').onclick=run;
+  const RKIND={goal:'🎯',thought:'🧠',action:'⚙️',observation:'👁️',final:'🏁'};
+  async function loadRuns(){const el=$('#dgruns');if(!el)return;
+    let r;try{r=await api('/agent/runs?limit=25')}catch(e){el.innerHTML='<div class="empty">load failed</div>';return}
+    const runs=(r&&r.runs)||[];const tag=$('#dgruntag');if(tag)tag.textContent=runs.length?runs.length+' runs':'none yet';
+    if(!runs.length){el.innerHTML='<div class="empty">'+(AR?'لا توجد جلسات وكيل بعد':'no agent runs yet')+'</div>';return}
+    el.innerHTML=runs.map((x,ix)=>`<div class="row" data-run="${ix}" style="cursor:pointer">
+      <span class="tag ${/budget|stopped|error|could not/i.test(x.final)?'warn':'on'}">${x.steps}⚙</span>
+      <span class="name" title="${esc(x.final||'')}">${esc(x.goal||'(no goal)')}<div class="muted" style="font-size:11px">${esc((x.final||'').slice(0,90))} · ${x.duration_s}s</div></span></div>
+      <div class="run-steps" id="rs${ix}" style="display:none;margin:2px 0 10px 8px;border-left:2px solid var(--bd);padding-left:10px"></div>`).join('');
+    $$('#dgruns [data-run]').forEach(row=>row.onclick=async()=>{const ix=+row.dataset.run;const box=$('#rs'+ix);if(!box)return;
+      if(box.style.display!=='none'){box.style.display='none';return}
+      box.style.display='';box.innerHTML='<span class="spin"></span>';
+      const d=await api('/agent/runs/'+encodeURIComponent(runs[ix].run_id));
+      box.innerHTML=(d.steps||[]).map(s=>`<div class="metarow" style="align-items:flex-start"><span class="mut" style="min-width:78px">${RKIND[s.kind]||'•'} ${esc(s.kind||'')}</span><span style="font-size:12px;white-space:pre-wrap;word-break:break-word">${esc(s.text||'')}</span></div>`).join('')||'<div class="empty">no steps</div>'})}
+  function mount(){run();loadHealth();loadErrors();loadQuality();loadIssues();loadEvSummary();loadBugs();loadRuns();$('#dgrun').onclick=run;
     const hv=setInterval(loadHealth,5000);
     const ce=$('#dgerrclear');if(ce)ce.onclick=()=>del('/errors').then(loadErrors);
     const qs=$('#dgqsnap');if(qs)qs.onclick=async()=>{qs.disabled=true;const r=await post('/quality/snapshot',{});

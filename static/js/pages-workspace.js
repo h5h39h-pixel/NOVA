@@ -345,9 +345,17 @@ function Workspace(){
     subs.push(bus.on('confirm', m => {
       if(!m || !m.id) return;
       const ov=document.createElement('div'); ov.className='confirm-ov';
+      // Dry-run preview: show WHAT would change (a diff for writes, the command + danger flag for exec)
+      const pv=m.preview||null;
+      let pvHtml='';
+      if(pv){
+        if(pv.diff){ pvHtml=`<pre class="confirm-diff">${esc(pv.diff)}</pre>`; }
+        else if(pv.will){ pvHtml=`<div class="confirm-will${pv.destructive?' danger':''}">${esc(pv.will)}</div>`; }
+      }
       ov.innerHTML=`<div class="confirm-box glass"><div class="confirm-h">✋ ${AR?'تأكيد إجراء الوكيل':'Confirm agent action'}</div>
         <div class="confirm-act">${esc(m.action||'')}</div>
         <div class="confirm-detail">${esc(m.detail||'')}</div>
+        ${pvHtml}
         <div class="confirm-btns"><button class="btn danger" data-x="deny">${AR?'رفض':'Deny'}</button><button class="btn p" data-x="approve">${AR?'موافقة':'Approve'}</button></div></div>`;
       document.body.appendChild(ov);
       let answered=false;

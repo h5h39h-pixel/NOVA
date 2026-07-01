@@ -71,6 +71,6 @@ def test_agent_tool_respects_denied_confirm(monkeypatch, tmpdb):
     """agent_tool aborts a dangerous action when the confirmation gate denies it."""
     import nova.services.agent as A
     import nova.services.confirm as C
-    monkeypatch.setattr(C, "gate", lambda action, detail="": (False, f"BLOCKED: denied '{action}'"))
+    monkeypatch.setattr(C, "gate", lambda action, detail="", preview=None: (False, f"BLOCKED: denied '{action}'"))
     out = A.agent_tool("run_command", {"command": "echo hi"}, dry_run=False)
     assert "BLOCKED" in out and "denied" in out

@@ -39,6 +39,8 @@ DEFAULT_SETTINGS = {
     "upload_keep": 300,              # retention cap: newest N of each ephemeral upload type (screenshots/browse/recordings) kept; older auto-pruned so generated media can't fill the disk
     "agent_can_control": True,       # HON-1b: allow the AUTONOMOUS agent to drive mouse/keyboard (control/act_on_screen). Turn OFF to keep the agent from GUI control while still allowing manual control + the kill-switch.
     "control_mode": "auto",          # confirmation policy for dangerous agent actions: auto (no prompt) | confirm (ask before click/type/delete/run) | full (no prompt + run anything). Default auto.
+    "agent_max_seconds": 300,        # per-run wall-clock budget for the autonomous agent (0 = unlimited)
+    "agent_max_tokens": 0,           # per-run token budget (estimated; 0 = unlimited)
     "control_protected_patterns": None,  # HON-1b: window-title patterns where click/type is BLOCKED (None = built-in default list: password managers, banking, auth). Set [] to disable, or a custom list.
     "allow_input_capture": False,    # master gate for the keylogger-class features (macro recording + SV-4 keystroke context). OFF by default — both refuse to start unless this is on.
     "memory_semantic": False,        # IDEA-8: use embedding-based (semantic) memory recall instead of keyword. Off = free/fast keyword on the chat hot path; on = one embed call per recall.

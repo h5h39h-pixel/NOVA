@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
     # escapes the loop's own try, or an unexpected return) auto-restarts it instead of silently
     # dying for the rest of the process lifetime. Self-healing, local-only, no new surface.
     from nova.services.screen_vision import narration_loop   # SV-2: opt-in continuous VLM narration
-    for fn in (metrics_loop, status_loop, scheduler_loop, backup_loop, narration_loop):
+    for fn in (metrics_loop, status_loop, scheduler_loop, backup_loop, narration_loop, anomaly_loop):
         asyncio.create_task(_supervise(fn))
     yield
     # ---- graceful shutdown: finalize in-flight work so nothing is lost ----
@@ -358,6 +358,20 @@ async def backup_loop():
         except Exception as e:
             log.warning(f"media backup failed: {e}"); record_error("backup_loop", e)
         await asyncio.sleep(6 * 3600)   # every 6h so the prune keeps up with heavy capture use
+
+async def anomaly_loop():
+    """Watch the runtime for trouble (error spikes, a stalled loop, climbing memory) and raise a
+    notification when a signal trips. Read-only + notify-only; findings go to the Event Log."""
+    from nova.services.anomaly import check_anomalies
+    await asyncio.sleep(60)                       # let the app warm up before judging health
+    while True:
+        try:
+            found = await asyncio.to_thread(check_anomalies)
+            for f in found:
+                log.warning(f"anomaly: {f}")
+        except Exception as e:
+            record_error("anomaly_loop", e)
+        await asyncio.sleep(60)
 
 # ---- websocket
 @app.websocket("/ws")
