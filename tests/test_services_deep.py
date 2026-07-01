@@ -3,6 +3,26 @@
 mocked; the DB is the isolated temp DB from conftest. No live server / network required."""
 
 
+def test_visible_browser_submit(monkeypatch):
+    """Cover VisibleBrowser's thread/queue/future logic (real threading) with a fake page — no
+    Chromium/visible window needed. Tests the happy path AND error propagation."""
+    import pytest
+    from nova.services.browser import VisibleBrowser
+
+    class _FakePage:
+        def bring_to_front(self): pass
+        def title(self): return "FakeTitle"
+
+    vb = VisibleBrowser()
+    monkeypatch.setattr(vb, "_ensure", lambda: setattr(vb, "page", _FakePage()))
+    assert vb.submit(lambda page: page.title()) == "FakeTitle"        # runs on the worker thread
+
+    def _boom(page):
+        raise ValueError("boom")
+    with pytest.raises(ValueError):                                   # worker error propagates to caller
+        vb.submit(_boom)
+
+
 def test_audit_writes(tmpdb):
     from nova.services.audit import audit
     from nova.core.db import db
