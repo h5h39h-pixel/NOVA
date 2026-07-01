@@ -1661,5 +1661,13 @@ Existing `test_confirm.py` updated for `gate(preview=…)`. Frontend sweep exten
 
 **Soak**: the 24h longevity soak ran **clean ~7h / 173,176 requests / 0 http+runtime errors /
 RSS slope −0.3 MB/h (no leak) / 0 dead-loop samples** before I restarted the server for the new
-endpoints (which orphaned the soak's target pid). Relaunched fresh against the new server; running
-clean, observable via `data/logs/soak_progress.json`. Feature soak (`--load 8`): all 16 components ✅.
+endpoints (which orphaned the soak's target pid). Relaunched fresh; ran another **~2.5h / 61,672
+requests / 0 errors / −8.3 MB/h / 0 dead loops**, then stopped on the operator's "stop". **Combined
+~9.5h / ~235k requests / 0 errors / no leak / 0 dead loops.** A full uninterrupted 24h stamp is still
+pending — real wall-clock only (re-run `soak_test.py --hours 24` undisturbed for a day). Feature soak
+(`--load 8`): all 16 components ✅.
+
+**Tests**: hermetic suite `python -m pytest` → **224 passed, 12 skipped** (skips = opt-in live tests).
+
+**Final report**: `docs/M107-final-report.md` — the complete record (features, tests, soak verdict,
+bugs fixed, pending ideas, full project state).

@@ -24,10 +24,13 @@ Layered on the unified event log (no new silos), all local/read‑only‑or‑no
    clear message. Tested.
 5. **Backup‑restore drill** — `test_backup_restore.py` proves backup→wipe→restore round‑trips.
 
-Gate green (pyflakes + node --check + pytest); `test_features.py` +12 tests; frontend sweep now covers
-`diagnostics`+`events` (zero console errors). **24h soak ran clean ~7h / 173k reqs / 0 errors /
-−0.3 MB/h** before a planned restart for the new endpoints; relaunched fresh, running. Feature soak
-(`--load 8`): 16/16 ✅. See `BUILD_LOG.md` M107 and `docs/observability.md`.
+Gate green (pyflakes + node --check + pytest); hermetic suite **224 passed / 12 skipped**;
+`test_features.py` +12 tests; frontend sweep now covers `diagnostics`+`events` (zero console errors).
+**Soak: ~9.5h combined / ~235k requests / 0 errors / no leak / 0 dead loops** — run 1 ~7h (173k reqs,
+−0.3 MB/h), run 2 ~2.5h (61.7k reqs, −8.3 MB/h), both stopped intentionally (endpoint restart, then
+operator "stop"). Full uninterrupted 24h stamp still pending (wall-clock only). Feature soak
+(`--load 8`): 16/16 ✅. **Full record: `docs/M107-final-report.md`** · design `docs/observability.md`
+· `BUILD_LOG.md` M107.
 
 ---
 
