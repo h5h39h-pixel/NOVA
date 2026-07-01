@@ -177,6 +177,22 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## M105.7 (2026‑07‑01) — soak/longevity + browser/screen coverage (disposable target app)
+**SOAK‑1 result (30‑min accelerated soak, `scripts/soak_test.py --minutes 30`):**
+- **12,520 requests, 0 errors.** RSS **min 93.9 / max 102.1 MB, slope −11.4 MB/hour** (i.e. memory drifted
+  *down* over the run — GC reclaiming; no growth trend). Metrics loop **alive in 59/59 samples**.
+  Verdict: **no leak signal.** The hot paths (health/metrics/notifications/memory/quality + a memory
+  write+delete each cycle) are clearly leak‑free.
+- **Honest caveats:** (1) 30 minutes is **not** 24 hours — a leak that only manifests over many hours
+  (slow fragmentation, an unbounded table in a rarely‑hit path) would not show here; the harness supports
+  the literal `--hours 24` run, which is the real test to leave running overnight. (2) This run did **not**
+  exercise the **VLM describe queue** (`--vlm` needs screen vision enabled + is GPU‑heavy) — so VLM‑queue
+  backpressure over time is still unmeasured; run `soak_test.py --hours 24 --vlm` with vision on to cover it.
+- **Coverage via a disposable target app:** `screen.py` 21%→**52%** (a spawned/owned/killed WinForms
+  window driven by OCR + UIA `find_element` — the isolated‑target GUI test HON‑2b asked for), `browser.py`
+  17%→**25%** (headless `browse()` vs a disposable HTML page; visible‑browser/YouTube remain
+  headless‑untestable by nature). Full‑suite coverage **~59%**. Still lowest where hardware is unavoidable.
+
 ## M105.6 (2026‑07‑01) — DEEP tests + safety hardening (turned the honest report into work)
 Took my own honest report as a task list. Wrote **real** tests for the dangerous/weak/failure paths and
 they immediately paid for themselves — **4 real bugs found and fixed**:

@@ -60,6 +60,27 @@ These were written specifically to **test the dangerous, weak, and failure paths
 4. **Semantic recall silently disabled** — `recall()` called `get_settings()` which wasn't imported →
    `NameError` swallowed → always keyword. Fixed the import.
 
+### Live hardware/browser tests (opt-in — `NOVA_LIVE_TESTS=1`)
+
+These drive **real** hardware/browser and would pop windows / grab the screen, so they're **skipped in
+the normal gate** and run explicitly:
+
+```
+NOVA_LIVE_TESTS=1 python -m coverage run -m pytest tests/test_screen_live.py tests/test_browser_live.py
+```
+
+- **`test_screen_live.py`** — real `screen.py`: capture, region grab, OCR round-trip, RECORDER
+  start/stop/status/list, pure helpers, **plus a DISPOSABLE WinForms target app** the test spawns, owns,
+  and kills — exercised via **OCR** (reads the window's label) and **UIA `find_element`** (finds the named
+  button). This is the isolated-target GUI integration test the honest report kept asking for (HON-2b).
+  Raised `screen.py` coverage **21% → 52%**.
+- **`test_browser_live.py`** — `browse()` against a disposable local HTML page in headless Chromium
+  (fill / click / text extraction / screenshot) + `_norm_url` + a dead-host error path. Raised
+  `browser.py` **17% → 25%**. (`visible_browse`/YouTube need a real *visible* window + external network —
+  documented as not headless-testable; the thread/queue logic is covered hermetically via a fake page.)
+
+Full-suite coverage **with** the live tests = **~59%**.
+
 ## Layer 2 — live integration (`run_tests.py`, needs the server)
 
 Real HTTP against a running server: endpoint round-trips, chat stream, agent dry-run, WebSocket. 42/42.
@@ -73,6 +94,21 @@ after changing a model, dependency, or prompt, and record to the quality dashboa
 
 - `agent_eval` 9/9 (safe goals) · `rag_eval` 11/12 (overlapping corpus) · **`stt_eval` EN ~0.07 WER
   (~93%) / AR ~0.26 (~74%)** · `gen_eval` (SDXL image) · `nova_eval` (trained model identity/GPU/Arabic).
+
+## Layer 4 — soak / longevity (`scripts/soak_test.py`)
+
+Watches for the failures that only appear over time — **memory leaks, dead loops, error accumulation,
+VLM-queue backpressure**. Configurable duration; prints an **RSS slope (MB/hour)** so a leak is visible,
+not hidden behind a single before/after number.
+
+```
+python scripts/soak_test.py --minutes 30          # accelerated soak (real metrics)
+python scripts/soak_test.py --hours 24            # the real overnight run
+python scripts/soak_test.py --hours 24 --vlm      # also exercise the VLM describe queue
+```
+
+Records a verdict to the quality dashboard (`suite='soak'`). Leak criterion: RSS slope > 50 MB/h AND
+> 100 MB absolute growth. **Result of the M105.7 run: see `docs/honest-state.md` (SOAK-1).**
 
 ## Honest gaps that remain (see `docs/honest-state.md`)
 

@@ -1545,3 +1545,24 @@ A dedicated audit of the M105.6 guard/semantic code found more real issues; all 
 **VIDEO GENERATION VERIFIED:** ran a real LTX text→video job → produced a valid **574 KB MP4**
 (`videos/video_061743.mp4`) from the ComfyUI webp. Closes the "video gen unverified" gap from the honest
 report. (Quality is still just "a valid clip," not judged.)
+
+## M105.7 — soak/longevity harness + browser/screen coverage via a disposable target app
+The last two honest-report gaps: no soak test, and `browser`/`screen` barely covered. Both addressed.
+
+- **Soak harness — `scripts/soak_test.py`:** configurable `--minutes/--hours` (up to a real `--hours 24`
+  overnight run). Hammers the server (cheap reads + a memory write/delete each cycle; optional VLM
+  describe with `--vlm`), samples the server process **RSS every 30s**, and reports a **linear RSS slope
+  (MB/hour)** + loop liveness + error growth + VLM latency, with an honest leak verdict recorded to the
+  quality dashboard (`suite='soak'`). Leak criterion: >50 MB/h AND >100 MB absolute growth.
+  **M105.7 run (30 min): 12,520 requests, 0 errors, RSS 94–102 MB, slope −11.4 MB/h (no growth), metrics
+  loop alive 59/59 → NO LEAK.** (Honest: 30 min ≠ 24 h, and VLM queue not exercised — `--hours 24 --vlm`
+  with vision on is the full test. Full result: `docs/honest-state.md` SOAK-1.)
+- **`tests/test_screen_live.py` (opt-in `NOVA_LIVE_TESTS=1`):** real `screen.py` — capture, region grab,
+  OCR round-trip, RECORDER start/stop/status/list, pure helpers, **plus a DISPOSABLE WinForms target
+  app** (spawned/owned/killed) driven via **OCR** + **UIA `find_element`**. Closes HON-2b (isolated
+  target app). `screen.py` **21% → 52%**.
+- **`tests/test_browser_live.py` (opt-in):** headless `browse()` against a disposable local HTML page
+  (fill/click/text/screenshot) + `_norm_url` + dead-host error. `browser.py` **17% → 25%**; the
+  visible-browser threading is covered hermetically (`test_visible_browser_submit`, fake page).
+- Live tests are **skipped in the gate** (they pop windows / grab the screen). Full-suite coverage with
+  them = **~59%**. Gate stays hermetic + clean. Documented in `docs/testing.md`.

@@ -107,14 +107,17 @@ citations; opt‑in/online), and an explicit microphone **⏹ Stop** control. Se
 and the full spec in **`docs/chat-deepthink-websearch.md`**.
 
 ## Caveats / bounded items (live list in STATUS.md; full truth in `docs/honest-state.md`)
-_As of M105.5 the TASKS table is **all ✅** (or ✅‑within‑constraints). The items below are the only
+_As of M105.7 the TASKS table is **all ✅** (or ✅‑within‑constraints). The items below are the only
 residuals — each is a physics/OS/principle limit or a deliberate decision, **not a code defect**:_
-- ✅ **Agent GUI control** — has a global ⛔ panic kill‑switch (HON‑1) + an `agent_can_control` toggle.
-  Residual: no *per‑action* confirmation for autonomous runs (use dry‑run + the kill‑switch).
+- ✅ **Agent GUI control** — global ⛔ panic kill‑switch (HON‑1) + `agent_can_control` toggle + a
+  **per‑action protected‑window guard** (blocks input into password managers/banking/auth; fails closed;
+  checks the window under the click). Residual: no *approval prompt* for autonomous runs (dry‑run + ⛔).
 - ✅ **Prompt‑injection** — defense‑in‑depth: untrusted text fenced (web/browse/understand) + output‑side
   detection + a system rule (HON‑10). No defense is absolute — strong layered mitigation is the right bar.
-- ✅ **Verification** — agent 9/9, RAG 11/12, **STT measured (EN ~93% / AR ~74%)**, coverage 56%, GUI
-  control + drag live‑verified, 22 routes render‑clean. (A 50+‑goal multi‑app battery = *more*, not a fix.)
+- ✅ **Verification** — agent 9/9, RAG 11/12, **STT measured (EN ~93% / AR ~74%)**, **video gen verified**,
+  **soak 30 min / 12.5k req / no leak** (SOAK‑1), coverage **~59%** (w/ live), disposable‑target GUI test,
+  22 routes render‑clean. Residual: a literal 24h soak + a 50+‑goal multi‑app agent battery = *more* depth,
+  not a defect.
 - **Autonomous game‑play (AVL‑1)** — bounded by Win11 synthetic‑keyboard suppression (OS limit). Mouse +
   UIA text work; rapid game key‑presses don't.
 - **HON‑9** — reading hosted‑CI results needs an interactive `gh auth login` (owner‑gated; I won't touch
