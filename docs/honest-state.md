@@ -177,6 +177,21 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## SOAK‑24H (2026‑07‑01) — the literal 24‑hour soak is RUNNING
+Launched `python scripts/soak_test.py --hours 24` as a detached background run against the live server
+(PID confirmed sampling: 0 errors, loop alive, RSS ~88 MB at start). It is **still running** — I cannot
+wait out 24 h inside a session, so this is the honest status:
+- **Live progress:** `data/logs/soak_progress.json` (updated every 30 s: elapsed, RSS, slope, requests,
+  errors, loop‑dead count). Full log: `data/logs/soak_24h.log`.
+- **Hourly checkpoints:** recorded to the quality dashboard as `suite='soak-hourly'` (visible on the
+  Diagnostics "Quality Trend" card).
+- **Final verdict:** written to `soak-hourly`'s sibling `suite='soak'` + printed to the log when it ends
+  (~24 h). Leak criterion: RSS slope > 50 MB/h AND > 100 MB absolute growth over the full run.
+- **What it will actually tell us:** whether the loops/handlers/memory paths hold over a full day. The
+  30‑min accelerated run (SOAK‑1) already showed no leak on the non‑VLM hot paths; this confirms it over
+  24 h and averages out the VLM sawtooth (SOAK‑2) if vision is enabled during the window.
+_Update this entry with the final numbers once the run completes._
+
 ## M105.8b (2026‑07‑01) — VLM soak: found + fixed an event‑loop stall; memory is bounded
 **SOAK‑2 (`soak_test.py --minutes 12 --vlm`, screen vision on):**
 - **🔴 Bug the VLM soak caught & I fixed:** `POST /api/vision/describe` ran the blocking ~30 s VLM call
