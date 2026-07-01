@@ -32,6 +32,19 @@ def _no_network(monkeypatch):
     monkeypatch.setattr(urllib.request, "urlopen", _blocked)
 
 
+@pytest.fixture(autouse=True)
+def _default_db(tmp_path, monkeypatch):
+    """Safety net: EVERY test gets a valid, initialized temp DB by default — so a test that forgot the
+    `tmpdb` fixture still can't hit an uninitialized/real DB (which failed on the CI runner where no
+    control.db exists). Tests that request `tmpdb`/`client` simply re-point to their own temp DB."""
+    import nova.core.db as dbm
+    monkeypatch.setattr(dbm, "DB_PATH", tmp_path / "_default.db")
+    try:
+        dbm.init_db()
+    except Exception:
+        pass
+
+
 @pytest.fixture
 def tmpdb(tmp_path, monkeypatch):
     """Point the DB layer at an isolated temp database and initialize the schema."""

@@ -27,7 +27,12 @@ _LOCK = threading.Lock()
 
 
 def control_mode():
-    m = str(get_settings().get("control_mode") or "auto").lower()
+    # Degrade to 'auto' if settings can't be read (e.g. DB unavailable) — the confirmation layer must
+    # never break tool execution just because it couldn't read its own setting.
+    try:
+        m = str(get_settings().get("control_mode") or "auto").lower()
+    except Exception:
+        return "auto"
     return m if m in ("auto", "confirm", "full") else "auto"
 
 

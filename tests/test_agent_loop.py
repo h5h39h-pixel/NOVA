@@ -169,7 +169,7 @@ def test_agent_tool_write_full_access_allows(tmpdb, monkeypatch, tmp_path):
     target.unlink()
 
 
-def test_agent_write_read_roundtrip(monkeypatch, tmp_path):
+def test_agent_write_read_roundtrip(monkeypatch, tmp_path, tmpdb):
     """OUT-1 regression: a relative path (even one the model prefixes with 'agent-output/')
     must write to AND read back from the same place — no doubled directory, no CWD mismatch."""
     import nova.services.agent as A

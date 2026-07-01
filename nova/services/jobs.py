@@ -137,7 +137,10 @@ class ProcMgr:
             push({"type": "term", "job": job.id, "name": job.name, "line": f"[error] {e}"})
         dur = time.time() - t0
         _job_finish(job)
-        add_history(job.name, job.exit_code, dur, "\n".join(job.tail), source)
+        try:            # a completed job must never crash its own thread on a bookkeeping write
+            add_history(job.name, job.exit_code, dur, "\n".join(job.tail), source)
+        except Exception:
+            pass
         push({"type": "job", "job": job.info()})
         lvl = "success" if job.exit_code == 0 else "error"
         add_notification(lvl, f"{job.name} {'finished' if lvl=='success' else 'failed'}",

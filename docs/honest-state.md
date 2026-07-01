@@ -230,6 +230,20 @@ wait out 24 h inside a session, so this is the honest status:
   24 h and averages out the VLM sawtooth (SOAK‑2) if vision is enabled during the window.
 _Update this entry with the final numbers once the run completes._
 
+## M106.2 (2026‑07‑01) — hosted CI caught a real DB-isolation bug (fixed at the root)
+The GitHub Actions run failed `test_agent_write_read_roundtrip` with **"unable to open database file"** —
+a genuine finding that only the CI environment (fresh checkout, **no `control.db`**) exposed. Root cause:
+the M105.9 confirmation layer made `agent_tool` call `get_settings()` (→ the DB) for dangerous actions,
+and that test didn't use the `tmpdb` fixture, so on CI it hit an uninitialized DB. Fixes:
+1. **Root:** `confirm.control_mode()` now degrades to `'auto'` if settings can't be read — the
+   confirmation layer must never break tool execution over its own setting. Verified against a dead DB.
+2. **Systemic:** a new **autouse `_default_db` conftest fixture** gives EVERY test a valid temp DB by
+   default, so a test that forgets `tmpdb` can't hit an uninitialized/real DB again (whole class closed).
+3. **Robustness:** `jobs._run` wraps its `add_history` in try/except — a completed job's thread must not
+   crash on a bookkeeping write (that was the `PytestUnhandledThreadExceptionWarning` in the CI log).
+This is the payoff of running hosted CI on a clean machine: the local suite passed because the real
+`control.db` existed; only CI (no DB) surfaced it.
+
 ## M106.1 (2026‑07‑01) — comprehensive load+soak of EVERY component (+ 2 agent bugs fixed)
 Ran the full per‑feature soak with **concurrent load** (`feature_soak.py --load 8`) covering every
 component + the new requirements (network‑failure sim, large‑file, resource monitoring, auto report).
