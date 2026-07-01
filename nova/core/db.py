@@ -36,6 +36,7 @@ DEFAULT_SETTINGS = {
     "vision_narrate_interval": 30,   # SV-2: seconds between narration frames (10–300)
     "screen_memory_enabled": False,  # IDEA-2: opt-in — OCR snapshots of the screen into the KB ("what did I see earlier?")
     "screen_memory_keep": 50,        # IDEA-2b: retention cap — keep only the newest N screen-memory docs
+    "upload_keep": 300,              # retention cap: newest N of each ephemeral upload type (screenshots/browse/recordings) kept; older auto-pruned so generated media can't fill the disk
     "agent_can_control": True,       # HON-1b: allow the AUTONOMOUS agent to drive mouse/keyboard (control/act_on_screen). Turn OFF to keep the agent from GUI control while still allowing manual control + the kill-switch.
     "control_mode": "auto",          # confirmation policy for dangerous agent actions: auto (no prompt) | confirm (ask before click/type/delete/run) | full (no prompt + run anything). Default auto.
     "control_protected_patterns": None,  # HON-1b: window-title patterns where click/type is BLOCKED (None = built-in default list: password managers, banking, auth). Set [] to disable, or a custom list.

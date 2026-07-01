@@ -186,24 +186,68 @@ def test_quality_record_and_summary(tmpdb):
 
 
 def test_screen_if_region_and_absent(monkeypatch, tmpdb):
-    """IDEA-7: screen_if supports a pinned region + an inverted (absent) trigger."""
+    """IDEA-7: screen_if supports a pinned region + an inverted (absent) trigger. With always_notify it
+    fires every tick (edge-triggering is tested separately)."""
     import nova.services.schedules as SCH
     monkeypatch.setattr(SCH.screen_svc, "read_screen",
                         lambda vision=False, region=None: {"ok": True, "text": "Error: disk full on C:"})
-    # present + normal → triggers
-    r = SCH.run_action("screen_if", {"match": "disk full", "then_action": "notify"})
-    assert "matched" in r and "notify" in r
-    # present + absent flag → does NOT trigger
-    r = SCH.run_action("screen_if", {"match": "disk full", "absent": True})
+    # present + normal (always_notify) → fires
+    r = SCH.run_action("screen_if", {"match": "disk full", "then_action": "notify", "always_notify": True})
+    assert "fired" in r and "appeared" in r and "notify" in r
+    # present + absent flag (always_notify) → does NOT trigger (text is present)
+    r = SCH.run_action("screen_if", {"match": "disk full", "absent": True, "always_notify": True})
     assert "no trigger" in r
-    # missing text + absent flag → triggers (the watched thing vanished)
-    r = SCH.run_action("screen_if", {"match": "loading...", "absent": True, "then_action": "notify"})
-    assert "vanished" in r
-    # region is passed through + validated
-    r = SCH.run_action("screen_if", {"match": "disk full", "region": [0, 0, 100, 50]})
-    assert "in region" in r
+    # missing text + absent flag (always_notify) → fires ("disappeared")
+    r = SCH.run_action("screen_if", {"match": "loading...", "absent": True, "then_action": "notify", "always_notify": True})
+    assert "fired" in r and "disappeared" in r
+    # region validated
     r = SCH.run_action("screen_if", {"match": "x", "region": "bad"})
     assert "must be [x,y,w,h]" in r
+
+
+def test_screen_if_edge_trigger_no_spam(monkeypatch, tmpdb):
+    """The fix for the 'Screen matched: disk full' spam: screen_if fires only on a state CHANGE, not
+    every tick. First observation = baseline (no fire); repeats = no fire; a transition = one fire."""
+    import nova.services.schedules as SCH
+    state = {"text": "nothing here"}
+    monkeypatch.setattr(SCH.screen_svc, "read_screen", lambda vision=False, region=None: {"text": state["text"]})
+    fires = []
+    monkeypatch.setattr(SCH, "add_notification", lambda *a, **k: fires.append(a))
+    P = {"match": "disk full", "then_action": "notify", "name": "watch"}
+    assert "baseline" in SCH.run_action("screen_if", dict(P), "watch")       # 1st = arm, no fire
+    assert "no change" in SCH.run_action("screen_if", dict(P), "watch")      # still absent → no fire
+    state["text"] = "warning: disk full!"                                     # transition absent→present
+    r = SCH.run_action("screen_if", dict(P), "watch")
+    assert "fired" in r and len(fires) == 1                                   # exactly ONE fire on the edge
+    assert "no change" in SCH.run_action("screen_if", dict(P), "watch")      # still present → no re-fire (no spam)
+    assert len(fires) == 1
+
+
+def test_screen_if_window_scope(monkeypatch, tmpdb):
+    """screen_if only reads the named window's region (never the whole desktop) → ignores other apps."""
+    import nova.services.schedules as SCH
+    import nova.services.control as C
+    monkeypatch.setattr(C, "list_windows", lambda limit=60: [
+        {"title": "My App - main", "process": "app.exe", "rect": {"x": 10, "y": 20, "w": 300, "h": 200}}])
+    seen = {}
+    def fake_read(vision=False, region=None):
+        seen["region"] = region
+        return {"text": "status ok"}
+    monkeypatch.setattr(SCH.screen_svc, "read_screen", fake_read)
+    # window present → reads only that rect
+    SCH.run_action("screen_if", {"match": "ok", "window": "My App", "always_notify": True})
+    assert seen["region"] == [10, 20, 300, 200]
+    # window NOT open → skipped, does NOT read the whole screen
+    r = SCH.run_action("screen_if", {"match": "ok", "window": "Nonexistent"})
+    assert "not open" in r and "not reading the whole screen" in r
+
+
+def test_screen_if_whole_word(monkeypatch, tmpdb):
+    import nova.services.schedules as SCH
+    monkeypatch.setattr(SCH.screen_svc, "read_screen", lambda vision=False, region=None: {"text": "errorless build"})
+    # substring match would fire on "errorless"; whole_word must NOT
+    assert "no trigger" in SCH.run_action("screen_if", {"match": "error", "whole_word": True, "always_notify": True})
+    assert "fired" in SCH.run_action("screen_if", {"match": "error", "always_notify": True})   # substring does
 
 
 def test_screen_memory_retention(monkeypatch, tmpdb):
@@ -265,9 +309,10 @@ def test_run_action(tmpdb):
 def test_screen_if_trigger(tmpdb, monkeypatch):
     import nova.services.schedules as S
     monkeypatch.setattr(S.screen_svc, "read_screen", lambda vision=False, region=None: {"text": "Build SUCCEEDED on main"})
-    assert "no trigger" in S.run_action("screen_if", {"match": "FAILED"})
-    out = S.run_action("screen_if", {"match": "succeeded", "then_action": "notify", "then_params": {"text": "ok"}})
-    assert out.startswith("matched") and "notify" in out
+    assert "no trigger" in S.run_action("screen_if", {"match": "FAILED", "always_notify": True})
+    out = S.run_action("screen_if", {"match": "succeeded", "then_action": "notify",
+                                     "then_params": {"text": "ok"}, "always_notify": True})
+    assert "fired" in out and "notify" in out
     assert "no 'match'" in S.run_action("screen_if", {})
 
 

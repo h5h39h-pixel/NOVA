@@ -134,6 +134,32 @@ def test_injection_detect_empty():
 
 
 # ── automodel with a single model ──
+def test_uploads_retention_prune(monkeypatch, tmp_path, tmpdb):
+    """Generated/captured media can't fill the disk: prune keeps newest N ephemera, drops the rest,
+    and never touches non-ephemeral content. backup_media skips ephemera entirely."""
+    import nova.services.backup as B
+    up = tmp_path / "uploads"; up.mkdir()
+    monkeypatch.setattr(B, "UPLOAD_DIR", up)
+    monkeypatch.setattr(B, "MEDIA_MIRROR", tmp_path / "mirror")
+    import os as _os
+    # 10 screenshots (ephemeral) + 1 generated image (keep) + 1 upload doc (keep)
+    for i in range(10):
+        f = up / f"screen_{i:02d}.png"; f.write_bytes(b"x" * 10); _os.utime(f, (1000 + i, 1000 + i))
+    (up / "img_keep.png").write_bytes(b"y" * 10)
+    (up / "report.pdf").write_bytes(b"z" * 10)
+    from nova.core.db import set_settings
+    set_settings({"upload_keep": 3})
+    r = B.prune_uploads()
+    assert r["removed"] == 7                                  # 10 screenshots → keep 3, drop 7
+    names = {p.name for p in up.glob("*")}
+    assert "img_keep.png" in names and "report.pdf" in names  # non-ephemeral untouched
+    assert len([n for n in names if n.startswith("screen_")]) == 3
+    # backup_media mirrors only non-ephemeral content
+    B.backup_media()
+    mirrored = {p.name for p in (tmp_path / "mirror").glob("*")}
+    assert "img_keep.png" in mirrored and not any(n.startswith("screen_") for n in mirrored)
+
+
 def test_automodel_single_model(monkeypatch, tmpdb):
     import nova.services.automodel as AM
     monkeypatch.setattr(AM, "_models", lambda: [{"name": "only:7b", "tags": [], "size_gb": 4}])

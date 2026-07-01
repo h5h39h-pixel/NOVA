@@ -311,9 +311,10 @@ async def scheduler_loop():
         await asyncio.sleep(15)
 
 async def backup_loop():
-    """Daily consistent snapshot of the SQLite DB (rotated, last 14 kept) + incremental
-    media mirror (generated images/video/screenshots/uploads)."""
-    from nova.services.backup import snapshot_db, backup_media
+    """Daily consistent snapshot of the SQLite DB (rotated, last 14 kept), incremental media mirror
+    (generated content only — ephemeral captures skipped), and an uploads retention prune so
+    generated/captured media can never fill the disk."""
+    from nova.services.backup import snapshot_db, backup_media, prune_uploads
     while True:
         try:
             p = await asyncio.to_thread(snapshot_db)
@@ -321,12 +322,18 @@ async def backup_loop():
         except Exception as e:
             log.warning(f"DB snapshot failed: {e}"); record_error("backup_loop", e)
         try:
+            pr = await asyncio.to_thread(prune_uploads)   # cap uploads BEFORE mirroring
+            if pr["removed"]:
+                log.info(f"uploads prune: removed {pr['removed']} ephemeral files ({pr['freed_mb']} MB)")
+        except Exception as e:
+            log.warning(f"uploads prune failed: {e}"); record_error("backup_loop", e)
+        try:
             m = await asyncio.to_thread(backup_media)
             if m["copied"]:
                 log.info(f"media backup: mirrored {m['copied']}/{m['total']} files ({m['bytes']//1024} KB)")
         except Exception as e:
             log.warning(f"media backup failed: {e}"); record_error("backup_loop", e)
-        await asyncio.sleep(24 * 3600)
+        await asyncio.sleep(6 * 3600)   # every 6h so the prune keeps up with heavy capture use
 
 # ---- websocket
 @app.websocket("/ws")

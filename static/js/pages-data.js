@@ -126,15 +126,19 @@ function Automation(){
     if(a==='screen_if')return `<label class="f">If the screen contains (text or regex)</label><input class="t" id="pp" placeholder="Build FAILED">
       <div class="grid g2 mt"><div><label class="f">Then do</label><select class="t" id="pp2"><option value="notify">🔔 Notify</option><option value="speak">🔊 Speak</option><option value="command">⌨️ Run command</option></select></div>
       <div><label class="f">With (text / command)</label><input class="t" id="pp3" placeholder="Build failed!"></div></div>
-      <label class="f mt">Watch only a region (optional) — x,y,w,h</label><input class="t" id="ppr" placeholder="e.g. 0,0,800,200 (leave empty = whole screen)">
+      <label class="f mt">Watch only this window (recommended — ignores other apps)</label><input class="t" id="ppw" placeholder="e.g. Visual Studio Code (partial title match; empty = any)">
+      <label class="f mt">…or a fixed region — x,y,w,h</label><input class="t" id="ppr" placeholder="e.g. 0,0,800,200 (empty = whole screen)">
       <label class="atog mt" style="display:inline-flex"><input type="checkbox" id="ppa"> act when the text is <b>&nbsp;ABSENT</b>&nbsp;(disappears) instead of present</label>
-      <label class="atog mt" style="display:inline-flex"><input type="checkbox" id="ppv"> use the vision model (read screen via qwen2.5‑VL instead of OCR)</label>`;
+      <label class="atog mt" style="display:inline-flex"><input type="checkbox" id="ppwrd"> whole-word match only (don't match inside larger words)</label>
+      <label class="atog mt" style="display:inline-flex"><input type="checkbox" id="ppv"> use the vision model (read screen via qwen2.5‑VL instead of OCR)</label>
+      <p class="muted mt" style="font-size:11px">Fires only when the match state <b>changes</b> (no repeat spam). Scope to a window/region so it never reads other apps.</p>`;
     return '<p class="muted mt" style="font-size:12px">No parameters needed.</p>';}
   function buildParams(a){const v=$('#pp')?$('#pp').value:'';
     if(a==='screen_if'){const ta=$('#pp2')?$('#pp2').value:'notify';const tx=$('#pp3')?$('#pp3').value:'';
       const rraw=($('#ppr')&&$('#ppr').value||'').trim();
       const region=rraw?rraw.split(',').map(n=>parseInt(n.trim(),10)).filter(n=>!isNaN(n)):null;
-      const p={match:v,then_action:ta,then_params:(ta==='command'?{command:tx}:{text:tx}),vision:!!($('#ppv')&&$('#ppv').checked),absent:!!($('#ppa')&&$('#ppa').checked)};
+      const p={match:v,then_action:ta,then_params:(ta==='command'?{command:tx}:{text:tx}),vision:!!($('#ppv')&&$('#ppv').checked),absent:!!($('#ppa')&&$('#ppa').checked),whole_word:!!($('#ppwrd')&&$('#ppwrd').checked)};
+      const win=($('#ppw')&&$('#ppw').value||'').trim(); if(win)p.window=win;
       if(region&&region.length===4)p.region=region;
       return p;}
     return a==='command'?{command:v}:a==='video'?{prompt:v}:(a==='notify'||a==='speak')?{text:v}:a==='kb_search'?{query:v}:a==='kb_index'?{folder:v}:a==='browse'?{url:v}:a==='screen_record'?{seconds:+v||10}:{}}

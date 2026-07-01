@@ -148,24 +148,65 @@ def run_action(action, params, name="task"):
                 assert len(region) == 4
             except Exception:
                 return "screen_if: 'region' must be [x,y,w,h]"
+        # SCOPING: a `window` title restricts the watch to THAT app's window rect, so screen_if never
+        # reads text from other applications (the owner's report). If the window isn't present, skip the
+        # tick entirely rather than falling back to the whole desktop.
+        win = (p.get("window") or "").strip()
+        scope = ""
+        if win:
+            try:
+                from nova.services import control as _ctl
+                wins = _ctl.list_windows()
+            except Exception:
+                wins = []
+            match_w = next((w for w in wins if win.lower() in (w.get("title") or "").lower()), None)
+            if not match_w:
+                return f"screen_if: window '{win}' not open — skipped (not reading the whole screen)"
+            rc = match_w.get("rect") or {}
+            if rc.get("w", 0) > 0 and rc.get("h", 0) > 0:
+                region = [rc["x"], rc["y"], rc["w"], rc["h"]]
+                scope = f" in window '{match_w.get('title','')[:30]}'"
         try:
             r = screen_svc.read_screen(bool(p.get("vision")), region=region)
             text = (r.get("text") or "").lower()
         except Exception as e:
             return f"screen_if: read failed ({e})"
-        present = want in text
-        trigger = (not present) if bool(p.get("absent")) else present
-        where = " in region" if region else ""
-        if trigger:
-            ta = p.get("then_action", "notify")
-            if ta in ("screen_if", "schedule"):       # guard: no self-recursion / scheduling storms
-                return f"screen_if: then_action '{ta}' is not allowed (would recurse)"
-            verb = "vanished from" if p.get("absent") else "matched"
-            tp = p.get("then_params") or {"text": f"Screen {verb}: {p.get('match')}"}
-            st = run_action(ta, tp, name)
-            return f"{verb} '{p.get('match')}'{where} → {ta}: {st}"
-        return f"no trigger for '{p.get('match')}'{where}"
+        # optional whole-word match so "error" doesn't fire on "errorless"/"terror" etc.
+        if bool(p.get("whole_word")):
+            import re as _re
+            present = bool(_re.search(r"\b" + _re.escape(want) + r"\b", text))
+        else:
+            present = want in text
+        absent = bool(p.get("absent"))
+        where = scope or (" in region" if region else "")
+        # EDGE-TRIGGER: fire only when the watched condition CHANGES (transition), not on every tick.
+        # Without this a screen_if fires each scheduler run while the condition holds — spamming
+        # notifications (esp. with absent=true + a common word, which is "true" almost always).
+        # `always_notify: true` opts back into fire-every-tick for the rare case that wants it.
+        key = f"{name}|{want}|{region}|{absent}"
+        prev = _SCREEN_IF_LAST.get(key)
+        _SCREEN_IF_LAST[key] = present
+        trigger_now = (not present) if absent else present
+        if not bool(p.get("always_notify")):
+            if prev is None:
+                return f"screen_if: baseline '{p.get('match')}'{where} = {'present' if present else 'absent'} (armed)"
+            prev_trigger = (not prev) if absent else prev
+            if not (trigger_now and not prev_trigger):   # only act on the transition INTO the trigger state
+                return f"screen_if: no change for '{p.get('match')}'{where}"
+        elif not trigger_now:
+            return f"screen_if: no trigger for '{p.get('match')}'{where}"
+        ta = p.get("then_action", "notify")
+        if ta in ("screen_if", "schedule"):              # guard: no self-recursion / scheduling storms
+            return f"screen_if: then_action '{ta}' is not allowed (would recurse)"
+        verb = "disappeared" if absent else "appeared"
+        # Clear, unambiguous text — names the automation so it can't be mistaken for a system error.
+        tp = p.get("then_params") or {"text": f"Automation '{name}': the text '{p.get('match')}' {verb} on screen"}
+        st = run_action(ta, tp, name)
+        return f"screen_if fired ({verb} '{p.get('match')}'{where}) → {ta}: {st}"
     return "unknown action"
+
+
+_SCREEN_IF_LAST = {}   # edge-detection state per screen_if schedule: key -> was-the-match-present-last-tick
 
 
 def run_schedule(row):

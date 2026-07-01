@@ -55,6 +55,18 @@ def test_gate_auto_never_blocks(tmpdb):
     assert ok is True and msg is None                    # auto → no prompt, proceeds
 
 
+def test_agent_cannot_schedule_screen_watcher(tmpdb):
+    """The agent must not create a background screen_if watcher (it would react to other apps' screen
+    content — the 'Screen matched: disk full' bug). Other actions schedule with a min 30s interval."""
+    from nova.services.agent import agent_tool
+    out = agent_tool("schedule", {"name": "w", "action": "screen_if", "params": {"match": "disk full"}})
+    assert out.startswith("BLOCKED") and "screen watcher" in out
+    agent_tool("schedule", {"name": "n", "action": "notify", "params": {"text": "x"}, "interval_sec": 2})
+    from nova.core.db import db
+    c = db(); row = c.execute("SELECT interval_sec FROM schedules WHERE name='n'").fetchone(); c.close()
+    assert row["interval_sec"] == 30                              # tight interval capped → no storms
+
+
 def test_agent_tool_respects_denied_confirm(monkeypatch, tmpdb):
     """agent_tool aborts a dangerous action when the confirmation gate denies it."""
     import nova.services.agent as A

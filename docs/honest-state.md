@@ -177,6 +177,44 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## M105.10 (2026‑07‑01) — root‑caused the "Screen matched: disk full" / "Screen vanished from: error" notifications
+The owner reported mysterious notifications during agent runs: **"Screen matched: disk full"** and
+**"Screen vanished from: error"**. Investigated exhaustively (grep of all code, the live notifications +
+audit + schedules tables) and found the exact source and the real defect:
+
+**Source:** the string "vanished from"/"matched" exists ONLY in `schedules.py`'s `screen_if` action.
+Both notifications are a **`screen_if` automation firing** — its default notify text was
+`f"Screen {verb}: {match}"`, so a watcher with match text "disk full" / "error" produced exactly those
+messages. There is **no "disk full" system alert** anywhere in the code (confirmed by grep) — it was the
+*match string* of a screen watcher, not a disk condition. (Disk was never full: C: had 1.9 TB free.)
+
+**How it fired during agent runs:** the agent's `schedule` tool could create a **background `screen_if`
+watcher**, which the scheduler then ran every interval, scanning the **whole desktop** and matching text
+from OTHER apps (a "disk full" dialog, an "error" toast) — i.e. reacting to content unrelated to the task.
+
+**Two real defects fixed:**
+1. **No edge‑detection → spam.** `screen_if` fired on *every* scheduler tick while the condition held
+   (with `absent`+a common word, that's almost always). Now it **only fires on a state TRANSITION**
+   (per‑watcher last‑state tracking); `always_notify:true` opts back into fire‑every‑tick. No more storms.
+2. **Agent could set up whole‑screen watchers.** The agent `schedule` tool now **refuses `screen_if`**
+   ("do screen work in‑task with see_screen/act, not as an unattended watcher") and caps any interval to
+   ≥30 s. So the agent only reacts to relevant, in‑task screen content — never to other apps' pop‑ups.
+Also: clearer text ("Automation '<name>': the text '<match>' appeared on screen") so it can never be
+mistaken for a system error; a recursion guard (no `screen_if`/`schedule` as a then_action); and cleaned
+the live notification center of test artifacts. Tests: edge‑trigger no‑spam + agent‑cannot‑schedule‑watcher.
+
+**Scoping + filtering (M105.11):** `screen_if` now reads only what it's told to, never the whole desktop
+by accident: a **`window` title** restricts the watch to that app's window rect (and *skips* the tick if
+the window isn't open, rather than falling back to full‑screen), the existing **`region`** pins a fixed
+area, and a **`whole_word`** option stops "error" firing on "errorless". The Automation UI exposes all
+three and notes that it fires only on state changes. Net: the watcher reacts only to relevant text in a
+chosen window/region — not to other apps' pop‑ups.
+
+**Related disk finding (real, fixed):** while investigating I confirmed generated media grew unbounded —
+uploads mirrored *forever* (incl. every screenshot) into backups. Added an **uploads retention cap**
+(`prune_uploads`, `upload_keep=300`) + made `backup_media` skip ephemeral captures, and freed ~1.5 GB of
+accumulated test artifacts. So generation/soaks can never fill the disk.
+
 ## SOAK‑24H (2026‑07‑01) — the literal 24‑hour soak is RUNNING
 Launched `python scripts/soak_test.py --hours 24` as a detached background run against the live server
 (PID confirmed sampling: 0 errors, loop alive, RSS ~88 MB at start). It is **still running** — I cannot

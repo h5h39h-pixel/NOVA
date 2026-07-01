@@ -80,7 +80,9 @@ AGENT_TOOL_DEFS = {
                    "to read & describe the current screen.\n"),
     "write_file": ("- write_file {path, content}: write a text file. Pass just a bare filename (e.g. report.txt) — "
                    "it is saved in your output folder automatically; do NOT prefix 'agent-output/'.\n"),
-    "schedule": "- schedule {name, action, params, interval_sec}: create a background automation.\n",
+    "schedule": ("- schedule {name, action, params, interval_sec}: create a background automation (min "
+                 "interval 30s). NOTE: you cannot schedule a screen watcher (screen_if) — do screen work "
+                 "inside this task with see_screen/act, not as an unattended watcher.\n"),
     "remember": ("- remember {text}: durably store a fact/preference about the operator (local memory) so "
                  "you recall it in future sessions, e.g. 'the user prefers English explanations'.\n"),
     "recall": ("- recall {query}: retrieve durable facts you previously stored about the operator. Use when "
@@ -353,10 +355,27 @@ def agent_tool(name, args, dry_run=False, unrestricted=False):
             if dry_run: return "[dry-run] would start a video generation"
             run_action("video", {"prompt": a.get("prompt", "a cinematic shot")}); return "video generation started in the background"
         if name == "schedule":
-            if dry_run: return f"[dry-run] would schedule '{a.get('name','task')}' ({a.get('action')})"
+            sched_action = a.get("action", "notify")
+            # The agent must NOT set up persistent background SCREEN WATCHERS: a scheduled screen_if scans
+            # the WHOLE desktop every interval and fires on text from OTHER apps (e.g. a "disk full" dialog
+            # or an "error" toast) — reacting to content that has nothing to do with the task. Screen work
+            # belongs INSIDE the task loop (see_screen → act), not as an unattended watcher. If the user
+            # genuinely wants a screen watch, they create it deliberately in the Automation UI (with a region).
+            if sched_action == "screen_if":
+                return ("BLOCKED: the agent can't schedule a background screen watcher (screen_if) — it "
+                        "would react to unrelated apps' screen content. Use see_screen/act within this task "
+                        "instead, or ask the user to create the watch in Automation.")
+            try:
+                interval = int(a.get("interval_sec", 0))
+            except Exception:
+                interval = 0
+            if 0 < interval < 30:
+                interval = 30          # no tight loops → no notification storms
+            if dry_run: return f"[dry-run] would schedule '{a.get('name','task')}' ({sched_action})"
             c = db(); c.execute("INSERT INTO schedules(name,action,params,interval_sec,next_run,enabled,created) VALUES(?,?,?,?,?,1,?)",
-                (a.get("name", "Agent task")[:80], a.get("action", "notify"), json.dumps(a.get("params", {})),
-                 int(a.get("interval_sec", 0)), time.time() + 60, time.time())); c.commit(); c.close()
+                (a.get("name", "Agent task")[:80], sched_action, json.dumps(a.get("params", {})),
+                 interval, time.time() + 60, time.time())); c.commit(); c.close()
+            audit("agent", "schedule", f"{sched_action} every {interval}s")
             return "automation scheduled"
     except Exception as e:
         return f"tool error: {e}"

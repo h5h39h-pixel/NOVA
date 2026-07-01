@@ -16,17 +16,25 @@ BACKUP_DIR = DB_PATH.parent / "backups"
 MEDIA_MIRROR = BACKUP_DIR / "media"
 
 
+# Ephemeral capture artifacts — NOT worth permanent backup and the main source of unbounded growth
+# (a new screenshot per capture/OCR/vision call). Pruned + never mirrored.
+EPHEMERAL_PREFIXES = ("screen_", "browse_", "rec_")
+
+
+def _is_ephemeral(name):
+    return any(name.startswith(p) for p in EPHEMERAL_PREFIXES)
+
+
 def backup_media():
-    """STB-4: incremental mirror of generated media + uploads (UPLOAD_DIR) into
-    data/backups/media. Copies files that are new or changed in size; never deletes mirror
-    copies, so a file accidentally removed from the live folder still survives here. The DB
-    snapshots cover state; this covers the binary assets the DB only references by name."""
+    """STB-4: incremental mirror of generated media (UPLOAD_DIR) into data/backups/media. Mirrors
+    content worth keeping (generated images/video, uploaded docs); SKIPS ephemeral capture artifacts
+    (screenshots/browse grabs/recordings) — mirroring those forever was the disk-growth culprit."""
     if not UPLOAD_DIR.exists():
         return {"copied": 0, "total": 0, "bytes": 0}
     MEDIA_MIRROR.mkdir(parents=True, exist_ok=True)
     copied = total = nbytes = 0
     for src in UPLOAD_DIR.rglob("*"):
-        if not src.is_file():
+        if not src.is_file() or _is_ephemeral(src.name):
             continue
         total += 1
         try:
@@ -39,6 +47,43 @@ def backup_media():
         except Exception:
             pass
     return {"copied": copied, "total": total, "bytes": nbytes}
+
+
+def prune_uploads(keep_each=300, max_total_mb=1500):
+    """Retention cap for UPLOAD_DIR so generated/captured media can never fill the disk. Keeps the
+    newest `keep_each` of each ephemeral type; if the folder still exceeds `max_total_mb`, deletes the
+    oldest ephemeral files until under. Non-ephemeral content (generated images/video, uploads) is
+    kept. Returns {removed, freed_mb}. Called from the daily backup loop."""
+    if not UPLOAD_DIR.exists():
+        return {"removed": 0, "freed_mb": 0.0}
+    try:
+        s = get_settings().get("upload_keep")
+        if isinstance(s, int) and s > 0:
+            keep_each = s
+    except Exception:
+        pass
+    removed = freed = 0
+    # per-type newest-N retention
+    for pre in EPHEMERAL_PREFIXES:
+        files = sorted(UPLOAD_DIR.glob(pre + "*"), key=lambda p: p.stat().st_mtime, reverse=True)
+        for old in files[keep_each:]:
+            try:
+                sz = old.stat().st_size; old.unlink(); removed += 1; freed += sz
+            except Exception:
+                pass
+    # global size cap: drop oldest ephemeral files if still too big
+    allf = [p for p in UPLOAD_DIR.glob("*") if p.is_file()]
+    total = sum(p.stat().st_size for p in allf)
+    if total > max_total_mb * 1024 * 1024:
+        eph = sorted([p for p in allf if _is_ephemeral(p.name)], key=lambda p: p.stat().st_mtime)
+        for old in eph:
+            if total <= max_total_mb * 1024 * 1024:
+                break
+            try:
+                sz = old.stat().st_size; old.unlink(); removed += 1; freed += sz; total -= sz
+            except Exception:
+                pass
+    return {"removed": removed, "freed_mb": round(freed / 1024 / 1024, 1)}
 
 
 def snapshot_db(keep=14):
