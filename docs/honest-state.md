@@ -228,6 +228,10 @@ wait out 24 h inside a session, so this is the honest status:
 - **What it will actually tell us:** whether the loops/handlers/memory paths hold over a full day. The
   30‑min accelerated run (SOAK‑1) already showed no leak on the non‑VLM hot paths; this confirms it over
   24 h and averages out the VLM sawtooth (SOAK‑2) if vision is enabled during the window.
+**Interim checkpoint (~3.2 h in):** **79,840 requests · 0 HTTP errors · 0 runtime errors · 0 dead loop
+samples · RSS ~76 MB · slope +1.0 MB/h** (≈flat — no leak trend over 3 h of continuous load). Background
+loops healthy throughout. The run continues to 24 h; final verdict is recorded to the quality dashboard
+(`suite='soak'`) + `soak_progress.json` when it ends.
 _Update this entry with the final numbers once the run completes._
 
 ## M106.2 (2026‑07‑01) — hosted CI caught a real DB-isolation bug (fixed at the root)
