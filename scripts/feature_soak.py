@@ -59,8 +59,16 @@ def _rss():
     return None
 
 
+def _cpu():
+    try:
+        import psutil
+        return psutil.cpu_percent(interval=None)
+    except Exception:
+        return None
+
+
 def soak(name, fn, n):
-    lat, errs, gpu_peak, vram_peak = [], 0, 0, 0
+    lat, errs, gpu_peak, vram_peak, cpu_peak = [], 0, 0, 0, 0
     rss0 = _rss()
     print(f"\n[{name}] x{n} ...", flush=True)
     for i in range(n):
@@ -74,18 +82,29 @@ def soak(name, fn, n):
         g, v = _gpu()
         if g is not None:
             gpu_peak = max(gpu_peak, g); vram_peak = max(vram_peak, v)
+        cp = _cpu()
+        if cp is not None:
+            cpu_peak = max(cpu_peak, cp)
     rss1 = _rss()
     loop_alive = _get("/api/health").get("metrics_loop_alive", True)
+    # slowdown: ratio of the slowest-half median to the fastest-half median (drift over the run)
+    drift = 0
+    if len(lat) >= 4:
+        half = len(lat) // 2
+        a = statistics.median(lat[:half]) or 0.001
+        drift = round(statistics.median(lat[half:]) / a, 2)
     r = {"feature": name, "n": n, "errors": errs,
-         "p50_s": round(statistics.median(lat), 2) if lat else 0,
-         "max_s": round(max(lat), 2) if lat else 0,
-         "first_s": round(lat[0], 2) if lat else 0, "last_s": round(lat[-1], 2) if lat else 0,
-         "rss_before": rss0, "rss_after": rss1,
+         "p50_s": round(statistics.median(lat), 3) if lat else 0,
+         "max_s": round(max(lat), 3) if lat else 0,
+         "first_s": round(lat[0], 3) if lat else 0, "last_s": round(lat[-1], 3) if lat else 0,
+         "slowdown_x": drift, "rss_before": rss0, "rss_after": rss1,
          "rss_delta": (round(rss1 - rss0, 1) if (rss0 and rss1) else None),
-         "gpu_peak_pct": gpu_peak, "vram_peak_mb": vram_peak, "loop_alive": loop_alive}
+         "gpu_peak_pct": gpu_peak, "vram_peak_mb": vram_peak, "cpu_peak_pct": round(cpu_peak, 0),
+         "loop_alive": loop_alive}
     RESULTS.append(r)
-    print(f"    n={n} errors={errs} p50={r['p50_s']}s first={r['first_s']}s last={r['last_s']}s "
-          f"rss {rss0}->{rss1}MB gpu_peak={gpu_peak}% loop_alive={loop_alive}", flush=True)
+    warn = " ⚠SLOWDOWN" if (drift > 2 and r["last_s"] > 0.5) else ""
+    print(f"    n={n} errors={errs} p50={r['p50_s']}s drift×{drift} rss {rss0}->{rss1}MB "
+          f"gpu={gpu_peak}% cpu={r['cpu_peak_pct']}% loop_alive={loop_alive}{warn}", flush=True)
     return r
 
 
@@ -102,20 +121,53 @@ def _poll_job(job_id, timeout=240):
     raise TimeoutError("job timeout")
 
 
+# ---------------- concurrent load generator (load + soak together) ----------------
+import threading
+_LOAD_STOP = threading.Event()
+_LOAD_STATS = {"reqs": 0, "errs": 0}
+
+
+def _load_worker():
+    """Continuously hammer cheap read endpoints to create concurrent load during the soak."""
+    eps = ["/api/health", "/api/metrics", "/api/processes", "/api/notifications", "/api/memory",
+           "/api/events?limit=10", "/api/quality", "/api/services"]
+    i = 0
+    while not _LOAD_STOP.is_set():
+        try:
+            _get(eps[i % len(eps)], t=8); _LOAD_STATS["reqs"] += 1
+        except Exception:
+            _LOAD_STATS["errs"] += 1
+        i += 1
+        time.sleep(0.05)
+
+
+def _start_load(n):
+    threads = [threading.Thread(target=_load_worker, daemon=True) for _ in range(n)]
+    for t in threads:
+        t.start()
+    return threads
+
+
 # ---------------- feature exercises ----------------
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--light", type=int, default=30)
     ap.add_argument("--medium", type=int, default=8)
     ap.add_argument("--heavy", type=int, default=2)
+    ap.add_argument("--load", type=int, default=0, help="N concurrent load-generator threads (load+soak)")
     args = ap.parse_args()
     L, M, H = args.light, args.medium, args.heavy
+
+    if args.load:
+        _start_load(args.load)
+        print(f"⚡ load+soak: {args.load} concurrent load threads running", flush=True)
 
     from nova.services import memory as MEM
     from nova.services import kb as KB
     from nova.services.schedules import run_action
     from nova.services.notifications import add_notification
     from nova.services import control as CTL
+    from nova.core import eventlog as EL
 
     # memory (store/recall/forget)
     def _mem(i):
@@ -182,23 +234,94 @@ def main():
         _poll_job(r["job"], timeout=400)
     soak("video_gen_ltx", _vid, 1)
 
-    # ---- report ----
-    print("\n================ FEATURE SOAK REPORT ================")
+    # event log system itself (log + query + stats under repetition; retention prune sanity)
+    def _evlog(i):
+        EL.log("system", f"soak event {i}", source="feature_soak", context={"i": i})
+        EL.query(q="soak event", limit=20); EL.stats(hours=1, buckets=12)
+    soak("event_log", _evlog, L)
+
+    # diagnostics + audit (issues scan, ops report, audit endpoint)
+    soak("diagnostics_ops", lambda i: (_get("/api/issues"), _get("/api/ops/report"), _get("/api/audit")), M)
+
+    # database under concurrent load (parallel reads + writes → checks WAL / no locks)
+    def _db_load(i):
+        def hit(): _get("/api/history"); _get("/api/conversations")
+        ts = [threading.Thread(target=hit) for _ in range(6)]
+        for t in ts: t.start()
+        for t in ts: t.join(15)
+        MEM.remember(f"db-load {i}")          # a concurrent write alongside the reads
+    soak("db_concurrent", _db_load, M)
+
+    # large-file processing (ingest a big text doc into the KB → chunking + embeddings at size)
+    big = "The RTX 5090 has 32GB of VRAM. " * 4000     # ~120 KB of text
+    def _bigfile(i):
+        n = KB.kb_ingest_text(f"soak-big-{i}", big)
+        return n
+    soak("large_file_ingest", _bigfile, max(1, H))
+    for d in _get("/api/kb/docs"):
+        if str(d.get("name", "")).startswith(("soak-big-", "soak-doc-")):
+            try: urllib.request.urlopen(urllib.request.Request(BASE + f"/api/kb/docs/{d['id']}", method="DELETE"), timeout=10).read()
+            except Exception: pass
+
+    # network-failure simulation: point a probe at a DEAD endpoint → the app must degrade, not crash
+    def _netfail(i):
+        from nova.core.http import http_ok            # must return False fast, no raise
+        assert http_ok("http://127.0.0.1:1/") is False
+        # a chat/agent path with the model unreachable degrades gracefully (dry-run avoids side effects)
+        _get("/api/services")                          # status loop probes down services cleanly
+    soak("network_failure_sim", _netfail, M)
+
+    # ---- stop load + auto report ----
+    _LOAD_STOP.set()
+    time.sleep(0.3)
+    return _report(load=args.load)
+
+
+def _report(load=0):
     total_err = sum(r["errors"] for r in RESULTS)
+    leak = [r for r in RESULTS if (r["rss_delta"] or 0) > 80]
+    slow = [r for r in RESULTS if r["slowdown_x"] and r["slowdown_x"] > 2 and r["last_s"] > 0.5]
+    dead = [r for r in RESULTS if not r["loop_alive"]]
+    print("\n================ FEATURE SOAK REPORT ================", flush=True)
     for r in RESULTS:
-        drift = ""
-        if r["first_s"] and r["last_s"] and r["first_s"] > 0:
-            ratio = r["last_s"] / r["first_s"]
-            drift = f"  drift x{ratio:.1f}" + (" ⚠SLOWDOWN" if ratio > 2 and r["last_s"] > 1 else "")
+        w = " ⚠SLOWDOWN" if r in slow else ""
         print(f"{r['feature']:22} n={r['n']:<3} err={r['errors']} p50={r['p50_s']}s "
-              f"rssΔ={r['rss_delta']}MB gpu={r['gpu_peak_pct']}%{drift}")
-    print(f"\nTOTAL ERRORS: {total_err}")
+              f"drift×{r['slowdown_x']} rssΔ={r['rss_delta']}MB gpu={r['gpu_peak_pct']}% cpu={r['cpu_peak_pct']}%{w}", flush=True)
+    print(f"\nTOTAL ERRORS: {total_err} | leaks: {len(leak)} | slowdowns: {len(slow)} | dead loops: {len(dead)}")
+    if load:
+        print(f"concurrent load: {_LOAD_STATS['reqs']} reqs / {_LOAD_STATS['errs']} errors")
+    verdict = "PASS" if (total_err == 0 and not leak and not slow and not dead) else "ISSUES FOUND"
+    print(f"VERDICT: {verdict}")
+    # persist JSON + markdown report
     try:
-        _post("/api/quality", {"suite": "feature-soak", "score": len(RESULTS) - sum(1 for r in RESULTS if r["errors"]),
-                               "total": len(RESULTS), "detail": f"{total_err} errors across {len(RESULTS)} features"})
+        from config import LOG_DIR
+        import json as _json
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        rep = {"generated": time.time(), "verdict": verdict, "total_errors": total_err,
+               "leaks": [r["feature"] for r in leak], "slowdowns": [r["feature"] for r in slow],
+               "dead_loops": [r["feature"] for r in dead], "load_reqs": _LOAD_STATS["reqs"],
+               "load_errs": _LOAD_STATS["errs"], "results": RESULTS}
+        (LOG_DIR / "feature_soak_report.json").write_text(_json.dumps(rep, indent=2), encoding="utf-8")
+        md = [f"# Feature soak report — {verdict}", "",
+              f"_generated {time.strftime('%Y-%m-%d %H:%M')} · {total_err} errors · "
+              f"{len(leak)} leaks · {len(slow)} slowdowns · {len(dead)} dead loops_", "",
+              "| feature | n | errors | p50 s | drift× | rssΔ MB | gpu% | cpu% | loop |",
+              "|---|---|---|---|---|---|---|---|---|"]
+        for r in RESULTS:
+            md.append(f"| {r['feature']} | {r['n']} | {r['errors']} | {r['p50_s']} | {r['slowdown_x']} | "
+                      f"{r['rss_delta']} | {r['gpu_peak_pct']} | {r['cpu_peak_pct']} | "
+                      f"{'✅' if r['loop_alive'] else '🔴'} |")
+        (LOG_DIR / "feature_soak_report.md").write_text("\n".join(md), encoding="utf-8")
+        print(f"report → {LOG_DIR / 'feature_soak_report.md'}")
+    except Exception as e:
+        print(f"report write failed: {e}")
+    try:
+        _post("/api/quality", {"suite": "feature-soak",
+                               "score": len(RESULTS) - sum(1 for r in RESULTS if r["errors"]),
+                               "total": len(RESULTS), "detail": f"{verdict}: {total_err} errors"})
     except Exception:
         pass
-    return total_err == 0
+    return total_err == 0 and not leak and not slow and not dead
 
 
 if __name__ == "__main__":

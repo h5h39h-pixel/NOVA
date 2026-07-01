@@ -419,7 +419,9 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
             push({"type": "agent", "ev": "stopped"}); final = "Stopped by user."; break
         try: text = ollama_chat_once(model, msgs, temperature)
         except Exception as e:
-            push({"type": "agent", "ev": "error", "text": str(e)}); break
+            push({"type": "agent", "ev": "error", "text": str(e)})
+            final = f"Agent stopped: the model could not be reached ({str(e)[:120]})."
+            break
         obj = parse_action(text)
         if not obj:
             msgs.append({"role": "assistant", "content": text})
@@ -444,6 +446,8 @@ def agent_run(goal, model, dry_run=False, unrestricted=False, temperature=0.2, m
         msgs.append({"role": "assistant", "content": text})
         msgs.append({"role": "user", "content": "Observation: " + obs[:1500] + "\nContinue with the next JSON step."})
     if final is None:
-        push({"type": "agent", "ev": "final", "text": "Reached the step limit. Partial progress shown above."})
+        final = "Reached the step limit. Partial progress shown above."
+        push({"type": "agent", "ev": "final", "text": final})
     add_notification("success", "Agent finished", goal[:60])
     push({"type": "agent", "ev": "done"})
+    return final          # the final answer/summary (always a string) — used by run_action('agent') etc.

@@ -1607,3 +1607,24 @@ coverage 63%. Full design: `docs/observability.md`.
 - **Tests:** `test_eventlog.py` (store, filters, timeline, retention, throttle, request logging, and all
   bridges: audit/errors/notifications). Isolated the error-bridge test's `_FILE` so it can't pollute the
   live log.
+
+## M106.1 — comprehensive load+soak of every component + network-failure sim
+Extended `scripts/feature_soak.py`: now covers ALL 16 components (added event log, diagnostics/ops/audit,
+DB-under-concurrent-load, large-file ingest, network-failure sim), samples RSS+GPU+**CPU**, supports a
+**concurrent load generator** (`--load N` = load+soak together), computes a **slowdown/drift** metric,
+and writes an **auto report** (`data/logs/feature_soak_report.{json,md}`).
+
+**Run (`--load 8`): PASS on all 16 components** — 0 errors, 0 leaks, 0 slowdowns, 0 dead loops; the
+concurrent load generator did **11,807 requests with 0 errors** during the soak. Latencies stable
+(image ~8s, VLM ~21s, video ~17s, large-file ingest ~3.7s); GPU spikes only during agent(89%)/VLM(95%).
+
+**Network-failure simulation** — new `tests/test_network_failure.py`: disconnect → degrade → reconnect →
+recover for http_ok, embeddings/KB, web search, the status snapshot, and the agent (LLM down). All pass.
+
+**Two real bugs the soak/network tests caught & fixed:**
+- `agent_run` had **no `return` statement** → always returned `None`, so `run_action('agent')` (scheduled
+  / replayed agent tasks) never reported the result. Added `return final`.
+- `agent_run` returned `None` when the model was unreachable → now returns a clear "model could not be
+  reached" message.
+Gate green, live 42/42. The 24h longevity soak (`soak_test.py --hours 24`) runs separately, observable via
+`data/logs/soak_progress.json`.

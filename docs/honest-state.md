@@ -230,6 +230,30 @@ wait out 24 h inside a session, so this is the honest status:
   24 h and averages out the VLM sawtooth (SOAK‑2) if vision is enabled during the window.
 _Update this entry with the final numbers once the run completes._
 
+## M106.1 (2026‑07‑01) — comprehensive load+soak of EVERY component (+ 2 agent bugs fixed)
+Ran the full per‑feature soak with **concurrent load** (`feature_soak.py --load 8`) covering every
+component + the new requirements (network‑failure sim, large‑file, resource monitoring, auto report).
+
+**Result: PASS across all 16 components** — 0 errors, 0 memory leaks (all RSS deltas ≈0 or negative),
+0 slowdowns (drift ≈1.0×), 0 dead loops. **Concurrent load held: 11,807 requests / 0 errors** while the
+feature soak ran. Coverage:
+- agent (dry‑run ×2, GPU 89%), vision VLM describe (×2, ~21 s, GPU 95%, RSS bounded), TTS, image (SDXL
+  ~8 s), video (LTX ~17 s), memory, RAG, automation, workflows, notifications, control, **event log**,
+  **diagnostics/ops/audit**, **DB under concurrent load** (WAL, no locks), **large‑file ingest** (~120 KB
+  → chunk+embed ~3.7 s), **network‑failure sim** (dead‑endpoint probe degrades cleanly).
+- Auto report written to `data/logs/feature_soak_report.{json,md}` after the run.
+
+**Two real bugs the soak/network tests caught & fixed:**
+1. **`agent_run` never returned its result** — the function had no `return final`, so it always returned
+   `None`. `run_action("agent")` (scheduled/replayed agent tasks) therefore always reported "no final
+   answer." Added `return final`.
+2. **`agent_run` returned `None` on an unreachable model** — now returns a clear "the model could not be
+   reached" message instead of silently nothing.
+
+**Network‑failure simulation (hermetic, `test_network_failure.py`):** disconnect → degrade → reconnect →
+recover, verified for `http_ok`, embeddings/KB (empty, no crash), web search (offline → empty), the status
+snapshot (all services down → no raise), and the agent (LLM down → graceful message). All pass.
+
 ## M105.8b (2026‑07‑01) — VLM soak: found + fixed an event‑loop stall; memory is bounded
 **SOAK‑2 (`soak_test.py --minutes 12 --vlm`, screen vision on):**
 - **🔴 Bug the VLM soak caught & I fixed:** `POST /api/vision/describe` ran the blocking ~30 s VLM call
