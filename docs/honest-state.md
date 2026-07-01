@@ -192,10 +192,18 @@ refuses to click/type into a focused window that looks like a password manager /
 a **master `allow_input_capture` gate** (default OFF) that both keylogger‑class features now require.
 Coverage rose to ~57% with the *security* modules now well covered (safety 100%, memory 89%).
 
+**A 4th audit (of the M105.6 code itself) found + fixed more** — the pattern holds that fresh code needs
+adversarial review: the guard **failed open** on a title‑read error (now fails closed), **coordinate
+clicks bypassed** the foreground check (now checks the window under the point via `WindowFromPoint`), a
+**TOCTOU** gap (now re‑checks before clicking), and the credential denylist had **false positives**
+(`credentials‑policy.md`) plus a Windows **trailing‑dot bypass** (`.ssh.\config`) — all fixed with
+segment‑based matching. **Video generation is now verified** (produced a valid 574 KB MP4).
+
 **Still honestly true after this round:**
-- **The protected‑window guard is best‑effort, not airtight.** It's a title substring check with a
-  possible TOCTOU window (the foreground can change between the check and the click). It reduces blast
-  radius; it is not a sandbox. A determined/edge case can still slip. Documented, not hidden.
+- **The protected‑window guard is hardened but still best‑effort, not a sandbox.** It now fails closed,
+  checks the window under the click point, and re‑checks before acting — but a title substring check can
+  still be fooled (a benign‑titled malicious window), and a sufficiently fast focus change can still race.
+  It meaningfully reduces blast radius; it is not a guarantee. Keep the ⛔ panic stop handy.
 - **Semantic recall is opt‑in and only as good as the embed model**; off by default to keep chat fast.
 - Coverage 57% still leaves `browser.py`/`screen.py` (real‑hardware code) barely tested — unavoidable
   headlessly.

@@ -1523,3 +1523,25 @@ oversized truncation; guard survives settings error). Documented in `docs/testin
 blended with keyword, gated by `memory_semantic` (default OFF, so zero hot-path cost). Facts embed at
 write (best-effort; `emb` column + idempotent migration); embeddings never shipped to the UI. Test with
 deterministic fake embeddings proves "car" ~ "vehicle" recall.
+
+### M105.6b — 4th audit (of the new safety code) → hardened again
+A dedicated audit of the M105.6 guard/semantic code found more real issues; all fixed + tested:
+- **Guard failed OPEN** on a window-title read error → now **fails CLOSED** (`_READ_FAIL` sentinel treated
+  as protected). *(audit HIGH 1a)*
+- **Coordinate clicks bypassed the foreground-only check** → `click`/`drag` now also check the **window
+  UNDER the point** via `WindowFromPoint`+`GetAncestor`, so a click onto a visible-but-unfocused password
+  window is blocked. *(audit HIGH 1b)*
+- **TOCTOU** → `click` re-checks the guard after the cursor lands, right before clicking. *(1c)*
+- **`scroll` now guarded** too (could scroll a banking window). *(1d)*
+- **Credential denylist false-positives + bypass** — substring match blocked legit files
+  (`credentials-policy.md`, `secretsanta/`) AND a Windows **trailing-dot bypass** (`.ssh.\config` opened
+  the real `.ssh`). Rewrote `is_credential_path`: **segment-based** matching for generic words, per-segment
+  `rstrip('. ')` (Windows dot/space collapse), `.env` anchored (`.environment` allowed), + `known_hosts`/
+  `authorized_keys`. *(audit MEDIUM 4a/4b)*
+- **Semantic write-embed** no longer runs (or takes an Ollama dependency / up-to-60s stall) unless
+  `memory_semantic` is on. *(audit MEDIUM 2a)*
+- New tests: guard fail-closed, window-under-point block. Gate ✅ · live 42/42 ✅ · 22 routes clean ✅.
+
+**VIDEO GENERATION VERIFIED:** ran a real LTX text→video job → produced a valid **574 KB MP4**
+(`videos/video_061743.mp4`) from the ComfyUI webp. Closes the "video gen unverified" gap from the honest
+report. (Quality is still just "a valid clip," not judged.)

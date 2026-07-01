@@ -55,6 +55,28 @@ def test_protected_window_blocks_input(monkeypatch, tmpdb):
     assert C._guard("click") is None
 
 
+def test_guard_fails_closed_on_read_error(monkeypatch, tmpdb):
+    """Audit 1a: if the window title can't be read, the guard must FAIL CLOSED (block), not open."""
+    import nova.services.control as C
+    C.resume_control()
+    monkeypatch.setattr(C, "_foreground_title", lambda: C._READ_FAIL)
+    assert C.protected_foreground() == C._READ_FAIL      # unreadable → treated as protected
+    assert C._guard("type") is not None                  # → blocked
+
+
+def test_guard_blocks_window_under_point(monkeypatch, tmpdb):
+    """Audit 1b: a coordinate click onto a visible-but-unfocused protected window is blocked even when
+    the FOREGROUND window is innocuous."""
+    import nova.services.control as C
+    C.resume_control()
+    monkeypatch.setattr(C, "_foreground_title", lambda: "notepad — untitled")   # foreground is safe
+    monkeypatch.setattr(C, "_title_at_point", lambda x, y: "bitwarden vault")    # but the target isn't
+    assert C.protected_foreground(500, 300) == "bitwarden"
+    assert C.click(500, 300).get("blocked") is True
+    # with no coordinates (focus-based action) only the foreground matters → allowed by the guard
+    assert C._guard("type") is None
+
+
 def test_protected_patterns_configurable(monkeypatch, tmpdb):
     import nova.services.control as C
     from nova.core.db import set_settings

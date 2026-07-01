@@ -57,21 +57,30 @@ def is_dangerous(cmd):
 
 # ─── credential-store read denylist (shared) ────────────────────────────────
 # Paths that must never be read by any feature (file read, KB/folder ingest, agent understand).
-# Same list the agent enforces; centralized here so every reader uses one source of truth.
-# Separator-agnostic: paths are normalized to '/' before matching so a backslash Windows path and a
-# forward-slash path are treated the same (a real gap the deep tests caught — `.git\config` vs `.git/config`).
-DENY_READ = (".ssh/", ".aws/", ".env", "credentials", "login data", "id_rsa", "id_ed25519",
-             "ntuser.dat", ".git/config", ".npmrc", ".pypirc", ".config/gh", ".docker/config",
-             "secrets", ".kube/config", ".gnupg", "id_dsa", "id_ecdsa")
+# Hardened against the deep-audit findings:
+#  - separator-agnostic (\ and / treated the same),
+#  - SEGMENT matching for generic words so "credentials-policy.md"/"secretsanta" are NOT false-blocked,
+#  - trailing dot/space stripped per segment (Windows collapses them → ".ssh.\config" opens real .ssh),
+#  - ".env" anchored so ".environment" is allowed but ".env"/".env.local" are blocked.
+# Secret directory/file names matched as an EXACT path segment:
+_SECRET_SEGMENTS = frozenset((".ssh", ".aws", ".gnupg", ".kube", ".docker",
+                              "secrets", "credentials", "login data", ".git"))
+# Secret markers matched as a substring of the normalized path (specific enough to avoid false hits):
+_SECRET_SUBSTR = ("id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "ntuser.dat", ".npmrc", ".pypirc",
+                  ".git/config", ".config/gh", ".docker/config", ".kube/config", "/.aws/", "/.ssh/")
 
 
 def is_credential_path(path) -> bool:
-    """True if `path` points into a credential/secret store and must not be read. Normalizes path
-    separators + lowercases so both `\\` and `/` forms are blocked. Also blocks a bare `.ssh`/`.aws`
-    directory reference (not just `.ssh/`) via the segment check."""
-    p = str(path).lower().replace("\\", "/")
-    if any(d in p for d in DENY_READ):
-        return True
-    # segment-exact match for bare secret dirs/files (e.g. path ending in "/.ssh" or just ".ssh")
-    segs = [s for s in p.split("/") if s]
-    return any(s in (".ssh", ".aws", ".gnupg", ".kube", ".docker", ".env") for s in segs)
+    """True if `path` points into a credential/secret store and must not be read."""
+    raw = str(path).lower().replace("\\", "/")
+    segs = [s.rstrip(". ") for s in raw.split("/")]     # strip Windows trailing dots/spaces per segment
+    segs = [s for s in segs if s]
+    for s in segs:
+        if s in _SECRET_SEGMENTS:
+            return True
+        if s == ".env" or s.startswith(".env."):        # .env / .env.local — but NOT .environment
+            return True
+        if s in ("credentials.json", "known_hosts", "authorized_keys"):
+            return True
+    norm = "/".join(segs)
+    return any(sub in norm for sub in _SECRET_SUBSTR)

@@ -45,8 +45,12 @@ def remember(text: str, *, kind: str = "fact", tags: str = "", source: str = "us
 
 
 def _embed_fact(text):
-    """Embed a fact for semantic recall; returns a JSON string or None (Ollama down / disabled)."""
+    """Embed a fact for semantic recall; returns a JSON string or None. Skipped entirely unless
+    `memory_semantic` is on, so users who never use semantic recall don't take an Ollama dependency
+    (or a up-to-60s stall) on every save (audit 2a)."""
     try:
+        if not get_settings().get("memory_semantic"):
+            return None
         import json as _json
         from nova.services.kb import embed
         v = embed(text)

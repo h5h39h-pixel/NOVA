@@ -47,35 +47,83 @@ DEFAULT_PROTECTED = ("bitwarden", "1password", "keepass", "lastpass", "dashlane"
                      "sign in", "log in", "login", " bank", "banking", "paypal", "wallet", "seed phrase")
 
 
+class _POINT2(ctypes.Structure):
+    _fields_ = [("x", wt.LONG), ("y", wt.LONG)]
+
+
+_READ_FAIL = "<window-read-failed>"   # sentinel → guard fails CLOSED (block) on a title-read failure
+
+
 def _foreground_title():
+    """(title_lower). Returns the _READ_FAIL sentinel if the read failed, so the guard fails closed."""
     try:
-        return (_title(_user32.GetForegroundWindow()) or "").lower()
+        h = _user32.GetForegroundWindow()
+        if not h:
+            return _READ_FAIL
+        return (_title(h) or "").lower()
     except Exception:
-        return ""
+        return _READ_FAIL
 
 
-def protected_foreground():
-    """Return the matched protected pattern if the focused window looks sensitive, else None."""
+def _title_at_point(x, y):
+    """Lowercased title of the TOP-LEVEL window under screen point (x,y), or _READ_FAIL. Catches a
+    coordinate click landing on a visible-but-unfocused protected window (audit 1b)."""
+    try:
+        _user32.WindowFromPoint.restype = wt.HWND
+        _user32.WindowFromPoint.argtypes = [_POINT2]
+        _user32.GetAncestor.restype = wt.HWND
+        _user32.GetAncestor.argtypes = [wt.HWND, wt.UINT]
+        h = _user32.WindowFromPoint(_POINT2(int(x), int(y)))
+        if not h:
+            return ""                     # empty desktop area → nothing to protect
+        h = _user32.GetAncestor(h, 2) or h   # GA_ROOT = 2
+        return (_title(h) or "").lower()
+    except Exception:
+        return _READ_FAIL
+
+
+def _patterns():
     try:
         from nova.core.db import get_settings
         pats = get_settings().get("control_protected_patterns")
     except Exception:
         pats = None
+    if pats is None:
+        return DEFAULT_PROTECTED
     if not isinstance(pats, (list, tuple)):
-        pats = DEFAULT_PROTECTED
-    t = _foreground_title()
+        return DEFAULT_PROTECTED
+    return pats                            # [] = explicitly disabled
+
+
+def _match(title, pats):
+    if title == _READ_FAIL:
+        return _READ_FAIL                 # fail closed: unreadable window is treated as protected
     for p in pats:
-        if p and str(p).lower() in t:
+        if p and str(p).lower() in title:
             return p
     return None
 
 
-def _guard(action="control"):
-    """Combined guard for input-bearing actions: panic stop first, then the protected-window denylist.
-    Returns a blocked-result dict if the action must NOT proceed, else None."""
+def protected_foreground(x=None, y=None):
+    """Return the matched protected pattern (or the _READ_FAIL sentinel) if the focused window — or, for
+    a coordinate action, the window UNDER the point — looks sensitive; else None. Fails CLOSED."""
+    pats = _patterns()
+    if not pats:                          # protection explicitly disabled
+        return None
+    hit = _match(_foreground_title(), pats)
+    if hit:
+        return hit
+    if x is not None and y is not None:   # also guard the window under the click target
+        return _match(_title_at_point(x, y), pats)
+    return None
+
+
+def _guard(action="control", x=None, y=None):
+    """Combined guard for input-bearing actions: panic stop first, then the protected-window denylist
+    (foreground + window-under-point). Returns a blocked-result dict if the action must NOT proceed."""
     if CONTROL_PAUSED.is_set():
         return _blocked()
-    hit = protected_foreground()
+    hit = protected_foreground(x, y)
     if hit:
         try:
             from nova.services.audit import audit
@@ -83,8 +131,9 @@ def _guard(action="control"):
         except Exception:
             pass
         return {"ok": False, "blocked": True, "reason":
-                f"control blocked: the focused window looks sensitive ('{hit}'). Disable protection in "
-                f"Settings if this is intentional."}
+                f"control blocked: the target window looks sensitive ('{hit}'). Disable protection in "
+                f"Settings (control_protected_patterns) if this is intentional."}
+    return None
     return None
 
 _user32 = ctypes.windll.user32
@@ -177,11 +226,13 @@ def move_mouse(x, y, duration=0.1):
 
 
 def click(x=None, y=None, button="left", double=False):
-    g = _guard("click");  # noqa: E702
+    g = _guard("click", x, y)
     if g: return g
     p = _pag()
     if x is not None and y is not None:
         p.moveTo(int(x), int(y), duration=0.1)
+        g = _guard("click", x, y)        # TOCTOU: re-check after the cursor lands, before clicking
+        if g: return g
     if double: p.doubleClick()
     elif button == "right": p.rightClick()
     else: p.click()
@@ -189,7 +240,7 @@ def click(x=None, y=None, button="left", double=False):
 
 
 def drag(x1, y1, x2, y2, duration=0.3):
-    g = _guard("drag")
+    g = _guard("drag", x1, y1) or _guard("drag", x2, y2)   # guard both endpoints
     if g: return g
     p = _pag()
     p.moveTo(int(x1), int(y1), duration=0.1)
@@ -198,7 +249,8 @@ def drag(x1, y1, x2, y2, duration=0.3):
 
 
 def scroll(amount):
-    if CONTROL_PAUSED.is_set(): return _blocked()
+    g = _guard("scroll")             # guard scroll too (can manipulate a protected/banking window)
+    if g: return g
     _pag().scroll(int(amount))
     return {"ok": True, "amount": int(amount)}
 
