@@ -37,6 +37,7 @@ DEFAULT_SETTINGS = {
     "screen_memory_enabled": False,  # IDEA-2: opt-in — OCR snapshots of the screen into the KB ("what did I see earlier?")
     "screen_memory_keep": 50,        # IDEA-2b: retention cap — keep only the newest N screen-memory docs
     "agent_can_control": True,       # HON-1b: allow the AUTONOMOUS agent to drive mouse/keyboard (control/act_on_screen). Turn OFF to keep the agent from GUI control while still allowing manual control + the kill-switch.
+    "control_mode": "auto",          # confirmation policy for dangerous agent actions: auto (no prompt) | confirm (ask before click/type/delete/run) | full (no prompt + run anything). Default auto.
     "control_protected_patterns": None,  # HON-1b: window-title patterns where click/type is BLOCKED (None = built-in default list: password managers, banking, auth). Set [] to disable, or a custom list.
     "allow_input_capture": False,    # master gate for the keylogger-class features (macro recording + SV-4 keystroke context). OFF by default — both refuse to start unless this is on.
     "memory_semantic": False,        # IDEA-8: use embedding-based (semantic) memory recall instead of keyword. Off = free/fast keyword on the chat hot path; on = one embed call per recall.

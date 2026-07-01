@@ -41,7 +41,11 @@ function Workspace(){
       <div class="wstoggles">
         <button class="tgl" id="tg-deep" data-tip="${AR?'تفكير خطوة بخطوة':'Reason step by step'}">🧠 ${L.deep}</button>
         <button class="tgl" id="tg-web" data-tip="${AR?'نتائج ويب مباشرة':'Live web results'}">🌐 ${L.web}</button>
-        <button class="tgl agentonly" id="tg-full" data-tip="${AR?'يسمح للوكيل بتشغيل أي أمر/تحكم':'Let the agent run any command / control the PC'}">🔓 ${L.full}</button>
+        <span class="seg agentonly" id="wsctrlmode" data-tip="${AR?'وضع أمان الوكيل':'Agent safety mode'}">
+          <button data-cm="auto" data-tip="${AR?'ينفّذ دون تأكيد':'Execute without confirmation'}">⚙️ ${AR?'تلقائي':'Auto'}</button>
+          <button data-cm="confirm" data-tip="${AR?'يسأل قبل كل إجراء خطير':'Ask before every dangerous action'}">✋ ${AR?'تأكيد':'Confirm'}</button>
+          <button data-cm="full" data-tip="${AR?'ينفّذ كل شيء دون تأكيد':'Execute everything, no confirmation'}">🔓 ${AR?'صلاحية كاملة':'Full'}</button>
+        </span>
         <button class="tgl" id="tg-attach" data-tip="${AR?'أرفق صوراً/مستندات/أي ملف':'Attach images, documents, any file'}">📎 ${L.attach}</button>
         <button class="tgl" id="tg-open" data-tip="${AR?'افتح ملفاً على القرص واعمل عليه':'Open a file on disk and work on it'}">📂 ${AR?'فتح ملف':'Open file'}</button>
         <button class="tgl" id="tg-shot" aria-label="${AR?'التقط الشاشة في المحادثة':'Capture the screen into the chat'}" data-tip="${AR?'التقط الشاشة في المحادثة':'Capture the screen into the chat'}">📸</button>
@@ -64,7 +68,8 @@ function Workspace(){
     let attached = [], curAI = null, lastUser = '', busy = false, maxSteps = 8, workingFile = null;
     let lastAgentRun = null;   // IDEA-3: the last agent goal+settings, for "save as workflow"
     const hf = { on:false, waiting:false };   // IDEA-4: hands-free voice conversation loop
-    const tg = { deep: localStorage.getItem('ws_deep')==='1', web: localStorage.getItem('ws_web')==='1', full: false };
+    const tg = { deep: localStorage.getItem('ws_deep')==='1', web: localStorage.getItem('ws_web')==='1' };
+    let ctrlMode = (State.settings && State.settings.control_mode) || 'auto';   // auto | confirm | full
 
     // ---- helpers ----
     const clearEmpty = () => { const e = thread.querySelector('.wsempty'); if(e) e.remove(); };
@@ -101,7 +106,13 @@ function Workspace(){
         if(key!=='full') localStorage.setItem('ws_'+key, tg[key]?'1':'0');
         toast('info', `${el.textContent.trim()} ${tg[key]?'on':'off'}`, ''); };
     }
-    bindTgl('tg-deep','deep'); bindTgl('tg-web','web'); bindTgl('tg-full','full');
+    bindTgl('tg-deep','deep'); bindTgl('tg-web','web');
+    // control-mode selector (Auto / Confirm / Full) — persisted to the DB
+    const paintMode=()=>$$('#wsctrlmode button').forEach(b=>b.classList.toggle('active', b.dataset.cm===ctrlMode));
+    $$('#wsctrlmode button').forEach(b=>b.onclick=()=>{ ctrlMode=b.dataset.cm; paintMode();
+      post('/settings',{control_mode:ctrlMode}).then(s=>{State.settings=s;});
+      toast('info', (AR?'وضع الأمان: ':'Safety mode: ')+ctrlMode, ctrlMode==='confirm'?(AR?'سيُطلب تأكيدك':'you\'ll be asked to approve actions'):(ctrlMode==='full'?(AR?'تنفيذ كامل دون تأكيد':'full access, no prompts'):(AR?'تنفيذ تلقائي':'auto'))); });
+    paintMode();
 
     // ---- model select (with ✨ Auto) ----
     (async () => {
@@ -247,8 +258,9 @@ function Workspace(){
       setBusy(true);
       if(mode==='agent'){
         let tools = SET_TOOLS();   // all agent tools (so it can decide to capture/record/monitor)
-        lastAgentRun = { goal:v, model, deepthink:tg.deep, unrestricted:tg.full };  // IDEA-3: enable "save as workflow"
-        post('/agent', { goal:v, model, dry_run:false, unrestricted:tg.full,
+        const unrestricted = (ctrlMode==='full');   // confirm-mode gating happens server-side
+        lastAgentRun = { goal:v, model, deepthink:tg.deep, unrestricted };  // IDEA-3: enable "save as workflow"
+        post('/agent', { goal:v, model, dry_run:false, unrestricted,
                          deepthink:tg.deep, tools, websearch:tg.web });
         usage('agent');
       } else {
@@ -328,6 +340,23 @@ function Workspace(){
           if(hf.on && hf.waiting) hfSpeakAndContinue(reply); }   // IDEA-4: speak the reply, then listen again
       else if(m.ev==='error'){ addMsg('ai','⚠️ '+(m.text||'error')); curAI=null; setBusy(false);
           if(hf.on && hf.waiting){ hf.waiting=false; $('#wshf').classList.remove('rec'); hfListenOnce(); } }
+    }));
+    // Confirmation layer: when the agent (in Confirm mode) asks, show a modal; Approve/Deny → POST decision.
+    subs.push(bus.on('confirm', m => {
+      if(!m || !m.id) return;
+      const ov=document.createElement('div'); ov.className='confirm-ov';
+      ov.innerHTML=`<div class="confirm-box glass"><div class="confirm-h">✋ ${AR?'تأكيد إجراء الوكيل':'Confirm agent action'}</div>
+        <div class="confirm-act">${esc(m.action||'')}</div>
+        <div class="confirm-detail">${esc(m.detail||'')}</div>
+        <div class="confirm-btns"><button class="btn danger" data-x="deny">${AR?'رفض':'Deny'}</button><button class="btn p" data-x="approve">${AR?'موافقة':'Approve'}</button></div></div>`;
+      document.body.appendChild(ov);
+      let answered=false;
+      const answer=(approved)=>{ if(answered)return; answered=true; ov.remove();
+        post('/agent/confirm',{id:m.id,approved}); };
+      ov.querySelector('[data-x="approve"]').onclick=()=>answer(true);
+      ov.querySelector('[data-x="deny"]').onclick=()=>answer(false);
+      // auto-deny visual if the request times out server-side (we just clean up on confirm_result)
+      const off=bus.on('confirm_result', r=>{ if(r&&r.id===m.id){ if(!answered){answered=true; ov.remove();} off(); } });
     }));
     subs.push(bus.on('agent', m => {
       if(m.ev==='start'){ maxSteps=m.max_steps||8; }

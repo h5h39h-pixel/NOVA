@@ -96,3 +96,11 @@ textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid #22d3ee;outlin
 /* ---- Workspace: generated/captured media in chat ---- */
 .wsmsg .genimg{max-width:100%;max-height:380px;border-radius:12px;border:1px solid var(--bd);display:block}
 .wsmsg .genvid{max-width:100%;max-height:380px;border-radius:12px;border:1px solid var(--bd);display:block}
+
+/* ---- Confirmation layer (Confirm mode) modal ---- */
+.confirm-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(3px)}
+.confirm-box{max-width:440px;width:90%;padding:22px;border-radius:16px;border:1px solid var(--bd);background:var(--bg2,#1a1d27);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.confirm-h{font-size:16px;font-weight:700;margin-bottom:10px}
+.confirm-act{font-family:var(--mono,monospace);font-size:13px;color:var(--accent3,#a5b4fc);text-transform:uppercase;letter-spacing:.05em}
+.confirm-detail{margin:8px 0 18px;font-size:13.5px;color:var(--txt2,#cbd5e1);word-break:break-word;max-height:160px;overflow:auto}
+.confirm-btns{display:flex;gap:10px;justify-content:flex-end}

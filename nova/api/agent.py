@@ -33,6 +33,16 @@ def api_agent_stop():
     audit("agent", "stop", "user requested stop")
     return {"ok": True}
 
+@router.post("/api/agent/confirm")
+async def api_agent_confirm(req: Request):
+    """Confirmation layer: the UI answers a pending confirm request (control_mode='confirm')."""
+    from nova.services.confirm import resolve
+    b = await req.json()
+    cid = b.get("id"); approved = bool(b.get("approved"))
+    ok = resolve(cid, approved) if cid else False
+    audit("agent", "confirm", f"{cid}: {'approved' if approved else 'denied'}", "ok" if approved else "warn")
+    return {"ok": ok, "approved": approved}
+
 @router.post("/api/agent/save-workflow")
 async def api_agent_save_workflow(req: Request):
     """IDEA-3: persist an agent run as a reusable one-step workflow. Re-running the workflow replays

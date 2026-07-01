@@ -148,10 +148,25 @@ def test_agent_tool_blocks_destructive(tmpdb):
     assert dry.startswith("[dry-run]")                               # safe cmd simulated, not run
 
 
-def test_agent_tool_write_confined():
+def test_agent_tool_write_confined(tmpdb):
     from nova.services.agent import agent_tool
+    from nova.core.db import set_settings
+    set_settings({"control_mode": "auto"})                           # not Full Access → writes confined
     out = agent_tool("write_file", {"path": "C:\\Windows\\x.txt", "content": "x"})
     assert out.startswith("BLOCKED")                                 # outside the safe output root
+
+
+def test_agent_tool_write_full_access_allows(tmpdb, monkeypatch, tmp_path):
+    """Full Access (control_mode='full') intentionally lets the agent write outside the safe root —
+    verify the confirmation layer maps 'full' → unrestricted (documented, opt-in behavior)."""
+    import nova.services.agent as A
+    from nova.core.db import set_settings
+    set_settings({"control_mode": "full"})
+    monkeypatch.setattr(A, "SAFE_WRITE_ROOT", tmp_path)
+    target = tmp_path.parent / "outside_root.txt"
+    out = A.agent_tool("write_file", {"path": str(target), "content": "x"})
+    assert out.startswith("wrote") and target.exists()               # full access → allowed
+    target.unlink()
 
 
 def test_agent_write_read_roundtrip(monkeypatch, tmp_path):

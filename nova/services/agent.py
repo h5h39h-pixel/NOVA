@@ -155,9 +155,38 @@ def safe_write_path(p):
         return rp if (rp == root or root in rp.parents) else None
     except Exception: return None
 
+def _confirm_detail(name, a):
+    """A short human-readable description of a dangerous action for the confirmation popup."""
+    if name == "run_command":
+        return "run: " + str(a.get("command", ""))[:160]
+    if name == "control":
+        act = a.get("action", "")
+        if act in ("click", "move", "drag"):
+            return f"{act} at ({a.get('x','')},{a.get('y','')})"
+        if act in ("type", "set_text"):
+            return f"{act}: {str(a.get('text',''))[:80]}"
+        if act == "keys":
+            return f"press keys: {a.get('keys','')}"
+        return f"control: {act}"
+    if name == "act_on_screen":
+        return "act on screen: " + str(a.get("instruction", ""))[:120]
+    if name == "write_file":
+        return "write file: " + str(a.get("path", ""))[:120]
+    return name
+
+
 def agent_tool(name, args, dry_run=False, unrestricted=False):
     a = args or {}
     try:
+        # Confirmation layer (control_mode='confirm'): block dangerous actions until the user approves
+        # in the UI. Skipped in dry-run (nothing executes). 'full' mode implies unrestricted below.
+        if not dry_run and name in ("run_command", "control", "act_on_screen", "write_file"):
+            from nova.services.confirm import gate, is_full_access
+            ok, msg = gate(name, _confirm_detail(name, a))
+            if not ok:
+                return msg
+            if is_full_access():
+                unrestricted = True
         # read-only tools always run (so dry-run plans are grounded in real data)
         if name == "kb_search":
             hits = kb_search(a.get("query", ""), 4)
