@@ -97,6 +97,8 @@ function Settings(){
       <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${localStorage.getItem('lite')?'on':''}" id="slite"></button> Lite visuals — reduce background animations (low-end GPUs)</label>
       <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${s.confirm_exit!==false?'on':''}" id="sconfirm"></button> Confirm before closing the tab (warn while Nova is running)</label>
       <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${s.agent_can_control!==false?'on':''}" id="sagentctl"></button> 🖱️ Let the autonomous agent control mouse/keyboard (off = agent can't drive the GUI; manual control + panic stop still work)</label>
+      <p class="muted" style="font-size:11px;margin-top:4px">🛡️ Even when on, click/type is auto-blocked when the focused window looks sensitive (password managers, banking, auth prompts).</p>
+      <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${s.allow_input_capture?'on':''}" id="sinputcap"></button> ⌨️ Allow input capture (keylogger-class) — required for the 🎬 Macro recorder &amp; ⌨ keystroke context. <b>Off by default.</b> While on, typing across the whole desktop can be captured (in-memory, local). Don't leave it on.</label>
       <label class="f mt" style="display:flex;align-items:center;gap:9px"><button class="sw ${s.screen_memory_enabled?'on':''}" id="sscrmem"></button> 🧠 Screen memory (opt-in) — OCR snapshots of your screen into the knowledge base so you can ask "what did I see earlier?" (local-only; keeps the newest ${s.screen_memory_keep||50}; schedule the <code>screen_memory</code> automation to capture periodically)</label>
       <button class="btn mt" id="purgescrmem" style="width:100%">🧹 Purge all screen memories</button>
       <label class="f mt">🔊 Voice speed (TTS) <span class="aset-v" id="ttsratev">${(+s.tts_rate||1).toFixed(1)}×</span></label>
@@ -127,6 +129,10 @@ function Settings(){
       post('/settings',{confirm_exit:on}).then(x=>{State.settings=x});toast('info',on?'Exit confirmation enabled':'Exit confirmation disabled','')};
     const sactl=$('#sagentctl');if(sactl)sactl.onclick=function(){const on=!this.classList.contains('on');this.classList.toggle('on',on);
       post('/settings',{agent_can_control:on}).then(x=>{State.settings=x});toast(on?'info':'success',on?'Agent GUI control enabled':'Agent GUI control disabled',on?'the agent may move the mouse/keyboard':'the agent can no longer drive the GUI')};
+    const sinputcap=$('#sinputcap');if(sinputcap)sinputcap.onclick=function(){const on=!this.classList.contains('on');
+      if(on&&!confirm('Enable input capture? While on, keystrokes across your whole desktop can be captured (in-memory, local-only). Only enable to record a macro, then turn it off.'))return;
+      this.classList.toggle('on',on);post('/settings',{allow_input_capture:on}).then(x=>{State.settings=x});
+      toast(on?'warn':'success',on?'⌨️ Input capture ON':'Input capture off',on?'turn off when done':'macro/keystroke features disabled')};
     const sscrmem=$('#sscrmem');if(sscrmem)sscrmem.onclick=function(){const on=!this.classList.contains('on');this.classList.toggle('on',on);
       post('/settings',{screen_memory_enabled:on}).then(x=>{State.settings=x});toast(on?'info':'success',on?'Screen memory enabled':'Screen memory disabled',on?'OCR snapshots can now be saved to the KB (opt-in)':'no screen snapshots will be stored')};
     const purgesm=$('#purgescrmem');if(purgesm)purgesm.onclick=async function(){if(!confirm('Delete ALL stored screen memories from the knowledge base?'))return;

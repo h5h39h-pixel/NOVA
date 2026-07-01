@@ -33,8 +33,18 @@ as the truthful backlog; the safety items (HON‑1, HON‑10) are the highest pr
 
 **Honest re‑grading of some ✅ above:** OUT‑1, OUT‑5 (toy batteries) · FEA‑1 (UIA‑only; vision fallback
 imprecise) · SV‑1 (stream unwatched) · STB‑2 (survival‑as‑record, not resume) · POL‑3 (viewport‑only) ·
-FEA‑2 (GPU path verified, Arabic accuracy not measured). They are "done to a smoke‑test bar," not proven
+FEA‑2 (now measured — STT WER EN ~93% / AR ~74%, M105.4). They are "done to a smoke‑test bar," not proven
 robust — see `docs/honest-state.md`.
+
+### M105.6 — deep tests + safety hardening (from the honest report)
+| ID | Task | Status | Notes |
+|---|---|---|---|
+| DEEP‑1 | **Real tests for dangerous/edge/failure paths** (not smoke) | ✅ | `tests/test_dangerous.py` + `test_edges.py` + `test_failures.py` (38 tests): panic blocks all control, protected‑window guard, credential denylist across all readers, LAN/exec/agent gates, destructive denylist + false‑positive guards, injection catch/miss, retention/÷0/chunking/macro‑cap edges, dependency‑down degradation, bad‑body 500‑guards. Documented in `docs/testing.md`. |
+| SEC‑7 | **Credential‑denylist hardening** | ✅ | Found via DEEP‑1: `.git/config` (forward‑slash) + bare `.ssh`/`.aws` dirs bypassed the filter. `is_credential_path` now separator‑agnostic + segment‑aware; list widened (`.gnupg`/`.kube`/`.docker`/gh configs). safety.py coverage 100%. |
+| SEC‑8 | **Per‑action control guard (protected windows)** — the report's #1 gap | ✅ | `control._guard()` blocks click/type/keys/drag/set_text/click_element when the focused window looks sensitive (password managers/banking/auth; `control_protected_patterns` tunable). Audited on block. **Honest:** substring title check with a TOCTOU window — reduces blast radius, not a sandbox. |
+| SEC‑9 | **`allow_input_capture` master gate** (keylogger‑class) | ✅ | Default OFF; required for the 🎬 macro recorder AND SV‑4 keystroke context. Settings toggle w/ confirm. Reduces the risk surface I flagged. |
+| IDEA‑8b | **Semantic memory recall** | ✅ | Embedding cosine blended with keyword, gated by `memory_semantic` (default OFF → zero hot‑path cost). Facts embed at write (`emb` column + idempotent migration); embeddings never leave the server. Test proves "car"~"vehicle". |
+| DEEP‑BUGS | Bugs the deep tests caught & fixed | ✅ | (1) credential bypass [SEC‑7]; (2) `screen_memory_keep:0` clobbered by `or 50`; (3) macro‑save empty‑list fallback; (4) semantic recall disabled by a missing `get_settings` import. All fixed + regression‑tested. |
 
 ## P0 — Security (command‑execution surface · auth · HTTPS)
 

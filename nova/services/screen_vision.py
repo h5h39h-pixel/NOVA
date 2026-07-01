@@ -63,7 +63,9 @@ def remember_screen(min_chars=12):
 def _prune_screen_memory():
     """IDEA-2b: keep only the newest `screen_memory_keep` screen-memory docs (default 50); delete the
     rest (and their chunks). Returns how many docs were pruned. Prevents unbounded KB growth."""
-    keep = int(get_settings().get("screen_memory_keep", 50) or 50)
+    keep = get_settings().get("screen_memory_keep", 50)   # 0 is valid ("keep none") — don't `or 50` it away
+    try: keep = max(0, int(keep))
+    except (TypeError, ValueError): keep = 50
     from nova.core.db import db
     c = db()
     rows = c.execute("SELECT id FROM kb_docs WHERE name LIKE 'screen-memory %' ORDER BY created DESC").fetchall()
@@ -191,20 +193,26 @@ def _ensure_kb_listener(on):
         except Exception: pass
 
 
+def _kb_capture_on():
+    # SV-4 needs BOTH the feature toggle AND the master input-capture gate (keylogger-class).
+    s = get_settings()
+    return bool(s.get("track_keyboard")) and bool(s.get("allow_input_capture"))
+
+
 def reconcile_kb_listener():
-    """Make the keyboard listener match the `track_keyboard` setting. Called periodically by a
-    background loop so that turning tracking OFF reliably STOPS the listener even though the API
-    endpoint 403s when off (so it would never otherwise hit the stop path) — closes a privacy leak."""
+    """Make the keyboard listener match the gates. Called periodically by a background loop so that
+    turning tracking (or the master gate) OFF reliably STOPS the listener even though the API endpoint
+    403s when off (so it would never otherwise hit the stop path) — closes a privacy leak."""
     try:
-        _ensure_kb_listener(bool(get_settings().get("track_keyboard")))
+        _ensure_kb_listener(_kb_capture_on())
     except Exception:
         pass
 
 
 def keyboard_context():
-    """SV-4: focused-window title + (opt-in) a short rolling buffer of recently typed text. When
-    `track_keyboard` is off, returns only the window and ensures the listener is stopped."""
-    on = bool(get_settings().get("track_keyboard"))
+    """SV-4: focused-window title + (opt-in) a short rolling buffer of recently typed text. Requires
+    both `track_keyboard` and the master `allow_input_capture` gate; otherwise only the window."""
+    on = _kb_capture_on()
     _ensure_kb_listener(on)
     win = active_window()
     if not on:

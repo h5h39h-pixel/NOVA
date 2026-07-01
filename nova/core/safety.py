@@ -58,10 +58,20 @@ def is_dangerous(cmd):
 # ─── credential-store read denylist (shared) ────────────────────────────────
 # Paths that must never be read by any feature (file read, KB/folder ingest, agent understand).
 # Same list the agent enforces; centralized here so every reader uses one source of truth.
-DENY_READ = (".ssh", ".aws", ".env", "credentials", "login data", "id_rsa", "id_ed25519",
-             "ntuser.dat", "\\.git\\config", ".npmrc", ".pypirc")
+# Separator-agnostic: paths are normalized to '/' before matching so a backslash Windows path and a
+# forward-slash path are treated the same (a real gap the deep tests caught — `.git\config` vs `.git/config`).
+DENY_READ = (".ssh/", ".aws/", ".env", "credentials", "login data", "id_rsa", "id_ed25519",
+             "ntuser.dat", ".git/config", ".npmrc", ".pypirc", ".config/gh", ".docker/config",
+             "secrets", ".kube/config", ".gnupg", "id_dsa", "id_ecdsa")
 
 
 def is_credential_path(path) -> bool:
-    """True if `path` points into a credential/secret store and must not be read."""
-    return any(d in str(path).lower() for d in DENY_READ)
+    """True if `path` points into a credential/secret store and must not be read. Normalizes path
+    separators + lowercases so both `\\` and `/` forms are blocked. Also blocks a bare `.ssh`/`.aws`
+    directory reference (not just `.ssh/`) via the segment check."""
+    p = str(path).lower().replace("\\", "/")
+    if any(d in p for d in DENY_READ):
+        return True
+    # segment-exact match for bare secret dirs/files (e.g. path ending in "/.ssh" or just ".ssh")
+    segs = [s for s in p.split("/") if s]
+    return any(s in (".ssh", ".aws", ".gnupg", ".kube", ".docker", ".env") for s in segs)

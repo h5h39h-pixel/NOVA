@@ -78,6 +78,9 @@ def _record_special(name):
 
 def start_recording():
     from nova.services.settings import exec_allowed
+    from nova.core.db import get_settings
+    if not get_settings().get("allow_input_capture"):
+        return {"ok": False, "error": "input capture is disabled. Enable 'allow_input_capture' in Settings (it's a keylogger-class feature, off by default)."}
     if not exec_allowed():
         return {"ok": False, "error": "macro recording is disabled while exposed on the LAN"}
     with _LOCK:

@@ -37,6 +37,56 @@ def resume_control():
 def _blocked():
     return {"ok": False, "blocked": True, "reason": "control is paused (panic stop active — resume in the UI)"}
 
+
+# ---- per-action safety guard (HON-1b) --------------------------------------
+# Block input-bearing control (click/type/keys) when the FOCUSED window looks sensitive — password
+# managers, banking, auth prompts — so an autonomous agent can't type/click into a credential surface.
+# Tunable via the `control_protected_patterns` setting; matched case-insensitively against the title.
+DEFAULT_PROTECTED = ("bitwarden", "1password", "keepass", "lastpass", "dashlane", "keychain",
+                     "credential manager", "windows security", "user account control",
+                     "sign in", "log in", "login", " bank", "banking", "paypal", "wallet", "seed phrase")
+
+
+def _foreground_title():
+    try:
+        return (_title(_user32.GetForegroundWindow()) or "").lower()
+    except Exception:
+        return ""
+
+
+def protected_foreground():
+    """Return the matched protected pattern if the focused window looks sensitive, else None."""
+    try:
+        from nova.core.db import get_settings
+        pats = get_settings().get("control_protected_patterns")
+    except Exception:
+        pats = None
+    if not isinstance(pats, (list, tuple)):
+        pats = DEFAULT_PROTECTED
+    t = _foreground_title()
+    for p in pats:
+        if p and str(p).lower() in t:
+            return p
+    return None
+
+
+def _guard(action="control"):
+    """Combined guard for input-bearing actions: panic stop first, then the protected-window denylist.
+    Returns a blocked-result dict if the action must NOT proceed, else None."""
+    if CONTROL_PAUSED.is_set():
+        return _blocked()
+    hit = protected_foreground()
+    if hit:
+        try:
+            from nova.services.audit import audit
+            audit("control", "blocked_protected", f"{action} into '{hit}'", "warn")
+        except Exception:
+            pass
+        return {"ok": False, "blocked": True, "reason":
+                f"control blocked: the focused window looks sensitive ('{hit}'). Disable protection in "
+                f"Settings if this is intentional."}
+    return None
+
 _user32 = ctypes.windll.user32
 # Per-monitor DPI awareness so GetWindowRect / cursor coords are real pixels (accurate control).
 try:
@@ -127,7 +177,8 @@ def move_mouse(x, y, duration=0.1):
 
 
 def click(x=None, y=None, button="left", double=False):
-    if CONTROL_PAUSED.is_set(): return _blocked()
+    g = _guard("click");  # noqa: E702
+    if g: return g
     p = _pag()
     if x is not None and y is not None:
         p.moveTo(int(x), int(y), duration=0.1)
@@ -138,7 +189,8 @@ def click(x=None, y=None, button="left", double=False):
 
 
 def drag(x1, y1, x2, y2, duration=0.3):
-    if CONTROL_PAUSED.is_set(): return _blocked()
+    g = _guard("drag")
+    if g: return g
     p = _pag()
     p.moveTo(int(x1), int(y1), duration=0.1)
     p.dragTo(int(x2), int(y2), duration=duration, button="left")
@@ -167,7 +219,8 @@ def _uia_set_focused(text):
 
 
 def type_text(text):
-    if CONTROL_PAUSED.is_set(): return _blocked()
+    g = _guard("type")
+    if g: return g
     if _uia_set_focused(text):                       # HON-2c: direct value-set (reliable)
         return {"ok": True, "typed": len(text), "via": "uia"}
     screen_svc.type_text(text)                       # fallback: clipboard paste / keystrokes
@@ -177,7 +230,8 @@ def type_text(text):
 def set_element_text(name, text, partial=True):
     """Find a UIA element by name and set its text directly (no focus/typing needed) — the robust
     way to fill a named field in real apps (HON-2c)."""
-    if CONTROL_PAUSED.is_set(): return _blocked()
+    g = _guard("set_text")
+    if g: return g
     try:
         import uiautomation as auto
         want = (name or "").lower().strip()
@@ -197,7 +251,8 @@ def set_element_text(name, text, partial=True):
 
 def press_keys(keys):
     """keys: 'enter' | 'ctrl+s' | ['ctrl','s']."""
-    if CONTROL_PAUSED.is_set(): return _blocked()
+    g = _guard("keys")
+    if g: return g
     p = _pag()
     if isinstance(keys, str):
         keys = [k.strip() for k in keys.replace("+", " ").split() if k.strip()]
@@ -250,7 +305,8 @@ def find_element(name, partial=True, max_results=10):
 
 def click_element(name, partial=True, double=False):
     """Find an element by name and click its center."""
-    if CONTROL_PAUSED.is_set(): return _blocked()
+    g = _guard("click_element")
+    if g: return g
     r = find_element(name, partial, max_results=1)
     if not r.get("matches"):
         return {"ok": False, "error": f"no element matching '{name}'"}

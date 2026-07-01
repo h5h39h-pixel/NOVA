@@ -35,7 +35,9 @@ async def api_macro_save(req: Request):
     except Exception: pass
     if M.recording():
         M.stop_recording()
-    steps = b.get("steps") or M._REC["steps"]
+    # an explicit `steps` (even empty) is authoritative; only fall back to the recorded buffer if the
+    # caller didn't provide the key at all.
+    steps = b["steps"] if isinstance(b.get("steps"), list) else M._REC["steps"]
     if not steps:
         return {"ok": False, "error": "no steps recorded"}
     wid = M.save_macro(b.get("name", "macro"), steps)

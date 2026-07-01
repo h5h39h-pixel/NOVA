@@ -12,7 +12,7 @@ is durability, not semantic search). Pinned facts always surface first.
 """
 import time
 import re
-from nova.core.db import db
+from nova.core.db import db, get_settings
 
 _WORD = re.compile(r"[a-z0-9؀-ۿ]+")   # latin + arabic word characters
 MAX_INJECT = 12        # cap facts injected into a prompt so the context stays small
@@ -28,19 +28,31 @@ def remember(text: str, *, kind: str = "fact", tags: str = "", source: str = "us
     text = (text or "").strip()
     if not text:
         raise ValueError("empty memory text")
+    emb = _embed_fact(text)                            # best-effort; None if embeddings unavailable
     c = db()
     existing = c.execute("SELECT id FROM memory WHERE lower(text)=lower(?)", (text,)).fetchone()
     if existing:
-        c.execute("UPDATE memory SET ts=?, pinned=MAX(pinned,?) WHERE id=?",
-                  (time.time(), 1 if pinned else 0, existing["id"]))
+        c.execute("UPDATE memory SET ts=?, pinned=MAX(pinned,?), emb=COALESCE(?,emb) WHERE id=?",
+                  (time.time(), 1 if pinned else 0, emb, existing["id"]))
         mid = existing["id"]
     else:
         cur = c.execute(
-            "INSERT INTO memory(ts,kind,text,tags,source,pinned) VALUES(?,?,?,?,?,?)",
-            (time.time(), kind, text, tags, source, 1 if pinned else 0))
+            "INSERT INTO memory(ts,kind,text,tags,source,pinned,emb) VALUES(?,?,?,?,?,?,?)",
+            (time.time(), kind, text, tags, source, 1 if pinned else 0, emb))
         mid = cur.lastrowid
     c.commit(); c.close()
     return {"id": mid, "text": text, "kind": kind, "pinned": bool(pinned)}
+
+
+def _embed_fact(text):
+    """Embed a fact for semantic recall; returns a JSON string or None (Ollama down / disabled)."""
+    try:
+        import json as _json
+        from nova.services.kb import embed
+        v = embed(text)
+        return _json.dumps(v) if v else None
+    except Exception:
+        return None
 
 
 def forget(mid: int) -> bool:
@@ -50,21 +62,31 @@ def forget(mid: int) -> bool:
     return n > 0
 
 
-def all_facts(limit: int = 200) -> list:
+def all_facts(limit: int = 200, with_emb: bool = True) -> list:
+    cols = "id,ts,kind,text,tags,source,pinned" + (",emb" if with_emb else "")
     c = db()
     rows = [dict(r) for r in c.execute(
-        "SELECT id,ts,kind,text,tags,source,pinned FROM memory "
-        "ORDER BY pinned DESC, ts DESC LIMIT ?", (int(limit),)).fetchall()]
+        f"SELECT {cols} FROM memory ORDER BY pinned DESC, ts DESC LIMIT ?", (int(limit),)).fetchall()]
     c.close()
     return rows
 
 
 def recall(query: str = "", k: int = MAX_INJECT) -> list:
-    """Return up to k facts most relevant to `query` (keyword overlap), pinned facts first.
-    With no query, returns the most recent/pinned facts."""
+    """Return up to k facts most relevant to `query`, pinned facts first. With no query, returns the
+    most recent/pinned. Keyword ranking by default (free, on the chat hot path); when the
+    `memory_semantic` setting is on, blends embedding cosine similarity for meaning-based recall
+    ("car" ~ "vehicle") with a keyword fallback."""
     facts = all_facts()
     if not query:
         return facts[:k]
+    try:
+        semantic = bool(get_settings().get("memory_semantic"))
+    except Exception:
+        semantic = False
+    if semantic:
+        sem = _semantic_recall(query, facts, k)
+        if sem is not None:
+            return sem
     q = _tokens(query)
     scored = []
     for f in facts:
@@ -74,6 +96,40 @@ def recall(query: str = "", k: int = MAX_INJECT) -> list:
         score = overlap * 10 + (1 if f["pinned"] else 0)
         if score > 0:
             scored.append((score, f["ts"], f))
+    scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
+    return [f for _, _, f in scored[:k]]
+
+
+def _semantic_recall(query, facts, k):
+    """Embedding cosine + keyword blend. Returns a ranked list, or None to fall back to keyword
+    (embeddings unavailable / no fact has an embedding)."""
+    import json as _json
+    try:
+        import numpy as np
+        from nova.services.kb import embed
+    except Exception:
+        return None
+    qv = embed(query)
+    if not qv:
+        return None
+    q = np.asarray(qv, dtype="float32"); q /= (np.linalg.norm(q) + 1e-8)
+    qk = _tokens(query)
+    scored, any_emb = [], False
+    for f in facts:
+        kw = len(qk & _tokens(f["text"] + " " + (f.get("tags") or "")))
+        cos = 0.0
+        try:
+            if f.get("emb"):
+                e = np.asarray(_json.loads(f["emb"]), dtype="float32"); e /= (np.linalg.norm(e) + 1e-8)
+                cos = float(np.dot(q, e)); any_emb = True
+        except Exception:
+            pass
+        # blended: semantic similarity dominates, keyword assists, pinned nudges; include anything with signal
+        score = cos + 0.05 * kw + (0.15 if f["pinned"] else 0)
+        if cos > 0.25 or kw > 0 or f["pinned"]:
+            scored.append((score, f["ts"], f))
+    if not any_emb:
+        return None                                   # nothing embedded yet → let keyword handle it
     scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
     return [f for _, _, f in scored[:k]]
 

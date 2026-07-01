@@ -17,7 +17,9 @@ class MemIn(BaseModel):
 
 @router.get("/api/memory")
 def api_memory_list(q: str = "", limit: int = 200):
-    return {"items": M.recall(q) if q else M.all_facts(limit), "count": len(M.all_facts())}
+    items = M.recall(q) if q else M.all_facts(limit, with_emb=False)
+    items = [{k: v for k, v in f.items() if k != "emb"} for f in items]   # don't ship embeddings to the UI
+    return {"items": items, "count": len(M.all_facts(with_emb=False))}
 
 
 @router.post("/api/memory")

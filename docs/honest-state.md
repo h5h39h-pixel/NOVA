@@ -177,6 +177,30 @@ broader 50+‑goal battery + Arabic STT WER not formally measured. Nothing is br
   such. The honest caveat is unchanged and belongs to **AVL‑1**: sustained GUI game‑play is limited by
   synthetic‑keyboard suppression (UIA SetValue works; drag‑and‑drop + long strategy loops unverified).
 
+## M105.6 (2026‑07‑01) — DEEP tests + safety hardening (turned the honest report into work)
+Took my own honest report as a task list. Wrote **real** tests for the dangerous/weak/failure paths and
+they immediately paid for themselves — **4 real bugs found and fixed**:
+1. a **credential‑denylist bypass** (`.git/config` forward‑slash form slipped the filter),
+2. **`screen_memory_keep: 0`** silently became 50,
+3. **macro‑save** fell back to the recorded buffer when handed an explicit empty list,
+4. **semantic memory recall was silently disabled** by a missing import (`NameError` swallowed).
+None of these would have surfaced in normal use until they bit — which is the entire argument for testing
+the edges instead of the happy path.
+
+**Safety hardening (the report's #1 gap):** added a **per‑action protected‑window guard** — the agent now
+refuses to click/type into a focused window that looks like a password manager / bank / auth prompt — and
+a **master `allow_input_capture` gate** (default OFF) that both keylogger‑class features now require.
+Coverage rose to ~57% with the *security* modules now well covered (safety 100%, memory 89%).
+
+**Still honestly true after this round:**
+- **The protected‑window guard is best‑effort, not airtight.** It's a title substring check with a
+  possible TOCTOU window (the foreground can change between the check and the click). It reduces blast
+  radius; it is not a sandbox. A determined/edge case can still slip. Documented, not hidden.
+- **Semantic recall is opt‑in and only as good as the embed model**; off by default to keep chat fast.
+- Coverage 57% still leaves `browser.py`/`screen.py` (real‑hardware code) barely tested — unavoidable
+  headlessly.
+- STT/agent/RAG numbers remain small samples. Video + training quality still verified only shallowly.
+
 ## M105.4 (2026‑06‑30) — cleared the whole table + a 3rd from‑scratch audit
 Closed every remaining 🟧 with real implementation, and re‑audited from scratch.
 - **SV‑2** continuous narration loop (opt‑in, supervised, live‑verified vs the VLM, 0 errors).

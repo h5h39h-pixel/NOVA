@@ -37,6 +37,9 @@ DEFAULT_SETTINGS = {
     "screen_memory_enabled": False,  # IDEA-2: opt-in — OCR snapshots of the screen into the KB ("what did I see earlier?")
     "screen_memory_keep": 50,        # IDEA-2b: retention cap — keep only the newest N screen-memory docs
     "agent_can_control": True,       # HON-1b: allow the AUTONOMOUS agent to drive mouse/keyboard (control/act_on_screen). Turn OFF to keep the agent from GUI control while still allowing manual control + the kill-switch.
+    "control_protected_patterns": None,  # HON-1b: window-title patterns where click/type is BLOCKED (None = built-in default list: password managers, banking, auth). Set [] to disable, or a custom list.
+    "allow_input_capture": False,    # master gate for the keylogger-class features (macro recording + SV-4 keystroke context). OFF by default — both refuse to start unless this is on.
+    "memory_semantic": False,        # IDEA-8: use embedding-based (semantic) memory recall instead of keyword. Off = free/fast keyword on the chat hot path; on = one embed call per recall.
 }
 
 def db():
@@ -86,7 +89,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY AUTOINCREMENT,
         jid TEXT, name TEXT, kind TEXT, status TEXT, started REAL, ended REAL, exit_code INTEGER, source TEXT);
     CREATE TABLE IF NOT EXISTS memory (id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ts REAL, kind TEXT DEFAULT 'fact', text TEXT, tags TEXT, source TEXT, pinned INTEGER DEFAULT 0);
+        ts REAL, kind TEXT DEFAULT 'fact', text TEXT, tags TEXT, source TEXT, pinned INTEGER DEFAULT 0, emb TEXT);
     CREATE TABLE IF NOT EXISTS quality_runs (id INTEGER PRIMARY KEY AUTOINCREMENT,
         ts REAL, suite TEXT, score REAL, total REAL, pct REAL, detail TEXT);
     """)
@@ -98,6 +101,8 @@ def init_db():
     ncols = [r[1] for r in c.execute("PRAGMA table_info(notifications)")]
     if "category" not in ncols: c.execute("ALTER TABLE notifications ADD COLUMN category TEXT")
     if "link" not in ncols: c.execute("ALTER TABLE notifications ADD COLUMN link TEXT")
+    mcols = [r[1] for r in c.execute("PRAGMA table_info(memory)")]
+    if mcols and "emb" not in mcols: c.execute("ALTER TABLE memory ADD COLUMN emb TEXT")  # IDEA-8 semantic recall
     for k, v in DEFAULT_SETTINGS.items():
         c.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)", (k, json.dumps(v)))
     run_migrations(c)

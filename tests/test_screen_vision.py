@@ -51,11 +51,23 @@ def test_keyboard_context_gate(client, monkeypatch):
     import nova.services.screen_vision as SV
     monkeypatch.setattr(SV, "_ensure_kb_listener", lambda on: None)   # never start a real global keylogger in tests
     from nova.core.db import set_settings
-    set_settings({"screen_vision_enabled": True, "track_keyboard": False})
-    assert client.get("/api/vision/context").status_code == 403
+    set_settings({"screen_vision_enabled": True, "track_keyboard": False, "allow_input_capture": True})
+    assert client.get("/api/vision/context").status_code == 403       # feature toggle off → API blocked
     set_settings({"track_keyboard": True})
     r = client.get("/api/vision/context")
-    assert r.status_code == 200 and r.json().get("enabled") is True
+    assert r.status_code == 200 and r.json().get("enabled") is True    # both gates on → capture enabled
+
+
+def test_keyboard_context_requires_master_gate(client, monkeypatch):
+    """SV-4 defense: track_keyboard alone does NOT capture keystrokes — the master allow_input_capture
+    gate is also required (keylogger-class feature, off by default)."""
+    import nova.services.screen_vision as SV
+    monkeypatch.setattr(SV, "_ensure_kb_listener", lambda on: None)
+    from nova.core.db import set_settings
+    set_settings({"screen_vision_enabled": True, "track_keyboard": True, "allow_input_capture": False})
+    r = client.get("/api/vision/context")
+    # API gate is on track_keyboard so it returns 200, but no keystrokes are captured without the master gate
+    assert r.status_code == 200 and r.json().get("enabled") is False and "recent_text" not in r.json()
 
 
 def test_narrate_gate(tmpdb):

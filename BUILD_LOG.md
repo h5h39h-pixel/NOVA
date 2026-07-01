@@ -1487,3 +1487,39 @@ all 22 routes zero console errors ✅ · coverage 56% · 0 runtime errors.
 - `nova/services/schedules.py`: new `control` action in `run_action` — dispatches move/click/drag/scroll/
   type/keys/click_element/set_text to the control service, `exec_allowed`-gated + audited + panic-aware.
   A workflow of control steps is now a replayable macro. Test `test_control_macro_action` ✅. Gate ✅.
+
+## M105.6 — DEEP tests (dangerous/edge/failure) + safety hardening from the honest report
+Treated the honest self-report as a task list. Added **real** tests for the dangerous, weak, and failure
+paths (not smoke) — they FOUND and I FIXED real bugs — plus concrete safety improvements. Strictly
+single-user/local-only; no protections disabled. Gate ✅ · live 42/42 ✅ · 22 routes clean ✅ · coverage
+**→57%** (safety 100%, memory 89%, control 57%, screen_vision 63%).
+
+**New deep test suites (38 tests):** `tests/test_dangerous.py` (panic blocks all 8 control actions;
+protected-window guard; credential denylist across every reader; LAN exec gate; destructive-command
+denylist + false-positive guards; agent control gate; injection detector's honest catch/miss),
+`tests/test_edges.py` (memory dedupe/unicode/**semantic**/pinned; retention keep=0 & keep≫count; quality
+÷0; KB chunking; macro backspace + event cap; automodel fallback), `tests/test_failures.py` (Ollama down →
+graceful; unreachable → http_ok False; malformed action JSON; **bad bodies → clean errors not 500**;
+oversized truncation; guard survives settings error). Documented in `docs/testing.md`.
+
+**Real bugs the deep tests caught & fixed:**
+1. **Credential-denylist bypass** — `.git\config` matched backslash paths only; `.git/config` (and bare
+   `.ssh`/`.aws` dirs) slipped through. `nova/core/safety.py`: `is_credential_path` now normalizes
+   separators + does a segment match; denylist widened (`.gnupg`, `.kube`, `.docker`, gh/docker configs).
+2. **`screen_memory_keep: 0` ignored** (`or 50` clobbered a valid "keep none") — fixed.
+3. **Macro-save fallback** — explicit `steps:[]` fell back to the recorded buffer — fixed to respect it.
+4. **Semantic recall silently off** — `recall()` used `get_settings()` without importing it → `NameError`
+   swallowed. Fixed the import (found because the semantic test failed).
+
+**Safety hardening (addresses the report's #1 gap — unguarded control):**
+- `nova/services/control.py`: **per-action protected-window guard** — click/type/keys/drag/set_text/
+  click_element are BLOCKED when the focused window title matches a sensitive list (`DEFAULT_PROTECTED`:
+  password managers, banking, auth) — tunable via `control_protected_patterns`. Audited on block.
+- **`allow_input_capture` master gate** (default OFF) now required for BOTH the macro recorder and SV-4
+  keystroke context (keylogger-class). Settings toggle with a confirm dialog + "turn off when done".
+- Settings UI: input-capture toggle + a note that control auto-blocks on sensitive windows.
+
+**Real improvement — semantic memory (IDEA-8b):** `memory.recall` gains embedding-based (cosine) recall
+blended with keyword, gated by `memory_semantic` (default OFF, so zero hot-path cost). Facts embed at
+write (best-effort; `emb` column + idempotent migration); embeddings never shipped to the UI. Test with
+deterministic fake embeddings proves "car" ~ "vehicle" recall.
